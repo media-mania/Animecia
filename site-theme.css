@@ -81,3 +81,14 @@ main{max-width:1240px!important;margin-left:auto!important;margin-right:auto!imp
 h1,h2,h3{letter-spacing:-.025em}
 .section-title{font-weight:900!important}
 .badge,.pill{border-radius:999px!important}
+
+/* Cross-page visual polish */
+body{min-height:100vh}
+header,.site-header{position:sticky!important;top:0!important;z-index:100}
+.wrap.head{min-height:66px!important}
+.logo{font-weight:950!important;letter-spacing:-.04em!important}
+main h1{font-weight:950}
+main h2{font-weight:900}
+.panel,.card,.profile-card,.list-item,.review-item,.anime-card,.feature-card,.genre-card{border-radius:16px!important}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(225,29,72,.18)!important;outline-offset:2px!important}
+@media(max-width:900px){header{position:relative!important}}
