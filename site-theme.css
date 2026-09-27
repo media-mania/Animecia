@@ -92,3 +92,16 @@ main h2{font-weight:900}
 .panel,.card,.profile-card,.list-item,.review-item,.anime-card,.feature-card,.genre-card{border-radius:16px!important}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(225,29,72,.18)!important;outline-offset:2px!important}
 @media(max-width:900px){header{position:relative!important}}
+
+/* Animecia premium navigation */
+header,.site-header{height:72px!important;background:rgba(17,18,20,.94)!important;box-shadow:0 8px 28px rgba(0,0,0,.12)!important}
+.wrap.head{min-height:72px!important;max-width:1280px!important;padding:0 22px!important;gap:22px!important}
+.logo{font-size:24px!important;flex:none!important}
+nav,.site-nav,.main-nav{gap:4px!important;align-items:center!important;overflow-x:auto!important;scrollbar-width:none!important}
+nav::-webkit-scrollbar,.site-nav::-webkit-scrollbar,.main-nav::-webkit-scrollbar{display:none}
+nav a,.site-nav a,.main-nav a{padding:9px 11px!important;border-radius:9px!important;font-size:13px!important;font-weight:750!important;white-space:nowrap!important}
+nav a:hover,.site-nav a:hover,.main-nav a:hover{background:rgba(255,255,255,.08)!important;color:#fff!important}
+main{width:min(1280px,100%)!important;padding-left:22px!important;padding-right:22px!important}
+.filter-item select,.field select,.field input,.field textarea{min-height:44px!important;border-radius:10px!important}
+@media(max-width:900px){header,.site-header{height:64px!important}.wrap.head{min-height:64px!important;padding:0 14px!important}nav,.site-nav,.main-nav{display:flex!important;flex:1!important}nav a,.site-nav a,.main-nav a{font-size:12px!important;padding:8px!important}.userbar{display:none!important}main{padding-left:14px!important;padding-right:14px!important}}
+@media(max-width:600px){nav,.site-nav,.main-nav{display:none!important}}
