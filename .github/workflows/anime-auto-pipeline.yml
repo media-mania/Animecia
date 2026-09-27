@@ -1121,6 +1121,35 @@ jobs:
             }
           }
 
+          async function notifyFollowers(animeId, title, changes) {
+            if (!changes?.length) return;
+            const { data: followers, error } = await supabase
+              .from('user_anime_follows')
+              .select('user_id,notify_new_episode,notify_new_info')
+              .eq('anime_id', animeId);
+            if (error) throw error;
+            const rows = [];
+            for (const follower of (followers || [])) {
+              for (const change of changes) {
+                if (change.type === 'episode' && !follower.notify_new_episode) continue;
+                if (change.type === 'info' && !follower.notify_new_info) continue;
+                rows.push({
+                  user_id: follower.user_id,
+                  anime_id: animeId,
+                  notification_type: change.type === 'episode' ? 'new_episode' : 'anime_info_update',
+                  title: change.title,
+                  message: change.message,
+                  target_url: `anime-detail.html?id=${animeId}`
+                });
+              }
+            }
+            if (!rows.length) return;
+            const { error: insertError } = await supabase
+              .from('user_notifications')
+              .insert(rows);
+            if (insertError) throw insertError;
+          }
+
           async function processOne(reportRow) {
             const detailXml = await fetchText(`${ANN_DETAIL_URL}${reportRow.source_id}`);
             const detailParsed = parser.parse(detailXml);
@@ -1161,7 +1190,7 @@ jobs:
           async function syncExistingAnnAnime() {
             const { data: animeRows, error } = await supabase
               .from('anime')
-              .select('id,external_id,title,start_date')
+              .select('id,external_id,title,start_date,end_date,episodes,status,official_url')
               .eq('source', 'Anime News Network Encyclopedia')
               .gte('external_id', ANN_EXTERNAL_ID_BASE)
               .lt('external_id', ANN_EXTERNAL_ID_BASE + 2000000000)
@@ -1199,6 +1228,31 @@ jobs:
                 }
 
                 const payload = result.payload;
+                const changes = [];
+
+                const oldEpisodes = Number.isFinite(Number(row.episodes)) ? Number(row.episodes) : null;
+                const newEpisodes = Number.isFinite(Number(payload.episodes)) ? Number(payload.episodes) : null;
+                if (newEpisodes !== null && oldEpisodes !== null && newEpisodes > oldEpisodes) {
+                  changes.push({
+                    type: 'episode',
+                    title: payload.title + ' の新しいエピソード情報',
+                    message: oldEpisodes + '話 → ' + newEpisodes + '話に更新されました。'
+                  });
+                }
+
+                const infoChanged =
+                  String(row.status || '') !== String(payload.status || '') ||
+                  String(row.end_date || '') !== String(payload.end_date || '') ||
+                  String(row.official_url || '') !== String(payload.official_url || '');
+
+                if (infoChanged) {
+                  changes.push({
+                    type: 'info',
+                    title: payload.title + ' の作品情報が更新されました',
+                    message: 'Animeciaの作品情報が自動更新されました。'
+                  });
+                }
+
                 const updateRow = {};
                 for (const key of [
                   'title', 'english_title', 'title_english', 'title_native', 'title_japanese', 'title_romaji',
