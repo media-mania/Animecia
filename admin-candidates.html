@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
 
   <meta charset="UTF-8">
@@ -16,7 +17,6 @@
     content="noindex,nofollow"
   >
 
-  <!-- Supabase -->
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
   ></script>
@@ -37,8 +37,9 @@
     body {
       margin: 0;
 
-      background: #f5f5f5;
-      color: #111;
+      background: #f5f6f8;
+
+      color: #171717;
 
       font-family:
         -apple-system,
@@ -49,6 +50,8 @@
         "Yu Gothic",
         Meiryo,
         sans-serif;
+
+      line-height: 1.7;
     }
 
 
@@ -60,9 +63,8 @@
     }
 
 
-    button,
     a {
-      -webkit-tap-highlight-color: transparent;
+      color: inherit;
     }
 
 
@@ -72,24 +74,26 @@
 
     header {
       background: #111;
-      color: #fff;
 
-      border-bottom: 1px solid #222;
+      color: #fff;
     }
 
 
     .header-inner {
-      width: min(
-        1200px,
-        calc(100% - 30px)
-      );
+      width:
+        min(
+          1200px,
+          calc(100% - 30px)
+        );
 
       min-height: 64px;
 
       margin: 0 auto;
 
       display: flex;
+
       align-items: center;
+
       justify-content: space-between;
 
       gap: 20px;
@@ -102,6 +106,7 @@
       text-decoration: none;
 
       font-size: 20px;
+
       font-weight: 700;
 
       white-space: nowrap;
@@ -119,11 +124,6 @@
 
     .header-actions a,
     .header-actions button {
-      display: inline-flex;
-
-      align-items: center;
-      justify-content: center;
-
       min-height: 40px;
 
       padding:
@@ -135,22 +135,18 @@
       border-radius: 8px;
 
       background: #222;
+
       color: #fff;
 
       text-decoration: none;
 
       cursor: pointer;
-
-      transition:
-        background-color .15s ease,
-        border-color .15s ease;
     }
 
 
     .header-actions a:hover,
     .header-actions button:hover {
       background: #333;
-      border-color: #555;
     }
 
 
@@ -159,15 +155,16 @@
     ========================================================= */
 
     main {
-      width: min(
-        1200px,
-        calc(100% - 30px)
-      );
+      width:
+        min(
+          1200px,
+          calc(100% - 30px)
+        );
 
       margin: 0 auto;
 
       padding:
-        36px 0 70px;
+        35px 0 70px;
     }
 
 
@@ -178,10 +175,11 @@
 
     .page-header h1 {
       margin:
-        0 0 9px;
+        0 0 8px;
 
       font-size: 30px;
-      line-height: 1.3;
+
+      line-height: 1.35;
     }
 
 
@@ -190,39 +188,100 @@
 
       color: #666;
 
-      line-height: 1.8;
-
       font-size: 14px;
+
+      line-height: 1.8;
     }
 
 
     /* =========================================================
-       Status
+       Summary
     ========================================================= */
 
-    .status-bar {
+    .summary-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          4,
+          minmax(0, 1fr)
+        );
+
+      gap: 12px;
+
+      margin-bottom: 20px;
+    }
+
+
+    .summary-card {
+      padding:
+        16px;
+
+      border:
+        1px solid #ddd;
+
+      border-radius: 12px;
+
+      background: #fff;
+    }
+
+
+    .summary-label {
+      color: #666;
+
+      font-size: 12px;
+    }
+
+
+    .summary-value {
+      margin-top: 4px;
+
+      font-size: 25px;
+
+      font-weight: 700;
+    }
+
+
+    .summary-value.accepted {
+      color: #19733c;
+    }
+
+
+    .summary-value.review {
+      color: #9b6800;
+    }
+
+
+    .summary-value.rejected {
+      color: #a52b2b;
+    }
+
+
+    /* =========================================================
+       Filter
+    ========================================================= */
+
+    .filter-bar {
       display: flex;
 
       flex-wrap: wrap;
 
-      gap: 10px;
+      align-items: center;
 
-      margin-bottom: 18px;
+      gap: 8px;
+
+      margin-bottom: 20px;
     }
 
 
-    .badge {
-      display: inline-flex;
-
-      align-items: center;
-
-      gap: 6px;
+    .filter-button {
+      min-height: 38px;
 
       padding:
         7px 12px;
 
       border:
-        1px solid #ddd;
+        1px solid #d5d5d5;
 
       border-radius: 999px;
 
@@ -230,12 +289,21 @@
 
       color: #333;
 
-      font-size: 13px;
+      cursor: pointer;
     }
 
 
-    .badge strong {
-      font-weight: 700;
+    .filter-button:hover {
+      background: #f0f0f0;
+    }
+
+
+    .filter-button.active {
+      border-color: #111;
+
+      background: #111;
+
+      color: #fff;
     }
 
 
@@ -246,20 +314,19 @@
     .message {
       min-height: 24px;
 
-      margin:
-        0 0 18px;
+      margin-bottom: 16px;
 
       font-size: 14px;
     }
 
 
-    .message.error {
-      color: #b00020;
+    .message.success {
+      color: #16723a;
     }
 
 
-    .message.success {
-      color: #147333;
+    .message.error {
+      color: #b00020;
     }
 
 
@@ -275,96 +342,224 @@
 
 
     .candidate-card {
-      background: #fff;
+      overflow: hidden;
 
       border:
         1px solid #ddd;
 
       border-radius: 14px;
 
-      padding: 22px;
+      background: #fff;
 
       box-shadow:
-        0 2px 10px
+        0 2px 12px
         rgba(0, 0, 0, .04);
     }
 
 
-    .candidate-card.imported {
-      border-color: #b7d8bf;
+    .candidate-card.accepted {
+      border-color: #b9d9c4;
+    }
 
-      background: #fbfffc;
+
+    .candidate-card.review {
+      border-color: #e3d09b;
     }
 
 
     .candidate-card.rejected {
-      border-color: #e2baba;
-
-      background: #fffafa;
+      border-color: #e4bcbc;
     }
 
 
-    .candidate-top {
+    .candidate-main {
+      padding: 22px;
+    }
+
+
+    .candidate-header {
       display: flex;
 
       align-items: flex-start;
+
       justify-content: space-between;
 
       gap: 16px;
-
-      margin-bottom: 18px;
     }
 
 
     .candidate-title {
       margin: 0;
 
-      font-size: 22px;
+      font-size: 23px;
+
       line-height: 1.45;
 
       word-break: break-word;
     }
 
 
-    .candidate-meta {
+    .candidate-id {
+      margin-top: 5px;
+
+      color: #777;
+
+      font-size: 12px;
+    }
+
+
+    /* =========================================================
+       Decision
+    ========================================================= */
+
+    .decision-area {
+      flex:
+        0 0 auto;
+
+      min-width: 180px;
+
+      text-align: right;
+    }
+
+
+    .decision-badge {
+      display: inline-flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      min-width: 110px;
+
+      padding:
+        7px 11px;
+
+      border-radius: 999px;
+
+      font-size: 12px;
+
+      font-weight: 700;
+    }
+
+
+    .decision-badge.accepted {
+      background: #dff2e4;
+
+      color: #176b35;
+    }
+
+
+    .decision-badge.review {
+      background: #fff1c7;
+
+      color: #8b6100;
+    }
+
+
+    .decision-badge.rejected {
+      background: #f6dddd;
+
+      color: #922727;
+    }
+
+
+    .confidence {
       margin-top: 7px;
 
       color: #666;
+
+      font-size: 12px;
+    }
+
+
+    .confidence-bar {
+      width: 180px;
+
+      height: 7px;
+
+      margin:
+        5px 0 0 auto;
+
+      overflow: hidden;
+
+      border-radius: 999px;
+
+      background: #e8e8e8;
+    }
+
+
+    .confidence-bar-inner {
+      height: 100%;
+
+      border-radius: inherit;
+
+      background: #222;
+
+      transition:
+        width .2s ease;
+    }
+
+
+    /* =========================================================
+       Reasons
+    ========================================================= */
+
+    .reason-box {
+      margin-top: 18px;
+
+      padding: 14px 16px;
+
+      border-radius: 10px;
+
+      background: #f7f7f7;
+    }
+
+
+    .reason-title {
+      margin-bottom: 7px;
+
+      font-size: 13px;
+
+      font-weight: 700;
+    }
+
+
+    .reason-list {
+      margin: 0;
+
+      padding-left: 20px;
+
+      color: #555;
 
       font-size: 13px;
     }
 
 
-    .status-pill {
-      flex:
-        0 0 auto;
+    .reason-list li + li {
+      margin-top: 3px;
+    }
+
+
+    /* =========================================================
+       Duplicate warning
+    ========================================================= */
+
+    .duplicate-warning {
+      margin-top: 12px;
 
       padding:
-        6px 10px;
+        11px 13px;
 
-      border-radius: 999px;
+      border:
+        1px solid #e3aaaa;
 
-      background: #eee;
+      border-radius: 9px;
 
-      color: #333;
+      background: #fff6f6;
 
-      font-size: 12px;
-      font-weight: 700;
-    }
+      color: #8d2525;
 
-
-    .status-pill.pending {
-      background: #fff2c2;
-    }
-
-
-    .status-pill.imported {
-      background: #dff2e2;
-    }
-
-
-    .status-pill.rejected {
-      background: #f6dddd;
+      font-size: 13px;
     }
 
 
@@ -382,6 +577,8 @@
         );
 
       gap: 14px;
+
+      margin-top: 20px;
     }
 
 
@@ -404,6 +601,7 @@
       color: #555;
 
       font-size: 12px;
+
       font-weight: 700;
     }
 
@@ -424,12 +622,13 @@
       outline: none;
 
       background: #fff;
+
       color: #111;
     }
 
 
     .field textarea {
-      min-height: 100px;
+      min-height: 90px;
 
       resize: vertical;
     }
@@ -439,10 +638,6 @@
     .field textarea:focus,
     .field select:focus {
       border-color: #111;
-
-      box-shadow:
-        0 0 0 2px
-        rgba(0, 0, 0, .05);
     }
 
 
@@ -458,11 +653,68 @@
 
 
     /* =========================================================
+       Metadata
+    ========================================================= */
+
+    .metadata-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          3,
+          minmax(0, 1fr)
+        );
+
+      gap: 10px;
+
+      margin-top: 20px;
+    }
+
+
+    .metadata-item {
+      padding:
+        11px 12px;
+
+      border:
+        1px solid #eee;
+
+      border-radius: 9px;
+
+      background: #fafafa;
+    }
+
+
+    .metadata-label {
+      color: #777;
+
+      font-size: 11px;
+    }
+
+
+    .metadata-value {
+      margin-top: 3px;
+
+      color: #222;
+
+      font-size: 13px;
+
+      font-weight: 600;
+
+      word-break: break-word;
+    }
+
+
+    /* =========================================================
        Source
     ========================================================= */
 
     .source-area {
-      margin-top: 16px;
+      margin-top: 18px;
+
+      padding-top: 16px;
+
+      border-top:
+        1px solid #eee;
 
       color: #555;
 
@@ -474,21 +726,8 @@
     }
 
 
-    .source-area strong {
-      color: #333;
-    }
-
-
     .source-area a {
-      color: #333;
-
-      text-decoration:
-        underline;
-    }
-
-
-    .source-area a:hover {
-      color: #000;
+      text-decoration: underline;
     }
 
 
@@ -500,8 +739,6 @@
       display: flex;
 
       flex-wrap: wrap;
-
-      align-items: center;
 
       gap: 9px;
 
@@ -519,19 +756,21 @@
       display: inline-flex;
 
       align-items: center;
+
       justify-content: center;
 
-      min-height: 40px;
+      min-height: 41px;
 
       padding:
         9px 14px;
 
       border-radius: 8px;
 
-      text-decoration: none;
-
       font-size: 13px;
+
       font-weight: 600;
+
+      text-decoration: none;
 
       cursor: pointer;
     }
@@ -544,54 +783,43 @@
 
     .btn-save {
       background: #111;
+
       color: #fff;
-    }
-
-
-    .btn-save:hover {
-      background: #2a2a2a;
     }
 
 
     .btn-approve {
       background: #1c7a3e;
+
       color: #fff;
-    }
-
-
-    .btn-approve:hover {
-      background: #176533;
     }
 
 
     .btn-reject {
       background: #a52b2b;
+
       color: #fff;
     }
 
 
-    .btn-reject:hover {
-      background: #8b2525;
-    }
+    .btn-source {
+      border:
+        1px solid #ddd;
 
-
-    .actions a {
       background: #eee;
 
       color: #222;
-
-      border:
-        1px solid #ddd;
     }
 
 
+    .actions button:hover,
     .actions a:hover {
-      background: #e4e4e4;
+      filter: brightness(.94);
     }
 
 
     .actions button:disabled {
-      opacity: .55;
+      opacity: .5;
 
       cursor: not-allowed;
     }
@@ -606,22 +834,44 @@
       padding:
         50px 20px;
 
-      text-align: center;
-
-      background: #fff;
-
       border:
         1px solid #ddd;
 
       border-radius: 14px;
 
+      background: #fff;
+
       color: #666;
+
+      text-align: center;
     }
 
 
     /* =========================================================
-       Responsive
+       Mobile
     ========================================================= */
+
+    @media (max-width: 850px) {
+
+      .summary-grid {
+        grid-template-columns:
+          repeat(
+            2,
+            minmax(0, 1fr)
+          );
+      }
+
+
+      .metadata-grid {
+        grid-template-columns:
+          repeat(
+            2,
+            minmax(0, 1fr)
+          );
+      }
+
+    }
+
 
     @media (max-width: 700px) {
 
@@ -650,17 +900,17 @@
       .header-actions a,
       .header-actions button {
         flex: 1;
+
+        text-align: center;
       }
 
 
       main {
         width:
-          min(
-            100% - 24px,
-            1200px
-          );
+          calc(100% - 24px);
 
-        padding-top: 26px;
+        padding:
+          25px 0 55px;
       }
 
 
@@ -669,18 +919,27 @@
       }
 
 
-      .candidate-card {
+      .candidate-main {
         padding: 17px;
       }
 
 
-      .candidate-top {
+      .candidate-header {
         flex-direction: column;
       }
 
 
-      .candidate-title {
-        font-size: 20px;
+      .decision-area {
+        width: 100%;
+
+        text-align: left;
+      }
+
+
+      .confidence-bar {
+        margin-left: 0;
+
+        margin-right: auto;
       }
 
 
@@ -694,10 +953,13 @@
       }
 
 
+      .metadata-grid {
+        grid-template-columns: 1fr;
+      }
+
+
       .actions {
         flex-direction: column;
-
-        align-items: stretch;
       }
 
 
@@ -705,6 +967,7 @@
       .actions a {
         width: 100%;
       }
+
     }
 
 
@@ -769,42 +1032,140 @@
       </h1>
 
       <p>
-        Anime News Networkから取得した作品候補を確認し、
-        必要に応じて情報を修正してください。
-        承認した作品だけAnimeciaのアニメデータベースへ登録されます。
+        Anime News Networkから取得した候補を自動検証しています。
+        自動判定は補助機能であり、承認した作品だけAnimeciaへ登録されます。
       </p>
 
     </section>
 
 
     <!-- =====================================================
-         Status
+         Summary
     ====================================================== -->
 
-    <div class="status-bar">
+    <section
+      class="summary-grid"
+      aria-label="自動判定集計"
+    >
 
-      <span class="badge">
-        保留：
-        <strong id="pending-count">
+      <div class="summary-card">
+
+        <div class="summary-label">
+          審査待ち
+        </div>
+
+        <div
+          id="pending-count"
+          class="summary-value"
+        >
           0
-        </strong>
-      </span>
+        </div>
+
+      </div>
 
 
-      <span class="badge">
-        登録済み：
-        <strong id="imported-count">
+      <div class="summary-card">
+
+        <div class="summary-label">
+          登録候補
+        </div>
+
+        <div
+          id="accepted-count"
+          class="summary-value accepted"
+        >
           0
-        </strong>
-      </span>
+        </div>
+
+      </div>
 
 
-      <span class="badge">
-        却下：
-        <strong id="rejected-count">
+      <div class="summary-card">
+
+        <div class="summary-label">
+          要確認
+        </div>
+
+        <div
+          id="review-count"
+          class="summary-value review"
+        >
           0
-        </strong>
-      </span>
+        </div>
+
+      </div>
+
+
+      <div class="summary-card">
+
+        <div class="summary-label">
+          自動却下
+        </div>
+
+        <div
+          id="rejected-count"
+          class="summary-value rejected"
+        >
+          0
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         Filter
+    ====================================================== -->
+
+    <div
+      class="filter-bar"
+      aria-label="候補フィルター"
+    >
+
+      <button
+        type="button"
+        class="filter-button active"
+        data-filter="all"
+      >
+        すべて
+      </button>
+
+
+      <button
+        type="button"
+        class="filter-button"
+        data-filter="pending"
+      >
+        審査待ち
+      </button>
+
+
+      <button
+        type="button"
+        class="filter-button"
+        data-filter="accepted"
+      >
+        登録候補
+      </button>
+
+
+      <button
+        type="button"
+        class="filter-button"
+        data-filter="review"
+      >
+        要確認
+      </button>
+
+
+      <button
+        type="button"
+        class="filter-button"
+        data-filter="rejected"
+      >
+        自動却下
+      </button>
 
     </div>
 
@@ -821,7 +1182,7 @@
 
 
     <!-- =====================================================
-         Candidate list
+         Candidates
     ====================================================== -->
 
     <section
@@ -850,12 +1211,6 @@
       "https://bhgdjuwlxvbaeraaivmh.supabase.co";
 
 
-    /*
-     * Animecia frontend Publishable Key
-     *
-     * 注意：
-     * sb_secret_... はここに絶対に入れない。
-     */
     const SUPABASE_KEY =
       "sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
 
@@ -889,9 +1244,15 @@
       );
 
 
-    const importedCount =
+    const acceptedCount =
       document.getElementById(
-        "imported-count"
+        "accepted-count"
+      );
+
+
+    const reviewCount =
+      document.getElementById(
+        "review-count"
       );
 
 
@@ -905,6 +1266,11 @@
       document.getElementById(
         "logout-button"
       );
+
+
+    let allCandidates = [];
+
+    let currentFilter = "all";
 
 
     /* =========================================================
@@ -929,13 +1295,14 @@
         messageElement.classList.add(
           type
         );
+
       }
 
     }
 
 
     /* =========================================================
-       Escape HTML
+       Escape
     ========================================================= */
 
     function escapeHtml(
@@ -970,6 +1337,32 @@
 
 
     /* =========================================================
+       Format value
+    ========================================================= */
+
+    function displayValue(
+      value
+    ) {
+
+      if (
+        value === null
+        ||
+        value === undefined
+        ||
+        value === ""
+      ) {
+
+        return "未設定";
+      }
+
+
+      return escapeHtml(
+        value
+      );
+    }
+
+
+    /* =========================================================
        Admin check
     ========================================================= */
 
@@ -987,14 +1380,15 @@
       if (sessionError) {
 
         console.error(
-          "Session error:",
           sessionError
         );
+
 
         showMessage(
           "ログイン状態を確認できませんでした。",
           "error"
         );
+
 
         return null;
       }
@@ -1005,6 +1399,7 @@
         window.location.href =
           "admin.html";
 
+
         return null;
       }
 
@@ -1014,7 +1409,9 @@
         error
       } =
         await supabaseClient
-          .from("admin_users")
+          .from(
+            "admin_users"
+          )
           .select(
             "user_id"
           )
@@ -1032,10 +1429,12 @@
           error
         );
 
+
         showMessage(
           "管理者権限を確認できませんでした。",
           "error"
         );
+
 
         return null;
       }
@@ -1112,23 +1511,26 @@
 
 
         showMessage(
+          error.message ||
           "候補の読み込みに失敗しました。",
           "error"
         );
+
 
         return;
       }
 
 
+      allCandidates =
+        data || [];
+
+
       updateCounts(
-        data || []
+        allCandidates
       );
 
 
-      renderCandidates(
-        data || []
-      );
-
+      renderFilteredCandidates();
     }
 
 
@@ -1140,34 +1542,51 @@
       candidates
     ) {
 
-      const counts = {
+      let pending =
+        0;
 
-        pending:
-          0,
+      let accepted =
+        0;
 
-        imported:
-          0,
+      let review =
+        0;
 
-        rejected:
-          0
-
-      };
+      let rejected =
+        0;
 
 
       candidates.forEach(
         candidate => {
 
           if (
-            Object.prototype.hasOwnProperty.call(
-              counts,
-              candidate.import_status
-            )
+            candidate.import_status
+            === "pending"
           ) {
+            pending++;
+          }
 
-            counts[
-              candidate.import_status
-            ]++;
 
+          if (
+            candidate.auto_decision
+            === "accepted"
+          ) {
+            accepted++;
+          }
+
+
+          if (
+            candidate.auto_decision
+            === "review"
+          ) {
+            review++;
+          }
+
+
+          if (
+            candidate.auto_decision
+            === "rejected"
+          ) {
+            rejected++;
           }
 
         }
@@ -1175,34 +1594,103 @@
 
 
       pendingCount.textContent =
-        counts.pending;
+        pending;
 
 
-      importedCount.textContent =
-        counts.imported;
+      acceptedCount.textContent =
+        accepted;
+
+
+      reviewCount.textContent =
+        review;
 
 
       rejectedCount.textContent =
-        counts.rejected;
-
+        rejected;
     }
 
 
     /* =========================================================
-       Render candidates
+       Filter
     ========================================================= */
 
-    function renderCandidates(
-      candidates
+    function getFilteredCandidates() {
+
+      if (
+        currentFilter === "all"
+      ) {
+
+        return allCandidates;
+      }
+
+
+      if (
+        currentFilter === "pending"
+      ) {
+
+        return allCandidates.filter(
+          candidate =>
+            candidate.import_status
+            === "pending"
+        );
+      }
+
+
+      return allCandidates.filter(
+        candidate =>
+          candidate.auto_decision
+          === currentFilter
+      );
+    }
+
+
+    function setFilter(
+      filter
     ) {
+
+      currentFilter =
+        filter;
+
+
+      document
+        .querySelectorAll(
+          ".filter-button"
+        )
+        .forEach(
+          button => {
+
+            button.classList.toggle(
+              "active",
+              button.dataset.filter
+              === filter
+            );
+
+          }
+        );
+
+
+      renderFilteredCandidates();
+    }
+
+
+    /* =========================================================
+       Render
+    ========================================================= */
+
+    function renderFilteredCandidates() {
+
+      const candidates =
+        getFilteredCandidates();
+
 
       if (!candidates.length) {
 
         candidateList.innerHTML = `
           <div class="empty">
-            アニメ候補はありません。
+            該当する候補はありません。
           </div>
         `;
+
 
         return;
       }
@@ -1217,7 +1705,106 @@
               )
           )
           .join("");
+    }
 
+
+    /* =========================================================
+       Decision labels
+    ========================================================= */
+
+    function getDecisionLabel(
+      decision
+    ) {
+
+      if (
+        decision === "accepted"
+      ) {
+
+        return "登録候補";
+      }
+
+
+      if (
+        decision === "review"
+      ) {
+
+        return "要確認";
+      }
+
+
+      if (
+        decision === "rejected"
+      ) {
+
+        return "自動却下";
+      }
+
+
+      return "未判定";
+    }
+
+
+    function getCategoryLabel(
+      category
+    ) {
+
+      if (
+        category === "anime"
+      ) {
+
+        return "アニメ";
+      }
+
+
+      if (
+        category === "non_anime"
+      ) {
+
+        return "対象外";
+      }
+
+
+      if (
+        category === "uncertain"
+      ) {
+
+        return "要確認";
+      }
+
+
+      return "未判定";
+    }
+
+
+    function getImportStatusLabel(
+      status
+    ) {
+
+      if (
+        status === "pending"
+      ) {
+
+        return "審査待ち";
+      }
+
+
+      if (
+        status === "imported"
+      ) {
+
+        return "登録済み";
+      }
+
+
+      if (
+        status === "rejected"
+      ) {
+
+        return "却下済み";
+      }
+
+
+      return "不明";
     }
 
 
@@ -1229,84 +1816,114 @@
       candidate
     ) {
 
-      const status =
-        candidate.import_status;
+      const decision =
+        candidate.auto_decision
+        || "review";
+
+
+      const confidence =
+        Number(
+          candidate.auto_confidence
+          ?? 0
+        );
+
+
+      const safeConfidence =
+        Math.max(
+          0,
+          Math.min(
+            100,
+            confidence
+          )
+        );
+
+
+      const reasons =
+        Array.isArray(
+          candidate.auto_reasons
+        )
+          ? candidate.auto_reasons
+          : [];
 
 
       const isPending =
-        status === "pending";
-
-
-      let statusLabel =
-        "審査待ち";
-
-
-      if (
-        status === "imported"
-      ) {
-
-        statusLabel =
-          "登録済み";
-
-      } else if (
-        status === "rejected"
-      ) {
-
-        statusLabel =
-          "却下";
-      }
+        candidate.import_status
+        === "pending";
 
 
       const title =
-        candidate.title || "";
+        candidate.title
+        || "";
 
 
       const titleJapanese =
-        candidate.title_japanese || "";
+        candidate.title_japanese
+        || "";
 
 
       const titleNative =
-        candidate.title_native || "";
+        candidate.title_native
+        || "";
 
 
       const titleEnglish =
-        candidate.title_english || "";
+        candidate.title_english
+        || "";
 
 
       const format =
-        candidate.format || "";
+        candidate.format
+        || "";
 
 
       const startDate =
-        candidate.start_date || "";
+        candidate.start_date
+        || "";
 
 
       const endDate =
-        candidate.end_date || "";
+        candidate.end_date
+        || "";
 
 
       const episodes =
-        candidate.episodes ?? "";
+        candidate.episodes
+        ?? "";
 
 
       const duration =
-        candidate.duration ?? "";
+        candidate.duration
+        ?? "";
 
 
       const genre =
-        candidate.genre || "";
+        candidate.genre
+        || "";
 
 
       const officialUrl =
-        candidate.official_url || "";
+        candidate.official_url
+        || "";
 
 
       const sourceUrl =
-        candidate.source_url || "";
+        candidate.source_url
+        || "";
 
 
-      const rejectionReason =
-        candidate.rejection_reason || "";
+      const status =
+        candidate.import_status
+        || "";
+
+
+      const autoCategory =
+        getCategoryLabel(
+          candidate.auto_category
+        );
+
+
+      const duplicateId =
+        candidate.duplicate_anime_id;
 
 
       const formatOptions = [
@@ -1358,339 +1975,573 @@
       return `
 
         <article
-          class="candidate-card ${escapeHtml(status)}"
+          class="
+            candidate-card
+            ${escapeHtml(decision)}
+          "
           data-id="${escapeHtml(candidate.id)}"
         >
 
+          <div class="candidate-main">
 
-          <div class="candidate-top">
 
-            <div>
+            <!-- =========================================
+                 Header
+            ========================================== -->
 
-              <h2 class="candidate-title">
-                ${escapeHtml(title)}
-              </h2>
+            <div class="candidate-header">
 
-              <div class="candidate-meta">
-                ANN ID:
-                ${escapeHtml(
-                  candidate.source_id
-                )}
+              <div>
+
+                <h2
+                  class="candidate-title"
+                >
+                  ${escapeHtml(title)}
+                </h2>
+
+                <div class="candidate-id">
+                  ANN ID:
+                  ${escapeHtml(
+                    candidate.source_id
+                  )}
+
+                  ・
+
+                  状態：
+                  ${escapeHtml(
+                    getImportStatusLabel(
+                      status
+                    )
+                  )}
+                </div>
+
+              </div>
+
+
+              <div class="decision-area">
+
+                <span
+                  class="
+                    decision-badge
+                    ${escapeHtml(decision)}
+                  "
+                >
+                  ${escapeHtml(
+                    getDecisionLabel(
+                      decision
+                    )
+                  )}
+                </span>
+
+
+                <div class="confidence">
+                  自動判定信頼度：
+                  ${safeConfidence}%
+                </div>
+
+
+                <div class="confidence-bar">
+                  <div
+                    class="confidence-bar-inner"
+                    style="
+                      width:
+                      ${safeConfidence}%;
+                    "
+                  ></div>
+                </div>
+
               </div>
 
             </div>
 
 
-            <span
-              class="status-pill ${escapeHtml(status)}"
-            >
-              ${escapeHtml(statusLabel)}
-            </span>
+            <!-- =========================================
+                 Automatic classification
+            ========================================== -->
 
-          </div>
+            <div class="metadata-grid">
 
+              <div class="metadata-item">
 
-          <div class="fields">
-
-
-            <div class="field full">
-
-              <label>
-                タイトル
-              </label>
-
-              <input
-                type="text"
-                data-field="title"
-                maxlength="500"
-                value="${escapeHtml(title)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                日本語タイトル
-              </label>
-
-              <input
-                type="text"
-                data-field="title_japanese"
-                maxlength="500"
-                value="${escapeHtml(titleJapanese)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                Native title
-              </label>
-
-              <input
-                type="text"
-                data-field="title_native"
-                maxlength="500"
-                value="${escapeHtml(titleNative)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                英語タイトル
-              </label>
-
-              <input
-                type="text"
-                data-field="title_english"
-                maxlength="500"
-                value="${escapeHtml(titleEnglish)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                形式
-              </label>
-
-              <select
-                data-field="format"
-                ${isPending ? "" : "disabled"}
-              >
-                ${formatOptions}
-              </select>
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                開始日
-              </label>
-
-              <input
-                type="date"
-                data-field="start_date"
-                value="${escapeHtml(startDate)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                終了日
-              </label>
-
-              <input
-                type="date"
-                data-field="end_date"
-                value="${escapeHtml(endDate)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                話数
-              </label>
-
-              <input
-                type="number"
-                min="0"
-                max="10000"
-                step="1"
-                data-field="episodes"
-                value="${escapeHtml(episodes)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                1話の時間（分）
-              </label>
-
-              <input
-                type="number"
-                min="0"
-                max="300"
-                step="1"
-                data-field="duration"
-                value="${escapeHtml(duration)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field full">
-
-              <label>
-                ジャンル
-              </label>
-
-              <input
-                type="text"
-                data-field="genre"
-                maxlength="1000"
-                value="${escapeHtml(genre)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-            <div class="field full">
-
-              <label>
-                公式サイトURL
-              </label>
-
-              <input
-                type="url"
-                data-field="official_url"
-                maxlength="2000"
-                value="${escapeHtml(officialUrl)}"
-                ${isPending ? "" : "disabled"}
-              >
-
-            </div>
-
-
-          </div>
-
-
-          <div class="source-area">
-
-            <strong>
-              情報源：
-            </strong>
-
-            ${
-              sourceUrl
-                ? `
-                  <a
-                    href="${escapeHtml(sourceUrl)}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Anime News Network Encyclopedia
-                  </a>
-                `
-                : `
-                  Anime News Network Encyclopedia
-                `
-            }
-
-          </div>
-
-
-          ${
-            rejectionReason
-              ? `
-                <div class="source-area">
-
-                  <strong>
-                    却下理由：
-                  </strong>
-
-                  ${escapeHtml(
-                    rejectionReason
-                  )}
-
+                <div class="metadata-label">
+                  自動カテゴリ
                 </div>
-              `
-              : ""
-          }
+
+                <div class="metadata-value">
+                  ${escapeHtml(
+                    autoCategory
+                  )}
+                </div>
+
+              </div>
 
 
-          <div class="actions">
+              <div class="metadata-item">
+
+                <div class="metadata-label">
+                  ANN形式
+                </div>
+
+                <div class="metadata-value">
+                  ${displayValue(
+                    format
+                  )}
+                </div>
+
+              </div>
+
+
+              <div class="metadata-item">
+
+                <div class="metadata-label">
+                  ANN ID
+                </div>
+
+                <div class="metadata-value">
+                  ${escapeHtml(
+                    candidate.source_id
+                  )}
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- =========================================
+                 Reasons
+            ========================================== -->
+
+            <div class="reason-box">
+
+              <div class="reason-title">
+                自動判定の理由
+              </div>
+
+
+              ${
+                reasons.length
+                  ? `
+                    <ul
+                      class="reason-list"
+                    >
+                      ${
+                        reasons
+                          .map(
+                            reason =>
+                              `
+                                <li>
+                                  ${escapeHtml(
+                                    reason
+                                  )}
+                                </li>
+                              `
+                          )
+                          .join("")
+                      }
+                    </ul>
+                  `
+                  : `
+                    <div>
+                      判定理由はありません。
+                    </div>
+                  `
+              }
+
+            </div>
 
 
             ${
-              isPending
+              duplicateId
                 ? `
-
-                  <button
-                    type="button"
-                    class="btn-save"
-                    data-action="save"
+                  <div
+                    class="duplicate-warning"
                   >
-                    修正を保存
-                  </button>
-
-
-                  <button
-                    type="button"
-                    class="btn-approve"
-                    data-action="approve"
-                  >
-                    承認して登録
-                  </button>
-
-
-                  <button
-                    type="button"
-                    class="btn-reject"
-                    data-action="reject"
-                  >
-                    却下
-                  </button>
-
+                    Animeciaの既存作品
+                    ID ${escapeHtml(
+                      duplicateId
+                    )}
+                    と重複する可能性があります。
+                  </div>
                 `
                 : ""
             }
 
 
-            ${
-              sourceUrl
-                ? `
-                  <a
-                    href="${escapeHtml(sourceUrl)}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    ANNページを開く
-                  </a>
-                `
-                : ""
-            }
+            <!-- =========================================
+                 Editable fields
+            ========================================== -->
+
+            <div class="fields">
+
+
+              <div class="field full">
+
+                <label>
+                  タイトル
+                </label>
+
+                <input
+                  type="text"
+                  data-field="title"
+                  maxlength="500"
+                  value="${escapeHtml(title)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field">
+
+                <label>
+                  日本語タイトル
+                </label>
+
+                <input
+                  type="text"
+                  data-field="title_japanese"
+                  maxlength="500"
+                  value="${escapeHtml(titleJapanese)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field">
+
+                <label>
+                  Native title
+                </label>
+
+                <input
+                  type="text"
+                  data-field="title_native"
+                  maxlength="500"
+                  value="${escapeHtml(titleNative)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field">
+
+                <label>
+                  英語タイトル
+                </label>
+
+                <input
+                  type="text"
+                  data-field="title_english"
+                  maxlength="500"
+                  value="${escapeHtml(titleEnglish)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field">
+
+                <label>
+                  形式
+                </label>
+
+                <select
+                  data-field="format"
+                  ${isPending ? "" : "disabled"}
+                >
+                  ${formatOptions}
+                </select>
+
+              </div>
+
+
+              <div class="field">
+
+                <label>
+                  開始日
+                </label>
+
+                <input
+                  type="date"
+                  data-field="start_date"
+                  value="${escapeHtml(startDate)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field">
+
+                <label>
+                  終了日
+                </label>
+
+                <input
+                  type="date"
+                  data-field="end_date"
+                  value="${escapeHtml(endDate)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field">
+
+                <label>
+                  話数
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  max="10000"
+                  step="1"
+                  data-field="episodes"
+                  value="${escapeHtml(episodes)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field">
+
+                <label>
+                  1話の時間（分）
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  max="300"
+                  step="1"
+                  data-field="duration"
+                  value="${escapeHtml(duration)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field full">
+
+                <label>
+                  ジャンル
+                </label>
+
+                <input
+                  type="text"
+                  data-field="genre"
+                  maxlength="1000"
+                  value="${escapeHtml(genre)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+              <div class="field full">
+
+                <label>
+                  公式サイトURL
+                </label>
+
+                <input
+                  type="url"
+                  data-field="official_url"
+                  maxlength="2000"
+                  value="${escapeHtml(officialUrl)}"
+                  ${isPending ? "" : "disabled"}
+                >
+
+              </div>
+
+
+            </div>
+
+
+            <!-- =========================================
+                 Metadata
+            ========================================== -->
+
+            <div class="metadata-grid">
+
+              <div class="metadata-item">
+
+                <div class="metadata-label">
+                  状態
+                </div>
+
+                <div class="metadata-value">
+                  ${displayValue(
+                    candidate.status
+                  )}
+                </div>
+
+              </div>
+
+
+              <div class="metadata-item">
+
+                <div class="metadata-label">
+                  自動チェック日時
+                </div>
+
+                <div class="metadata-value">
+                  ${displayValue(
+                    candidate.auto_checked_at
+                      ? new Date(
+                          candidate.auto_checked_at
+                        ).toLocaleString(
+                          "ja-JP"
+                        )
+                      : null
+                  )}
+                </div>
+
+              </div>
+
+
+              <div class="metadata-item">
+
+                <div class="metadata-label">
+                  ソース
+                </div>
+
+                <div class="metadata-value">
+                  Anime News Network Encyclopedia
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- =========================================
+                 Sources
+            ========================================== -->
+
+            <div class="source-area">
+
+              <strong>
+                情報源：
+              </strong>
+
+
+              ${
+                sourceUrl
+                  ? `
+                    <a
+                      href="${escapeHtml(sourceUrl)}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Anime News Network Encyclopedia
+                    </a>
+                  `
+                  : "なし"
+              }
+
+
+              ${
+                officialUrl
+                  ? `
+                    <br>
+
+                    <strong>
+                      公式サイト：
+                    </strong>
+
+                    <a
+                      href="${escapeHtml(officialUrl)}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      公式サイトを開く
+                    </a>
+                  `
+                  : ""
+              }
+
+            </div>
+
+
+            <!-- =========================================
+                 Actions
+            ========================================== -->
+
+            <div class="actions">
+
+
+              ${
+                isPending
+                  ? `
+
+                    <button
+                      type="button"
+                      class="btn-save"
+                      data-action="save"
+                    >
+                      修正を保存
+                    </button>
+
+
+                    <button
+                      type="button"
+                      class="btn-approve"
+                      data-action="approve"
+                    >
+                      承認して登録
+                    </button>
+
+
+                    <button
+                      type="button"
+                      class="btn-reject"
+                      data-action="reject"
+                    >
+                      却下
+                    </button>
+
+                  `
+                  : ""
+              }
+
+
+              ${
+                sourceUrl
+                  ? `
+                    <a
+                      class="btn-source"
+                      href="${escapeHtml(sourceUrl)}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      ANNページを開く
+                    </a>
+                  `
+                  : ""
+              }
+
+            </div>
 
 
           </div>
-
 
         </article>
       `;
+
     }
 
 
     /* =========================================================
-       Read card values
+       Get card values
     ========================================================= */
 
     function getCardValues(
@@ -1732,36 +2583,6 @@
         );
 
 
-      let episodes =
-        null;
-
-
-      if (
-        episodesValue !== null
-      ) {
-
-        episodes =
-          Number(
-            episodesValue
-          );
-      }
-
-
-      let duration =
-        null;
-
-
-      if (
-        durationValue !== null
-      ) {
-
-        duration =
-          Number(
-            durationValue
-          );
-      }
-
-
       return {
 
         title:
@@ -1799,9 +2620,19 @@
             "end_date"
           ),
 
-        episodes,
+        episodes:
+          episodesValue === null
+            ? null
+            : Number(
+                episodesValue
+              ),
 
-        duration,
+        duration:
+          durationValue === null
+            ? null
+            : Number(
+                durationValue
+              ),
 
         genre:
           getValue(
@@ -1818,10 +2649,10 @@
 
 
     /* =========================================================
-       Validate candidate
+       Validation
     ========================================================= */
 
-    function validateCandidate(
+    function validateValues(
       values
     ) {
 
@@ -1849,6 +2680,7 @@
 
           return "話数が正しくありません。";
         }
+
       }
 
 
@@ -1868,6 +2700,7 @@
 
           return "1話の時間が正しくありません。";
         }
+
       }
 
 
@@ -1910,8 +2743,9 @@
 
         } catch {
 
-          return "公式サイトURLが正しくありません.";
+          return "公式サイトURLが正しくありません。";
         }
+
       }
 
 
@@ -1920,7 +2754,7 @@
 
 
     /* =========================================================
-       Save candidate edits
+       Save
     ========================================================= */
 
     async function saveCandidate(
@@ -1935,7 +2769,7 @@
 
 
       const validationError =
-        validateCandidate(
+        validateValues(
           values
         );
 
@@ -1948,6 +2782,7 @@
           validationError,
           "error"
         );
+
 
         return false;
       }
@@ -2013,13 +2848,13 @@
       if (error) {
 
         console.error(
-          "Save candidate error:",
           error
         );
 
 
         showMessage(
-          "候補の修正保存に失敗しました。",
+          error.message ||
+          "修正の保存に失敗しました。",
           "error"
         );
 
@@ -2034,12 +2869,15 @@
       );
 
 
+      await loadCandidates();
+
+
       return true;
     }
 
 
     /* =========================================================
-       Approve candidate
+       Approve
     ========================================================= */
 
     async function approveCandidate(
@@ -2054,7 +2892,7 @@
 
 
       const validationError =
-        validateCandidate(
+        validateValues(
           values
         );
 
@@ -2068,18 +2906,38 @@
           "error"
         );
 
+
         return;
       }
 
 
-      const saveConfirmed =
+      if (
+        card.querySelector(
+          ".duplicate-warning"
+        )
+      ) {
+
+        const duplicateConfirmed =
+          window.confirm(
+            "既存作品との重複候補が検出されています。このまま登録しますか？"
+          );
+
+
+        if (!duplicateConfirmed) {
+          return;
+        }
+
+      }
+
+
+      const saved =
         await saveCandidate(
           card,
           candidateId
         );
 
 
-      if (!saveConfirmed) {
+      if (!saved) {
         return;
       }
 
@@ -2112,12 +2970,13 @@
       if (error) {
 
         console.error(
-          "Approve candidate error:",
+          "Approve error:",
           error
         );
 
 
         showMessage(
+          error.message ||
           "承認・登録に失敗しました。",
           "error"
         );
@@ -2138,7 +2997,7 @@
 
 
     /* =========================================================
-       Reject candidate
+       Reject
     ========================================================= */
 
     async function rejectCandidate(
@@ -2169,8 +3028,8 @@
                 candidateId,
 
               p_reason:
-                reason.trim() ||
-                null
+                reason.trim()
+                || null
             }
           );
 
@@ -2178,12 +3037,13 @@
       if (error) {
 
         console.error(
-          "Reject candidate error:",
+          "Reject error:",
           error
         );
 
 
         showMessage(
+          error.message ||
           "候補の却下に失敗しました。",
           "error"
         );
@@ -2204,7 +3064,7 @@
 
 
     /* =========================================================
-       Candidate click handling
+       Click handling
     ========================================================= */
 
     candidateList.addEventListener(
@@ -2251,6 +3111,7 @@
             "候補IDが不正です。",
             "error"
           );
+
 
           return;
         }
@@ -2299,12 +3160,12 @@
         } catch (error) {
 
           console.error(
-            "Candidate action error:",
             error
           );
 
 
           showMessage(
+            error.message ||
             "処理中にエラーが発生しました。",
             "error"
           );
@@ -2317,6 +3178,32 @@
 
       }
     );
+
+
+    /* =========================================================
+       Filters
+    ========================================================= */
+
+    document
+      .querySelectorAll(
+        ".filter-button"
+      )
+      .forEach(
+        button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              setFilter(
+                button.dataset.filter
+              );
+
+            }
+          );
+
+        }
+      );
 
 
     /* =========================================================
@@ -2336,7 +3223,6 @@
         if (error) {
 
           console.error(
-            "Logout error:",
             error
           );
 
@@ -2352,7 +3238,7 @@
 
 
     /* =========================================================
-       Auth state
+       Auth
     ========================================================= */
 
     supabaseClient.auth.onAuthStateChange(
@@ -2375,7 +3261,7 @@
 
 
     /* =========================================================
-       Initialize
+       Init
     ========================================================= */
 
     async function init() {
@@ -2398,4 +3284,5 @@
   </script>
 
 </body>
+
 </html>
