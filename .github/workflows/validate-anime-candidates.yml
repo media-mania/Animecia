@@ -1,0 +1,2101 @@
+name: Validate Anime Candidates
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_records:
+        description: "Number of pending candidates to validate"
+        required: false
+        default: "10"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anime-candidate-validation
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      MAX_RECORDS: ${{ inputs.max_records || '10' }}
+
+    steps:
+
+      # ========================================================
+      # 1. 設定確認
+      # ========================================================
+
+      - name: Check configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "::error::SUPABASE_URL is not configured."
+            exit 1
+          fi
+
+          if [ -z "${SUPABASE_SECRET_KEY:-}" ]; then
+            echo "::error::SUPABASE_SECRET_KEY is not configured."
+            exit 1
+          fi
+
+          echo "Configuration check passed."
+
+
+      # ========================================================
+      # 2. 詳細情報取得・自動検証
+      # ========================================================
+
+      - name: Validate pending anime candidates
+        shell: bash
+        run: |
+          python3 <<'PY'
+
+          import datetime
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import xml.etree.ElementTree as ET
+
+
+          # ========================================================
+          # Configuration
+          # ========================================================
+
+          SUPABASE_URL = os.environ[
+              "SUPABASE_URL"
+          ].rstrip("/")
+
+
+          SUPABASE_SECRET_KEY = os.environ[
+              "SUPABASE_SECRET_KEY"
+          ]
+
+
+          MAX_RECORDS = int(
+              os.environ.get(
+                  "MAX_RECORDS",
+                  "10"
+              )
+          )
+
+
+          if MAX_RECORDS <= 0:
+              MAX_RECORDS = 10
+
+
+          if MAX_RECORDS > 50:
+              MAX_RECORDS = 50
+
+
+          ANN_DETAIL_URL = (
+              "https://cdn.animenewsnetwork.com/"
+              "encyclopedia/api.xml"
+          )
+
+
+          USER_AGENT = (
+              "Animecia/1.0 "
+              "(https://github.com/media-mania/Animecia)"
+          )
+
+
+          TIMEOUT = 120
+
+
+          # ========================================================
+          # Allowed formats
+          # ========================================================
+
+          ALLOWED_TYPES = {
+              "TV",
+              "MOVIE",
+              "OVA",
+              "OAV",
+              "ONA",
+              "SPECIAL",
+              "OMNIBUS",
+          }
+
+
+          # ========================================================
+          # Utility
+          # ========================================================
+
+          def clean_text(value):
+
+              if value is None:
+                  return None
+
+              value = re.sub(
+                  r"\s+",
+                  " ",
+                  str(value)
+              ).strip()
+
+              return value or None
+
+
+          def safe_int(value):
+
+              try:
+                  return int(value)
+
+              except (
+                  TypeError,
+                  ValueError
+              ):
+                  return None
+
+
+          def http_get(url):
+
+              request = urllib.request.Request(
+
+                  url,
+
+                  headers={
+                      "User-Agent":
+                          USER_AGENT,
+
+                      "Accept":
+                          (
+                              "application/xml,"
+                              "text/xml,*/*"
+                          ),
+                  },
+
+                  method="GET",
+              )
+
+
+              with urllib.request.urlopen(
+                  request,
+                  timeout=TIMEOUT
+              ) as response:
+
+                  body = response.read()
+
+
+              if not body:
+
+                  raise RuntimeError(
+                      "ANN returned an empty response."
+                  )
+
+
+              return body
+
+
+          def supabase_request(
+              url,
+              method="GET",
+              data=None
+          ):
+
+              headers = {
+
+                  "apikey":
+                      SUPABASE_SECRET_KEY,
+
+                  "Authorization":
+                      (
+                          "Bearer "
+                          + SUPABASE_SECRET_KEY
+                      ),
+
+                  "Accept":
+                      "application/json",
+              }
+
+
+              payload = None
+
+
+              if data is not None:
+
+                  payload = json.dumps(
+                      data,
+                      ensure_ascii=False
+                  ).encode(
+                      "utf-8"
+                  )
+
+                  headers[
+                      "Content-Type"
+                  ] = "application/json"
+
+
+              request = urllib.request.Request(
+
+                  url,
+
+                  data=payload,
+
+                  method=method,
+
+                  headers=headers,
+              )
+
+
+              try:
+
+                  with urllib.request.urlopen(
+                      request,
+                      timeout=TIMEOUT
+                  ) as response:
+
+                      body = response.read()
+
+                      if not body:
+
+                          return None
+
+                      return json.loads(
+                          body.decode(
+                              "utf-8"
+                          )
+                      )
+
+              except urllib.error.HTTPError as exc:
+
+                  body = (
+                      exc.read()
+                      .decode(
+                          "utf-8",
+                          errors="replace"
+                      )
+                  )
+
+                  raise RuntimeError(
+                      "Supabase returned "
+                      f"HTTP {exc.code}: "
+                      f"{body[:2000]}"
+                  ) from exc
+
+
+          # ========================================================
+          # Get pending candidates
+          # ========================================================
+
+          def fetch_pending_candidates():
+
+              params = {
+
+                  "select":
+                      (
+                          "id,source,source_id,title,"
+                          "title_native,title_japanese,"
+                          "title_english,format,start_date,"
+                          "end_date,episodes,duration,genre,"
+                          "status,official_url,source_url,"
+                          "import_status"
+                      ),
+
+                  "import_status":
+                      "eq.pending",
+
+                  "order":
+                      "id.asc",
+
+                  "limit":
+                      str(MAX_RECORDS),
+              }
+
+
+              url = (
+                  f"{SUPABASE_URL}"
+                  "/rest/v1/anime_import_candidates?"
+                  + urllib.parse.urlencode(
+                      params
+                  )
+              )
+
+
+              data = supabase_request(
+                  url
+              )
+
+
+              return data or []
+
+
+          # ========================================================
+          # ANN detail
+          # ========================================================
+
+          def fetch_ann_details(
+              source_ids
+          ):
+
+              if not source_ids:
+                  return {}
+
+
+              unique_ids = []
+
+              seen = set()
+
+
+              for source_id in source_ids:
+
+                  if source_id in seen:
+                      continue
+
+                  seen.add(
+                      source_id
+                  )
+
+                  unique_ids.append(
+                      source_id
+                  )
+
+
+              if len(unique_ids) > 50:
+
+                  raise RuntimeError(
+                      "At most 50 ANN IDs can be "
+                      "requested at once."
+                  )
+
+
+              anime_query = "/".join(
+                  str(value)
+                  for value in unique_ids
+              )
+
+
+              params = {
+                  "anime":
+                      anime_query,
+              }
+
+
+              url = (
+                  ANN_DETAIL_URL
+                  + "?"
+                  + urllib.parse.urlencode(
+                      params
+                  )
+              )
+
+
+              print(
+                  "ANN detail request:"
+              )
+
+              print(
+                  f"{len(unique_ids)} anime IDs"
+              )
+
+
+              body = http_get(
+                  url
+              )
+
+
+              try:
+
+                  root = ET.fromstring(
+                      body
+                  )
+
+              except ET.ParseError as exc:
+
+                  preview = body[:1000].decode(
+                      "utf-8",
+                      errors="replace"
+                  )
+
+                  print(
+                      "ANN response preview:"
+                  )
+
+                  print(
+                      preview
+                  )
+
+                  raise RuntimeError(
+                      "ANN detail response "
+                      "was not valid XML."
+                  ) from exc
+
+
+              results = {}
+
+
+              for anime in root.iter():
+
+                  if anime.tag.lower() != "anime":
+                      continue
+
+
+                  source_id = safe_int(
+                      anime.get("id")
+                  )
+
+
+                  if source_id is None:
+                      continue
+
+
+                  results[
+                      source_id
+                  ] = anime
+
+
+              return results
+
+
+          # ========================================================
+          # Info extraction
+          # ========================================================
+
+          def get_infos(
+              anime
+          ):
+
+              infos = []
+
+
+              for element in anime:
+
+                  if element.tag.lower() != "info":
+                      continue
+
+
+                  info_type = clean_text(
+                      element.get("type")
+                  )
+
+
+                  text = " ".join(
+
+                      part.strip()
+
+                      for part in element.itertext()
+
+                      if part and part.strip()
+
+                  )
+
+
+                  text = re.sub(
+                      r"\s+",
+                      " ",
+                      text
+                  ).strip()
+
+
+                  infos.append({
+
+                      "type":
+                          info_type,
+
+                      "text":
+                          text or None,
+
+                      "href":
+                          clean_text(
+                              element.get(
+                                  "href"
+                              )
+                          ),
+
+                      "lang":
+                          clean_text(
+                              element.get(
+                                  "lang"
+                              )
+                          ),
+
+                      "src":
+                          clean_text(
+                              element.get(
+                                  "src"
+                              )
+                          ),
+                  })
+
+
+              return infos
+
+
+          # ========================================================
+          # Find info
+          # ========================================================
+
+          def find_info(
+              infos,
+              exact=None,
+              contains=None
+          ):
+
+              exact = {
+                  value.lower()
+                  for value in (
+                      exact or set()
+                  )
+              }
+
+
+              contains = [
+                  value.lower()
+                  for value in (
+                      contains or set()
+                  )
+              ]
+
+
+              for info in infos:
+
+                  info_type = (
+                      info.get("type")
+                      or ""
+                  ).lower()
+
+
+                  if info_type in exact:
+                      return info
+
+
+                  if any(
+                      word in info_type
+                      for word in contains
+                  ):
+                      return info
+
+
+              return None
+
+
+          # ========================================================
+          # Japanese title
+          # ========================================================
+
+          JAPANESE_RE = re.compile(
+              r"[\u3040-\u30ff\u3400-\u9fff]"
+          )
+
+
+          def find_japanese_title(
+              infos
+          ):
+
+              # First: explicit Japanese language
+              for info in infos:
+
+                  info_type = (
+                      info.get("type")
+                      or ""
+                  ).lower()
+
+
+                  lang = (
+                      info.get("lang")
+                      or ""
+                  ).lower()
+
+
+                  text = info.get(
+                      "text"
+                  )
+
+
+                  if not text:
+                      continue
+
+
+                  if (
+                      "alternative title"
+                      in info_type
+                      and lang in {
+                          "ja",
+                          "japanese",
+                          "jpn",
+                      }
+                  ):
+
+                      return text
+
+
+              # Second: Japanese characters
+              for info in infos:
+
+                  info_type = (
+                      info.get("type")
+                      or ""
+                  ).lower()
+
+
+                  text = info.get(
+                      "text"
+                  )
+
+
+                  if (
+                      text
+                      and "alternative title"
+                      in info_type
+                      and JAPANESE_RE.search(
+                          text
+                      )
+                  ):
+
+                      return text
+
+
+              return None
+
+
+          # ========================================================
+          # Date extraction
+          # ========================================================
+
+          def parse_dates(
+              text
+          ):
+
+              if not text:
+                  return None, None
+
+
+              dates = re.findall(
+                  r"\d{4}-\d{2}-\d{2}",
+                  text
+              )
+
+
+              if not dates:
+                  return None, None
+
+
+              start_date = dates[0]
+
+
+              end_date = (
+                  dates[1]
+                  if len(dates) >= 2
+                  else None
+              )
+
+
+              return (
+                  start_date,
+                  end_date
+              )
+
+
+          # ========================================================
+          # Episodes
+          # ========================================================
+
+          def extract_episode_count(
+              infos
+          ):
+
+              info = find_info(
+
+                  infos,
+
+                  contains={
+                      "number of episodes",
+                      "episodes"
+                  }
+
+              )
+
+
+              if not info:
+                  return None
+
+
+              text = info.get(
+                  "text"
+              )
+
+
+              if not text:
+                  return None
+
+
+              match = re.search(
+                  r"\d+",
+                  text
+              )
+
+
+              if not match:
+                  return None
+
+
+              value = int(
+                  match.group(0)
+              )
+
+
+              if value <= 0:
+                  return None
+
+
+              if value > 10000:
+                  return None
+
+
+              return value
+
+
+          # ========================================================
+          # Duration
+          # ========================================================
+
+          def extract_duration(
+              infos
+          ):
+
+              info = find_info(
+
+                  infos,
+
+                  contains={
+                      "running time",
+                      "duration"
+                  }
+
+              )
+
+
+              if not info:
+                  return None
+
+
+              text = (
+                  info.get("text")
+                  or ""
+              ).lower()
+
+
+              hour_match = re.search(
+                  r"(\d+)\s*hour",
+                  text
+              )
+
+
+              if hour_match:
+
+                  value = (
+                      int(
+                          hour_match.group(1)
+                      )
+                      * 60
+                  )
+
+
+                  if 1 <= value <= 300:
+                      return value
+
+
+              minute_match = re.search(
+                  r"(\d+)\s*min",
+                  text
+              )
+
+
+              if minute_match:
+
+                  value = int(
+                      minute_match.group(1)
+                  )
+
+
+                  if 1 <= value <= 300:
+                      return value
+
+
+              # Some entries simply contain
+              # a numeric running time.
+              number_match = re.search(
+                  r"\b(\d{1,3})\b",
+                  text
+              )
+
+
+              if number_match:
+
+                  value = int(
+                      number_match.group(1)
+                  )
+
+
+                  if 1 <= value <= 300:
+                      return value
+
+
+              return None
+
+
+          # ========================================================
+          # Genres
+          # ========================================================
+
+          def extract_genres(
+              infos
+          ):
+
+              info = find_info(
+                  infos,
+                  exact={
+                      "genres"
+                  }
+              )
+
+
+              if not info:
+                  return None
+
+
+              text = (
+                  info.get("text")
+                  or ""
+              )
+
+
+              values = []
+
+
+              for value in text.split(
+                  ","
+              ):
+
+                  value = clean_text(
+                      value
+                  )
+
+
+                  if (
+                      value
+                      and value not in values
+                  ):
+
+                      values.append(
+                          value
+                      )
+
+
+              return (
+                  ", ".join(values)
+                  if values
+                  else None
+              )
+
+
+          # ========================================================
+          # Official website
+          # ========================================================
+
+          def extract_official_url(
+              infos
+          ):
+
+              for info in infos:
+
+                  info_type = (
+                      info.get("type")
+                      or ""
+                  ).lower()
+
+
+                  if (
+                      "official website"
+                      not in info_type
+                  ):
+
+                      continue
+
+
+                  href = info.get(
+                      "href"
+                  )
+
+
+                  if (
+                      href
+                      and href.startswith(
+                          "http://"
+                      )
+                  ):
+
+                      return href
+
+
+                  if (
+                      href
+                      and href.startswith(
+                          "https://"
+                      )
+                  ):
+
+                      return href
+
+
+              return None
+
+
+          # ========================================================
+          # Status
+          # ========================================================
+
+          def calculate_status(
+              start_date,
+              end_date
+          ):
+
+              today = (
+                  datetime.date.today()
+              )
+
+
+              try:
+
+                  start = (
+                      datetime.date.fromisoformat(
+                          start_date
+                      )
+                      if start_date
+                      else None
+                  )
+
+
+                  end = (
+                      datetime.date.fromisoformat(
+                          end_date
+                      )
+                      if end_date
+                      else None
+                  )
+
+
+              except ValueError:
+
+                  return "UNKNOWN"
+
+
+              if (
+                  start
+                  and start > today
+              ):
+
+                  return "UPCOMING"
+
+
+              if (
+                  end
+                  and end <= today
+              ):
+
+                  return "FINISHED"
+
+
+              if (
+                  start
+                  and start <= today
+              ):
+
+                  return "ONGOING"
+
+
+              return "UNKNOWN"
+
+
+          # ========================================================
+          # Season
+          # ========================================================
+
+          def calculate_season(
+              start_date
+          ):
+
+              if not start_date:
+                  return None
+
+
+              try:
+
+                  month = int(
+                      start_date[5:7]
+                  )
+
+              except (
+                  TypeError,
+                  ValueError
+              ):
+
+                  return None
+
+
+              if month in {
+                  1,
+                  2,
+                  3
+              }:
+
+                  return "WINTER"
+
+
+              if month in {
+                  4,
+                  5,
+                  6
+              }:
+
+                  return "SPRING"
+
+
+              if month in {
+                  7,
+                  8,
+                  9
+              }:
+
+                  return "SUMMER"
+
+
+              return "FALL"
+
+
+          # ========================================================
+          # Format
+          # ========================================================
+
+          def normalize_format(
+              value
+          ):
+
+              if not value:
+                  return None
+
+
+              value = (
+                  value.upper()
+                  .strip()
+              )
+
+
+              if value == "TV":
+                  return "TV"
+
+
+              if value == "MOVIE":
+                  return "MOVIE"
+
+
+              if value in {
+                  "OVA",
+                  "OAV"
+              }:
+
+                  return "OVA"
+
+
+              if value == "ONA":
+                  return "ONA"
+
+
+              if value in {
+                  "SPECIAL",
+                  "OMNIBUS"
+              }:
+
+                  return "SPECIAL"
+
+
+              return None
+
+
+          # ========================================================
+          # Existing Anime duplicate check
+          # ========================================================
+
+          def fetch_existing_ids(
+              source_ids
+          ):
+
+              if not source_ids:
+                  return {}
+
+
+              external_ids = [
+
+                  2_000_000_000
+                  + int(source_id)
+
+                  for source_id
+                  in source_ids
+              ]
+
+
+              values = ",".join(
+                  str(value)
+                  for value in external_ids
+              )
+
+
+              params = {
+
+                  "select":
+                      "id,external_id",
+
+                  "external_id":
+                      f"in.({values})",
+              }
+
+
+              url = (
+                  f"{SUPABASE_URL}"
+                  "/rest/v1/anime?"
+                  + urllib.parse.urlencode(
+                      params
+                  )
+              )
+
+
+              data = supabase_request(
+                  url
+              )
+
+
+              result = {}
+
+
+              for row in (
+                  data or []
+              ):
+
+                  external_id = safe_int(
+                      row.get(
+                          "external_id"
+                      )
+                  )
+
+
+                  anime_id = safe_int(
+                      row.get(
+                          "id"
+                      )
+                  )
+
+
+                  if (
+                      external_id is None
+                      or anime_id is None
+                  ):
+
+                      continue
+
+
+                  ann_id = (
+                      external_id
+                      - 2_000_000_000
+                  )
+
+
+                  result[
+                      ann_id
+                  ] = anime_id
+
+
+              return result
+
+
+          # ========================================================
+          # Update candidate
+          # ========================================================
+
+          def update_candidate(
+              candidate_id,
+              values
+          ):
+
+              params = {
+                  "id":
+                      f"eq.{candidate_id}"
+              }
+
+
+              url = (
+                  f"{SUPABASE_URL}"
+                  "/rest/v1/"
+                  "anime_import_candidates?"
+                  + urllib.parse.urlencode(
+                      params
+                  )
+              )
+
+
+              supabase_request(
+                  url,
+                  method="PATCH",
+                  data=values
+              )
+
+
+          # ========================================================
+          # Build detailed validation
+          # ========================================================
+
+          def validate_candidate(
+              candidate,
+              anime_element,
+              existing_anime_id
+          ):
+
+              reasons = []
+
+              score = 100
+
+
+              # ----------------------------------------
+              # Existing duplicate
+              # ----------------------------------------
+
+              if existing_anime_id:
+
+                  return {
+
+                      "category":
+                          "uncertain",
+
+                      "decision":
+                          "rejected",
+
+                      "confidence":
+                          100,
+
+                      "reasons":
+                          [
+                              (
+                                  "このANN IDの作品は"
+                                  "Animeciaにすでに登録されています。"
+                              )
+                          ],
+
+                      "duplicate_anime_id":
+                          existing_anime_id,
+                  }
+
+
+              # ----------------------------------------
+              # ANN type
+              # ----------------------------------------
+
+              ann_type = (
+                  anime_element.get(
+                      "type"
+                  )
+                  or ""
+              ).upper().strip()
+
+
+              anime_format = normalize_format(
+                  ann_type
+              )
+
+
+              if ann_type not in ALLOWED_TYPES:
+
+                  return {
+
+                      "category":
+                          "non_anime",
+
+                      "decision":
+                          "rejected",
+
+                      "confidence":
+                          100,
+
+                      "reasons":
+                          [
+                              (
+                                  "ANNの作品種別が"
+                                  f"対象外です: {ann_type}"
+                              )
+                          ],
+
+                      "duplicate_anime_id":
+                          None,
+                  }
+
+
+              reasons.append(
+                  f"ANN種別: {ann_type}"
+              )
+
+
+              # ----------------------------------------
+              # Title
+              # ----------------------------------------
+
+              title = clean_text(
+                  anime_element.get(
+                      "name"
+                  )
+              )
+
+
+              if not title:
+
+                  return {
+
+                      "category":
+                          "non_anime",
+
+                      "decision":
+                          "rejected",
+
+                      "confidence":
+                          100,
+
+                      "reasons":
+                          [
+                              "作品タイトルがありません。"
+                          ],
+
+                      "duplicate_anime_id":
+                          None,
+                  }
+
+
+              if title != clean_text(
+                  candidate.get("title")
+              ):
+
+                  reasons.append(
+                      (
+                          "ANN詳細ページのタイトルと"
+                          "候補タイトルが異なります。"
+                      )
+                  )
+
+                  score -= 15
+
+              else:
+
+                  reasons.append(
+                      "タイトルが一致しています。"
+                  )
+
+
+              # ----------------------------------------
+              # Detailed info
+              # ----------------------------------------
+
+              infos = get_infos(
+                  anime_element
+              )
+
+
+              japanese_title = (
+                  find_japanese_title(
+                      infos
+                  )
+              )
+
+
+              genre = extract_genres(
+                  infos
+              )
+
+
+              episodes = extract_episode_count(
+                  infos
+              )
+
+
+              duration = extract_duration(
+                  infos
+              )
+
+
+              official_url = (
+                  extract_official_url(
+                      infos
+                  )
+              )
+
+
+              vintage_info = find_info(
+                  infos,
+                  exact={
+                      "vintage"
+                  }
+              )
+
+
+              vintage_text = (
+                  vintage_info.get(
+                      "text"
+                  )
+                  if vintage_info
+                  else None
+              )
+
+
+              start_date, end_date = (
+                  parse_dates(
+                      vintage_text
+                  )
+              )
+
+
+              # ----------------------------------------
+              # Date validation
+              # ----------------------------------------
+
+              if vintage_text and not start_date:
+
+                  score -= 20
+
+                  reasons.append(
+                      "放送・公開期間を解析できませんでした。"
+                  )
+
+              elif not start_date:
+
+                  score -= 10
+
+                  reasons.append(
+                      "開始日の情報がありません。"
+                  )
+
+              else:
+
+                  reasons.append(
+                      "開始日の情報を取得できました。"
+                  )
+
+
+              if (
+                  start_date
+                  and end_date
+                  and end_date < start_date
+              ):
+
+                  score -= 35
+
+                  reasons.append(
+                      "終了日が開始日より前です。"
+                  )
+
+
+              # ----------------------------------------
+              # Episode validation
+              # ----------------------------------------
+
+              if episodes is None:
+
+                  score -= 5
+
+                  reasons.append(
+                      "話数を取得できませんでした。"
+                  )
+
+              elif episodes <= 0:
+
+                  score -= 20
+
+                  reasons.append(
+                      "話数が不正です。"
+                  )
+
+              else:
+
+                  reasons.append(
+                      f"話数: {episodes}"
+                  )
+
+
+              # ----------------------------------------
+              # Duration validation
+              # ----------------------------------------
+
+              if duration is None:
+
+                  score -= 3
+
+                  reasons.append(
+                      "放送時間を取得できませんでした。"
+                  )
+
+              elif duration <= 0 or duration > 300:
+
+                  score -= 15
+
+                  reasons.append(
+                      "放送時間が不自然です。"
+                  )
+
+              else:
+
+                  reasons.append(
+                      f"放送時間: {duration}分"
+                  )
+
+
+              # ----------------------------------------
+              # Genres
+              # ----------------------------------------
+
+              if genre:
+
+                  reasons.append(
+                      "ジャンル情報を取得できました。"
+                  )
+
+              else:
+
+                  score -= 3
+
+                  reasons.append(
+                      "ジャンル情報がありません。"
+                  )
+
+
+              # ----------------------------------------
+              # Official website
+              # ----------------------------------------
+
+              if official_url:
+
+                  reasons.append(
+                      "公式サイトURLを取得できました。"
+                  )
+
+              else:
+
+                  score -= 3
+
+                  reasons.append(
+                      "公式サイトURLがありません。"
+                  )
+
+
+              # ----------------------------------------
+              # Score
+              # ----------------------------------------
+
+              score = max(
+                  0,
+                  min(
+                      100,
+                      score
+                  )
+              )
+
+
+              # ----------------------------------------
+              # Decision
+              # ----------------------------------------
+
+              if score >= 90:
+
+                  category = "anime"
+
+                  decision = "accepted"
+
+              elif score >= 65:
+
+                  category = "uncertain"
+
+                  decision = "review"
+
+              else:
+
+                  category = "uncertain"
+
+                  decision = "rejected"
+
+
+              return {
+
+                  "category":
+                      category,
+
+                  "decision":
+                      decision,
+
+                  "confidence":
+                      score,
+
+                  "reasons":
+                      reasons,
+
+                  "duplicate_anime_id":
+                      None,
+
+                  "detail": {
+
+                      "title":
+                          title,
+
+                      "title_japanese":
+                          japanese_title,
+
+                      "title_native":
+                          japanese_title,
+
+                      "format":
+                          anime_format,
+
+                      "start_date":
+                          start_date,
+
+                      "end_date":
+                          end_date,
+
+                      "episodes":
+                          episodes,
+
+                      "duration":
+                          duration,
+
+                      "genre":
+                          genre,
+
+                      "status":
+                          calculate_status(
+                              start_date,
+                              end_date
+                          ),
+
+                      "official_url":
+                          official_url,
+
+                      "season":
+                          calculate_season(
+                              start_date
+                          ),
+
+                      "season_year":
+                          (
+                              int(
+                                  start_date[:4]
+                              )
+                              if start_date
+                              else None
+                          ),
+                  },
+              }
+
+
+          # ========================================================
+          # Main
+          # ========================================================
+
+          print(
+              "========================================"
+          )
+
+          print(
+              "Animecia Detailed Candidate Validation"
+          )
+
+          print(
+              "Candidates:",
+              MAX_RECORDS
+          )
+
+          print(
+              "========================================"
+          )
+
+
+          candidates = (
+              fetch_pending_candidates()
+          )
+
+
+          print(
+              "Pending candidates:",
+              len(candidates)
+          )
+
+
+          if not candidates:
+
+              print(
+                  "No pending candidates."
+              )
+
+              raise SystemExit(0)
+
+
+          source_ids = [
+
+              int(
+                  candidate[
+                      "source_id"
+                  ]
+              )
+
+              for candidate
+              in candidates
+
+              if candidate.get(
+                  "source_id"
+              ) is not None
+          ]
+
+
+          details = fetch_ann_details(
+              source_ids
+          )
+
+
+          print(
+              "ANN details returned:",
+              len(details)
+          )
+
+
+          existing_ids = (
+              fetch_existing_ids(
+                  source_ids
+              )
+          )
+
+
+          print(
+              "Existing Animecia matches:",
+              len(existing_ids)
+          )
+
+
+          accepted = 0
+          review = 0
+          rejected = 0
+
+
+          for candidate in candidates:
+
+              candidate_id = int(
+                  candidate["id"]
+              )
+
+
+              source_id = int(
+                  candidate["source_id"]
+              )
+
+
+              anime_element = details.get(
+                  source_id
+              )
+
+
+              # --------------------------------------
+              # Missing detail
+              # --------------------------------------
+
+              if anime_element is None:
+
+                  values = {
+
+                      "auto_category":
+                          "uncertain",
+
+                      "auto_decision":
+                          "review",
+
+                      "auto_confidence":
+                          20,
+
+                      "auto_reasons":
+                          [
+                              (
+                                  "ANN詳細情報を"
+                                  "取得できませんでした。"
+                              )
+                          ],
+
+                      "auto_checked_at":
+                          datetime.datetime.now(
+                              datetime.timezone.utc
+                          ).isoformat(),
+
+                      "duplicate_anime_id":
+                          existing_ids.get(
+                              source_id
+                          ),
+                  }
+
+
+                  update_candidate(
+                      candidate_id,
+                      values
+                  )
+
+
+                  review += 1
+
+                  print()
+                  print(
+                      f"[REVIEW] "
+                      f"{candidate.get('title')}"
+                  )
+
+                  continue
+
+
+              result = validate_candidate(
+
+                  candidate,
+
+                  anime_element,
+
+                  existing_ids.get(
+                      source_id
+                  )
+              )
+
+
+              detail = result.get(
+                  "detail"
+              )
+
+
+              values = {
+
+                  "auto_category":
+                      result[
+                          "category"
+                      ],
+
+                  "auto_decision":
+                      result[
+                          "decision"
+                      ],
+
+                  "auto_confidence":
+                      result[
+                          "confidence"
+                      ],
+
+                  "auto_reasons":
+                      result[
+                          "reasons"
+                      ],
+
+                  "auto_checked_at":
+                      datetime.datetime.now(
+                          datetime.timezone.utc
+                      ).isoformat(),
+
+                  "duplicate_anime_id":
+                      result.get(
+                          "duplicate_anime_id"
+                      ),
+              }
+
+
+              # --------------------------------------
+              # Detailed metadata update
+              # --------------------------------------
+
+              if detail:
+
+                  if detail.get(
+                      "title"
+                  ):
+
+                      values[
+                          "title"
+                      ] = detail[
+                          "title"
+                      ]
+
+
+                  values[
+                      "title_japanese"
+                  ] = detail.get(
+                      "title_japanese"
+                  )
+
+
+                  values[
+                      "title_native"
+                  ] = detail.get(
+                      "title_native"
+                  )
+
+
+                  values[
+                      "format"
+                  ] = detail.get(
+                      "format"
+                  )
+
+
+                  values[
+                      "start_date"
+                  ] = detail.get(
+                      "start_date"
+                  )
+
+
+                  values[
+                      "end_date"
+                  ] = detail.get(
+                      "end_date"
+                  )
+
+
+                  values[
+                      "episodes"
+                  ] = detail.get(
+                      "episodes"
+                  )
+
+
+                  values[
+                      "duration"
+                  ] = detail.get(
+                      "duration"
+                  )
+
+
+                  values[
+                      "genre"
+                  ] = detail.get(
+                      "genre"
+                  )
+
+
+                  values[
+                      "status"
+                  ] = detail.get(
+                      "status"
+                  )
+
+
+                  values[
+                      "official_url"
+                  ] = detail.get(
+                      "official_url"
+                  )
+
+
+              update_candidate(
+                  candidate_id,
+                  values
+              )
+
+
+              decision = result[
+                  "decision"
+              ]
+
+
+              if decision == "accepted":
+
+                  accepted += 1
+
+              elif decision == "review":
+
+                  review += 1
+
+              else:
+
+                  rejected += 1
+
+
+              print()
+
+              print(
+                  f"[{decision.upper()}] "
+                  f"{candidate.get('title')}"
+              )
+
+              print(
+                  "  ANN ID:",
+                  source_id
+              )
+
+              print(
+                  "  Format:",
+                  (
+                      detail.get("format")
+                      if detail
+                      else candidate.get("format")
+                  )
+              )
+
+              print(
+                  "  Confidence:",
+                  result["confidence"]
+              )
+
+              print(
+                  "  Reasons:"
+              )
+
+              for reason in result[
+                  "reasons"
+              ]:
+
+                  print(
+                      "   -",
+                      reason
+                  )
+
+
+          # ========================================================
+          # Summary
+          # ========================================================
+
+          print()
+          print(
+              "========================================"
+          )
+
+          print(
+              "Validation completed."
+          )
+
+          print(
+              "Accepted:",
+              accepted
+          )
+
+          print(
+              "Review:",
+              review
+          )
+
+          print(
+              "Rejected:",
+              rejected
+          )
+
+          print(
+              "Anime table was NOT modified."
+          )
+
+          print(
+              "External ratings were NOT imported."
+          )
+
+          print(
+              "========================================"
+          )
+
+          PY
