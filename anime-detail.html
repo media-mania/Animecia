@@ -4737,9 +4737,24 @@
             }
 
 
-            currentUser =
+            const user =
                 data?.user ||
                 null;
+
+            currentUser =
+                user &&
+                user.is_anonymous !== true &&
+                user.email &&
+                user.email_confirmed_at
+                    ? user
+                    : null;
+
+            if (
+                user &&
+                !currentUser
+            ) {
+                await supabaseClient.auth.signOut();
+            }
 
 
         } catch (error) {
