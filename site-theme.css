@@ -62,3 +62,22 @@ input:focus,textarea:focus,select:focus{
 @media(max-width:800px){
   .head{min-height:64px!important}
 }
+
+/* Animecia 2026 unified UI */
+:root{
+ --animecia-accent:#e11d48;
+ --animecia-accent-soft:#fff1f2;
+ --animecia-radius:16px;
+ --animecia-shadow:0 10px 30px rgba(17,18,20,.06);
+}
+*{box-sizing:border-box}
+a{transition:color .18s ease,background .18s ease,border-color .18s ease,transform .18s ease}
+button,.btn{transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+button:hover,.btn:hover{transform:translateY(-1px)}
+main{max-width:1240px!important;margin-left:auto!important;margin-right:auto!important}
+.panel,.card,.profile-card,.list-item,.review-item{
+ border-radius:var(--animecia-radius)!important;
+}
+h1,h2,h3{letter-spacing:-.025em}
+.section-title{font-weight:900!important}
+.badge,.pill{border-radius:999px!important}
