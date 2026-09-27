@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "sitemap.xml"
+      - "sitemap-pages.xml"
+      - "sitemap-anime-*.xml"
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
