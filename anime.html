@@ -1703,6 +1703,26 @@
 
             anime.title_native ||
 
+            (
+                Array.isArray(
+                    anime._japanese_aliases
+                )
+                    ? anime._japanese_aliases[0]
+                    : ""
+            ) ||
+
+            (
+                /[\u3040-\u30ff\u3400-\u9fff]/.test(
+                    String(
+                        anime.title || ""
+                    )
+                )
+                    ? anime.title
+                    : ""
+            ) ||
+
+            anime.title_user_preferred ||
+
             anime.title_romaji ||
 
             anime.title_english ||
@@ -2632,6 +2652,9 @@
                 const aliasMap =
                     new Map();
 
+                const japaneseAliasMap =
+                    new Map();
+
                 for (
                     let start = 0;
                     start < ids.length;
@@ -2650,7 +2673,7 @@
                     } = await supabaseClient
                         .from("anime_aliases")
                         .select(
-                            "anime_id,title"
+                            "anime_id,title,language"
                         )
                         .in(
                             "anime_id",
@@ -2686,6 +2709,36 @@
                                 .get(key)
                                 .push(row.title);
 
+                            const isJapanese =
+                                String(
+                                    row.language || ""
+                                ).toLowerCase() ===
+                                "japanese" ||
+                                /[\u3040-\u30ff\u3400-\u9fff]/.test(
+                                    String(
+                                        row.title || ""
+                                    )
+                                );
+
+                            if (isJapanese) {
+
+                                if (
+                                    !japaneseAliasMap.has(
+                                        key
+                                    )
+                                ) {
+                                    japaneseAliasMap.set(
+                                        key,
+                                        []
+                                    );
+                                }
+
+                                japaneseAliasMap
+                                    .get(key)
+                                    .push(row.title);
+
+                            }
+
                         }
                     );
 
@@ -2697,6 +2750,10 @@
                             ...anime,
                             _aliases:
                                 aliasMap.get(
+                                    Number(anime.id)
+                                ) || [],
+                            _japanese_aliases:
+                                japaneseAliasMap.get(
                                     Number(anime.id)
                                 ) || []
                         })
@@ -2710,6 +2767,128 @@
                 );
 
             }
+
+            try {
+
+                const missingImageIds =
+                    animeData
+                        .filter(
+                            anime =>
+                                !anime.cover_image
+                        )
+                        .map(
+                            anime =>
+                                anime.id
+                        )
+                        .filter(
+                            Number.isInteger
+                        );
+
+                const sourceImageMap =
+                    new Map();
+
+                for (
+                    let start = 0;
+                    start < missingImageIds.length;
+                    start += 500
+                ) {
+
+                    const batch =
+                        missingImageIds.slice(
+                            start,
+                            start + 500
+                        );
+
+                    const {
+                        data,
+                        error
+                    } = await supabaseClient
+                        .from(
+                            "anime_sources"
+                        )
+                        .select(
+                            "anime_id,image_url,last_synced_at"
+                        )
+                        .in(
+                            "anime_id",
+                            batch
+                        )
+                        .not(
+                            "image_url",
+                            "is",
+                            null
+                        )
+                        .order(
+                            "last_synced_at",
+                            {
+                                ascending: false,
+                                nullsFirst: false
+                            }
+                        );
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    (
+                        data || []
+                    ).forEach(
+                        row => {
+
+                            const key =
+                                Number(
+                                    row.anime_id
+                                );
+
+                            if (
+                                !sourceImageMap.has(
+                                    key
+                                ) &&
+                                row.image_url
+                            ) {
+                                sourceImageMap.set(
+                                    key,
+                                    row.image_url
+                                );
+                            }
+
+                        }
+                    );
+
+                }
+
+                animeData =
+                    animeData.map(
+                        anime => {
+
+                            if (
+                                anime.cover_image
+                            ) {
+                                return anime;
+                            }
+
+                            return {
+                                ...anime,
+                                cover_image:
+                                    sourceImageMap.get(
+                                        Number(
+                                            anime.id
+                                        )
+                                    ) || null
+                            };
+
+                        }
+                    );
+
+            } catch (sourceImageError) {
+
+                console.error(
+                    "外部画像フォールバック取得エラー:",
+                    sourceImageError
+                );
+
+            }
+
 
             await loadAnimeGenres();
 
