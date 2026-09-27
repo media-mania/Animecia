@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ランキング | Animecia</title>
+<meta name="description" content="Animeciaのランキング。">
+<link rel="canonical" href="https://media-mania.github.io/Animecia/ranking.html">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#687386;--line:#e3e7ef;--accent:#5b5ce2;--accent2:#4547c7;--danger:#c33}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text)}
+a{color:inherit;text-decoration:none}.wrap{max-width:1180px;margin:auto;padding:0 20px}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}.head{height:68px;display:flex;align-items:center;gap:24px}.logo{font-size:25px;font-weight:800;color:var(--accent);letter-spacing:.02em}
+nav{display:flex;gap:18px;flex:1}nav a{color:#4c5668;font-weight:600}nav a:hover{color:var(--accent)}
+.userbar{display:flex;gap:10px;align-items:center}.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:var(--accent);color:white}.btn.secondary{background:#eef0ff;color:var(--accent)}.btn.ghost{background:#f0f2f6;color:#455066}
+main{padding:34px 0 60px}.hero{margin-bottom:24px}.hero h1{margin:0 0 8px;font-size:32px}.hero p{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 5px 20px rgba(31,42,68,.05)}.cover{width:100%;aspect-ratio:3/4;object-fit:cover;background:#e9edf5}.pad{padding:14px}.title{font-weight:800;line-height:1.45}.sub{color:var(--muted);font-size:13px;margin-top:4px}.meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:8px}.pill{display:inline-block;background:#eef0ff;color:var(--accent);padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tab{background:#eef0f4;border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}.tab.active{background:var(--accent);color:#fff}
+.empty,.loading,.error{padding:30px;text-align:center;color:var(--muted)}.error{color:var(--danger)}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}.field label{font-size:13px;color:var(--muted);font-weight:700}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;background:#fff}.field textarea{min-height:110px;resize:vertical}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{padding:15px;background:#f7f8fb;border-radius:12px}.stat b{display:block;font-size:24px}.list{display:flex;flex-direction:column;gap:10px}.list-item{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}.thumb{width:58px;height:78px;object-fit:cover;border-radius:7px;background:#edf0f5}.grow{flex:1}.rank{width:30px;font-size:20px;font-weight:900;text-align:center}
+@media(max-width:800px){nav{display:none}.row,.stats{grid-template-columns:1fr 1fr}.head{gap:12px}.hero h1{font-size:26px}}
+@media(max-width:520px){.stats{grid-template-columns:1fr 1fr}.wrap{padding:0 13px}}
+</style>
+</head>
+<body>
+<header><div class="wrap head">
+<a class="logo" href="index.html">Animecia</a>
+<nav>
+<a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a><a href="anime.html">今期アニメ</a><a href="recommendations.html">おすすめ</a><a href="mypage.html">マイページ</a>
+</nav>
+<div class="userbar"><span id="user-name"></span><button id="auth-btn" class="btn secondary">ログイン</button></div>
+</div></header>
+<main><div class="wrap">
+<section class="hero"><h1>Animeciaランキング</h1><p>Animecia内の評価・お気に入り・レビューなど、サイト上のデータをもとにしたランキングです。</p></section>
+<section class="panel"><div class="tabs">
+<button class="tab active" data-rank="rating">評価</button><button class="tab" data-rank="favorites">お気に入り</button><button class="tab" data-rank="reviews">レビュー</button><button class="tab" data-rank="newest">新着</button>
+</div><div id="ranking-list" class="list"></div></section></div></main>
+<script>
+const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
+const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
+const imgOf=a=>a?.cover_image||"";
+async function authState(){
+ const {data:{user}}=await supabaseClient.auth.getUser();
+ const n=document.getElementById("user-name"),b=document.getElementById("auth-btn");
+ if(user){n.textContent=user.email||"";b.textContent="ログアウト";b.onclick=async()=>{await supabaseClient.auth.signOut();location.reload()};}
+ else{n.textContent="";b.textContent="ログイン";b.onclick=()=>location.href="index.html#login";}
+ return user;
+}
+</script>
+
+let rankMode="rating";
+async function loadRanking(){
+ const el=document.getElementById("ranking-list");el.innerHTML='<div class="loading">ランキングを読み込み中…</div>';
+ const {data:summary,error}=await supabaseClient.from("anime_engagement_summary").select("anime_id,favorite_count,review_count,average_rating,rating_count");if(error)return el.innerHTML='<div class="error">ランキングデータを取得できませんでした。</div>';
+ const ids=(summary||[]).map(x=>x.anime_id);if(!ids.length)return el.innerHTML='<div class="empty">まだランキングデータがありません。</div>';
+ const {data:anime}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,format").in("id",ids);const m=new Map((anime||[]).map(a=>[a.id,a]));
+ const rows=(summary||[]).map(s=>({...s,anime:m.get(s.anime_id)})).filter(x=>x.anime);
+ rows.sort((a,b)=>{if(rankMode==="favorites")return Number(b.favorite_count||0)-Number(a.favorite_count||0);if(rankMode==="reviews")return Number(b.review_count||0)-Number(a.review_count||0);if(rankMode==="newest")return new Date(b.anime.start_date||0)-new Date(a.anime.start_date||0);return Number(b.average_rating??-1)-Number(a.average_rating??-1)});
+ const shown=rows.slice(0,50);
+ el.innerHTML=shown.map((x,i)=>'<a class="list-item" href="anime-detail.html?id='+x.anime.id+'"><div class="rank">'+(i+1)+'</div><img class="thumb" src="'+esc(imgOf(x.anime))+'"><div class="grow"><div class="title">'+esc(titleOf(x.anime))+'</div><div class="meta">'+(x.average_rating!=null?'<span class="pill">★ '+esc(x.average_rating)+'</span>':'')+'<span>お気に入り '+esc(x.favorite_count||0)+'</span><span>レビュー '+esc(x.review_count||0)+'</span></div></div></a>').join("")||'<div class="empty">該当データがありません。</div>'
+}
+document.querySelectorAll("[data-rank]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-rank]").forEach(x=>x.classList.remove("active"));b.classList.add("active");rankMode=b.dataset.rank;loadRanking()});
+(async()=>{await authState();loadRanking()})();
+
+</body></html>
