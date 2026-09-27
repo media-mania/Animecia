@@ -105,3 +105,215 @@ main{width:min(1280px,100%)!important;padding-left:22px!important;padding-right:
 .filter-item select,.field select,.field input,.field textarea{min-height:44px!important;border-radius:10px!important}
 @media(max-width:900px){header,.site-header{height:64px!important}.wrap.head{min-height:64px!important;padding:0 14px!important}nav,.site-nav,.main-nav{display:flex!important;flex:1!important}nav a,.site-nav a,.main-nav a{font-size:12px!important;padding:8px!important}.userbar{display:none!important}main{padding-left:14px!important;padding-right:14px!important}}
 @media(max-width:600px){nav,.site-nav,.main-nav{display:none!important}}
+
+
+/* =========================================================
+   Animecia Japan editorial design system — 2026
+   ========================================================= */
+:root{
+  --ac-red:#e6002d;
+  --ac-red-dark:#b90024;
+  --ac-ink:#15171a;
+  --ac-muted:#70757d;
+  --ac-line:#e5e7eb;
+  --ac-bg:#f7f7f5;
+  --ac-surface:#fff;
+  --ac-soft:#fff3f5;
+  --ac-radius:14px;
+  --ac-shadow:0 10px 32px rgba(20,24,30,.07);
+}
+html{background:var(--ac-bg)}
+body{
+  background:
+    radial-gradient(circle at 85% -10%,rgba(230,0,45,.045),transparent 32rem),
+    var(--ac-bg);
+  color:var(--ac-ink);
+}
+header,.site-header{
+  background:rgba(18,19,22,.97)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(14px);
+}
+.wrap.head,.header-inner{
+  width:min(1280px,100%);
+  min-height:68px!important;
+  padding:0 20px!important;
+  margin:auto;
+}
+.logo{
+  font-weight:950!important;
+  letter-spacing:-.04em!important;
+}
+.main-nav,.site-nav,header nav{
+  display:flex!important;
+  align-items:center!important;
+  gap:2px!important;
+  flex:1;
+  min-width:0;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.main-nav::-webkit-scrollbar,.site-nav::-webkit-scrollbar,header nav::-webkit-scrollbar{display:none}
+.main-nav a,.site-nav a,header nav a{
+  position:relative;
+  padding:9px 12px!important;
+  border-radius:9px;
+  color:#d9dadd!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  white-space:nowrap;
+  text-decoration:none;
+}
+.main-nav a:hover,.site-nav a:hover,header nav a:hover{
+  color:#fff!important;
+  background:rgba(255,255,255,.08);
+}
+.main-nav a[href="index.html"],
+.site-nav a[href="index.html"]{color:#fff!important}
+.userbar{margin-left:auto;flex:none}
+.userbar .btn,.userbar a{
+  border-radius:9px!important;
+  font-weight:850!important;
+}
+main{
+  width:min(1280px,100%)!important;
+  padding-left:20px!important;
+  padding-right:20px!important;
+}
+.page-header,.hero{
+  border-radius:20px!important;
+}
+.page-header h1,.hero h1{
+  letter-spacing:-.045em!important;
+}
+.panel,.card,.profile-card,.list-item,.review-item{
+  border:1px solid var(--ac-line)!important;
+  box-shadow:var(--ac-shadow)!important;
+}
+button,.btn,.chip,.tab,select,input,textarea{
+  border-radius:10px!important;
+}
+button,.btn{
+  font-weight:800;
+}
+button:hover,.btn:hover{transform:translateY(-1px)}
+a{transition:color .16s ease,background .16s ease,transform .16s ease,box-shadow .16s ease}
+
+/* Search-first discovery */
+.anime-page{max-width:1240px;margin:auto}
+.anime-page .breadcrumb{font-size:12px;color:var(--ac-muted);margin:10px 0 14px}
+.anime-page .page-header{
+  background:linear-gradient(135deg,#15171a,#25282d);
+  color:#fff;
+  padding:28px 30px!important;
+  margin-bottom:14px;
+}
+.anime-page .page-header p{color:#cdd0d5!important;max-width:760px}
+.anime-search-area{
+  position:sticky;
+  top:68px;
+  z-index:30;
+  background:rgba(247,247,245,.92);
+  backdrop-filter:blur(12px);
+  padding:10px 0!important;
+}
+.anime-search-area .search-box{
+  display:flex;
+  gap:8px;
+  padding:8px!important;
+  background:#fff;
+  border:1px solid var(--ac-line);
+  border-radius:14px!important;
+  box-shadow:0 8px 24px rgba(20,24,30,.07);
+}
+.anime-search-area input{
+  min-height:46px!important;
+  border:0!important;
+  background:transparent!important;
+  outline:none!important;
+  flex:1;
+  padding:0 12px!important;
+}
+.anime-search-area .search-button{
+  min-width:82px;
+  background:var(--ac-red)!important;
+  color:#fff!important;
+  border:0!important;
+}
+.filter-area{
+  background:#fff!important;
+  border:1px solid var(--ac-line)!important;
+  border-radius:16px!important;
+  padding:15px!important;
+  box-shadow:0 8px 25px rgba(20,24,30,.05);
+}
+.filter-title{
+  font-size:14px!important;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:0 0 12px!important;
+}
+.filter-title:before{
+  content:"条件";
+  color:var(--ac-red);
+  font-size:10px;
+  letter-spacing:.08em;
+}
+.filters{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:9px!important;
+}
+.filter-item label{
+  font-size:10px!important;
+  color:var(--ac-muted)!important;
+  font-weight:850!important;
+}
+.filter-item select{
+  width:100%;
+  min-height:40px!important;
+  border:1px solid #dfe2e6!important;
+  background:#fafafa!important;
+  padding:0 10px!important;
+}
+.filter-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:10px!important;
+}
+.reset-button{
+  background:#f2f3f5!important;
+  color:#444!important;
+  border:1px solid #e2e4e7!important;
+}
+.result-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:16px 2px 10px!important;
+}
+.result-count{
+  font-weight:900!important;
+  font-size:14px!important;
+}
+.result-page{color:var(--ac-muted)!important;font-size:12px!important}
+
+@media(max-width:1000px){
+  .filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .wrap.head,.header-inner{min-height:62px!important;padding:0 12px!important}
+  main{padding-left:12px!important;padding-right:12px!important}
+  .main-nav,.site-nav,header nav{display:flex!important}
+  .main-nav a,.site-nav a,header nav a{font-size:12px!important;padding:8px 9px!important}
+  .anime-search-area{top:62px}
+  .anime-page .page-header{padding:23px 20px!important}
+  .filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+  .logo{font-size:21px!important}
+  .main-nav a,.site-nav a,header nav a{font-size:11px!important;padding:7px 8px!important}
+  .filters{grid-template-columns:1fr}
+  .anime-search-area .search-button{min-width:68px}
+}
