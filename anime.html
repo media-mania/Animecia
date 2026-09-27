@@ -2435,212 +2435,308 @@
     async function loadAnime() {
 
         animeGrid.innerHTML = `
-
             <div class="loading">
-
                 アニメ情報を読み込んでいます……
-
             </div>
-
         `;
 
-
-        resultCount.innerHTML =
-            "<span>0</span> 作品";
-
-
-        resultPage.textContent =
-            "読み込み中…";
-
-
-        pagination.innerHTML =
-            "";
-
+        resultCount.innerHTML = "<span>0</span> 作品";
+        resultPage.textContent = "読み込み中…";
+        pagination.innerHTML = "";
 
         try {
 
             /*
-             * anime本体
+             * Supabase REST API の1回あたりの上限を避けるため、
+             * 1000件ずつ最後まで取得します。
              */
+            const selectColumns = `
+                id,
+                title,
+                genre,
+                description,
+                english_title,
+                title_romaji,
+                title_user_preferred,
+                title_english,
+                title_native,
+                title_japanese,
+                cover_image,
+                banner_image,
+                start_date,
+                end_date,
+                episodes,
+                duration,
+                status,
+                format,
+                season,
+                season_year,
+                source,
+                average_score,
+                popularity,
+                favourites_count,
+                site_url,
+                updated_at,
+                created_at,
+                recommended
+            `;
 
-            const {
-                data,
-                error
-            } =
-                await supabaseClient
+            const pageSize = 1000;
+            const allRows = [];
 
-                    .from(
-                        "anime"
-                    )
+            for (
+                let offset = 0;
+                ;
+                offset += pageSize
+            ) {
 
-                    .select(`
-                        id,
-                        title,
-                        genre,
-                        description,
-                        english_title,
-                        title_romaji,
-                        title_user_preferred,
-                        title_english,
-                        title_native,
-                        title_japanese,
-                        cover_image,
-                        banner_image,
-                        start_date,
-                        end_date,
-                        episodes,
-                        duration,
-                        status,
-                        format,
-                        season,
-                        season_year,
-                        source,
-                        average_score,
-                        popularity,
-                        favourites_count,
-                        site_url,
-                        updated_at,
-                        created_at,
-                        recommended
-                    `)
-
+                const {
+                    data,
+                    error
+                } = await supabaseClient
+                    .from("anime")
+                    .select(selectColumns)
                     .order(
                         "popularity",
                         {
-                            ascending:
-                                false,
-                            nullsFirst:
-                                false
+                            ascending: false,
+                            nullsFirst: false
                         }
+                    )
+                    .range(
+                        offset,
+                        offset + pageSize - 1
                     );
 
+                if (error) {
+                    throw error;
+                }
 
-            if (
-                error
-            ) {
+                const rows = Array.isArray(data)
+                    ? data
+                    : [];
 
-                throw error;
+                allRows.push(...rows);
+
+                if (rows.length < pageSize) {
+                    break;
+                }
 
             }
 
+            animeData = allRows;
 
-            animeData =
-                Array.isArray(
-                    data
-                )
-
-                    ? data
-
-                    : [];
-
+            /*
+             * Animecia側の評価・お気に入り・レビュー集計
+             */
             try {
-                const animeIds = animeData.map(anime => anime.id).filter(Number.isInteger);
-                if (animeIds.length) {
+
+                const animeIds =
+                    animeData
+                        .map(anime => anime.id)
+                        .filter(Number.isInteger);
+
+                const engagementMap = new Map();
+
+                for (
+                    let start = 0;
+                    start < animeIds.length;
+                    start += 500
+                ) {
+
+                    const batch =
+                        animeIds.slice(
+                            start,
+                            start + 500
+                        );
+
                     const {
                         data: engagementRows,
                         error: engagementError
                     } = await supabaseClient
-                        .from("anime_engagement_summary")
-                        .select("anime_id,favorite_count,review_count,average_rating,rating_count")
-                        .in("anime_id", animeIds);
+                        .from(
+                            "anime_engagement_summary"
+                        )
+                        .select(
+                            "anime_id,favorite_count,review_count,average_rating,rating_count"
+                        )
+                        .in(
+                            "anime_id",
+                            batch
+                        );
 
-                    if (engagementError) throw engagementError;
+                    if (engagementError) {
+                        throw engagementError;
+                    }
 
-                    const engagementMap = new Map(
-                        (engagementRows || []).map(row => [Number(row.anime_id), row])
+                    (
+                        engagementRows || []
+                    ).forEach(
+                        row => {
+                            engagementMap.set(
+                                Number(row.anime_id),
+                                row
+                            );
+                        }
                     );
 
-                    animeData = animeData.map(anime => ({
-                        ...anime,
-                        _animecia_rating: engagementMap.get(Number(anime.id))?.average_rating ?? null,
-                        _animecia_favorite_count: engagementMap.get(Number(anime.id))?.favorite_count ?? 0,
-                        _animecia_review_count: engagementMap.get(Number(anime.id))?.review_count ?? 0,
-                        _animecia_rating_count: engagementMap.get(Number(anime.id))?.rating_count ?? 0
-                    }));
                 }
+
+                animeData =
+                    animeData.map(
+                        anime => {
+
+                            const summary =
+                                engagementMap.get(
+                                    Number(anime.id)
+                                );
+
+                            return {
+                                ...anime,
+                                _animecia_rating:
+                                    summary?.average_rating ??
+                                    null,
+                                _animecia_favorite_count:
+                                    summary?.favorite_count ??
+                                    0,
+                                _animecia_review_count:
+                                    summary?.review_count ??
+                                    0,
+                                _animecia_rating_count:
+                                    summary?.rating_count ??
+                                    0
+                            };
+
+                        }
+                    );
+
             } catch (engagementError) {
-                console.error("Animecia集計取得エラー:", engagementError);
-            }
 
+                console.error(
+                    "Animecia集計取得エラー:",
+                    engagementError
+                );
 
-            try {
-                const ids = animeData.map(anime => anime.id).filter(Number.isInteger);
-                if (ids.length) {
-                    const aliasMap = new Map();
-                    for (let start = 0; start < ids.length; start += 500) {
-                        const batch = ids.slice(start, start + 500);
-                        const { data: aliasRows, error: aliasError } = await supabaseClient
-                            .from("anime_aliases")
-                            .select("anime_id,title")
-                            .in("anime_id", batch);
-                        if (aliasError) throw aliasError;
-                        (aliasRows || []).forEach(row => {
-                            const key = Number(row.anime_id);
-                            if (!aliasMap.has(key)) aliasMap.set(key, []);
-                            aliasMap.get(key).push(row.title);
-                        });
-                    }
-                    animeData = animeData.map(anime => ({
-                        ...anime,
-                        _aliases: aliasMap.get(Number(anime.id)) || []
-                    }));
-                }
-            } catch (aliasError) {
-                console.error("別名データ取得エラー:", aliasError);
             }
 
             /*
-             * ジャンル関連
+             * タイトル別名
              */
+            try {
+
+                const ids =
+                    animeData
+                        .map(anime => anime.id)
+                        .filter(Number.isInteger);
+
+                const aliasMap =
+                    new Map();
+
+                for (
+                    let start = 0;
+                    start < ids.length;
+                    start += 500
+                ) {
+
+                    const batch =
+                        ids.slice(
+                            start,
+                            start + 500
+                        );
+
+                    const {
+                        data: aliasRows,
+                        error: aliasError
+                    } = await supabaseClient
+                        .from("anime_aliases")
+                        .select(
+                            "anime_id,title"
+                        )
+                        .in(
+                            "anime_id",
+                            batch
+                        );
+
+                    if (aliasError) {
+                        throw aliasError;
+                    }
+
+                    (
+                        aliasRows || []
+                    ).forEach(
+                        row => {
+
+                            const key =
+                                Number(
+                                    row.anime_id
+                                );
+
+                            if (
+                                !aliasMap.has(
+                                    key
+                                )
+                            ) {
+                                aliasMap.set(
+                                    key,
+                                    []
+                                );
+                            }
+
+                            aliasMap
+                                .get(key)
+                                .push(row.title);
+
+                        }
+                    );
+
+                }
+
+                animeData =
+                    animeData.map(
+                        anime => ({
+                            ...anime,
+                            _aliases:
+                                aliasMap.get(
+                                    Number(anime.id)
+                                ) || []
+                        })
+                    );
+
+            } catch (aliasError) {
+
+                console.error(
+                    "別名データ取得エラー:",
+                    aliasError
+                );
+
+            }
 
             await loadAnimeGenres();
 
-
-            /*
-             * フィルターの選択肢
-             */
-
             createYearOptions();
-
             createGenreOptions();
 
-
-            /*
-             * URL
-             */
-
             loadURLParameters();
-
 
             if (
                 animeData.length === 0
             ) {
 
                 showEmptyDatabase();
-
                 return;
 
             }
 
+            applyFilters(false);
 
-            applyFilters(
-                false
-            );
-
-
-        } catch (
-            error
-        ) {
+        } catch (error) {
 
             console.error(
                 "Anime loading error:",
                 error
             );
 
-
-            showLoadError(
-                error
-            );
+            showLoadError(error);
 
         }
 
@@ -2655,42 +2751,50 @@
 
         animeData.forEach(
             anime => {
-
-                anime.anime_genres =
-                    [];
-
+                anime.anime_genres = [];
             }
         );
-
 
         if (
             animeData.length === 0
         ) {
-
             return;
-
         }
 
+        const map =
+            new Map(
+                animeData.map(
+                    anime => [
+                        String(anime.id),
+                        anime
+                    ]
+                )
+            );
 
         const ids =
             animeData.map(
-                anime =>
-                    anime.id
+                anime => anime.id
             );
-
 
         try {
 
-            const {
-                data,
-                error
-            } =
-                await supabaseClient
+            for (
+                let start = 0;
+                start < ids.length;
+                start += 500
+            ) {
 
-                    .from(
-                        "anime_genres"
-                    )
+                const batch =
+                    ids.slice(
+                        start,
+                        start + 500
+                    );
 
+                const {
+                    data,
+                    error
+                } = await supabaseClient
+                    .from("anime_genres")
                     .select(`
                         anime_id,
                         genre_id,
@@ -2699,75 +2803,41 @@
                             name
                         )
                     `)
-
                     .in(
                         "anime_id",
-                        ids
+                        batch
                     );
 
+                if (error) {
+                    throw error;
+                }
 
-            if (
-                error
-            ) {
+                (
+                    data || []
+                ).forEach(
+                    row => {
 
-                throw error;
+                        const anime =
+                            map.get(
+                                String(
+                                    row.anime_id
+                                )
+                            );
+
+                        if (!anime) {
+                            return;
+                        }
+
+                        anime
+                            .anime_genres
+                            .push(row);
+
+                    }
+                );
 
             }
 
-
-            const map =
-                new Map();
-
-
-            animeData.forEach(
-                anime => {
-
-                    map.set(
-                        String(
-                            anime.id
-                        ),
-                        anime
-                    );
-
-                }
-            );
-
-
-            (
-                data ||
-                []
-            ).forEach(
-                row => {
-
-                    const anime =
-                        map.get(
-                            String(
-                                row.anime_id
-                            )
-                        );
-
-
-                    if (
-                        !anime
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    anime.anime_genres
-                        .push(
-                            row
-                        );
-
-                }
-            );
-
-
-        } catch (
-            error
-        ) {
+        } catch (error) {
 
             console.error(
                 "Anime genre loading error:",
