@@ -51,6 +51,7 @@ const fixedPages = [
   `${base}/`,
   `${base}/anime.html`,
   `${base}/ranking.html`,
+  `${base}/compare.html`,
 ];
 
 const animeRows = [];
