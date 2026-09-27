@@ -15,6 +15,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: animecia-sitemap
+  cancel-in-progress: true
+
 jobs:
   sitemap:
     runs-on: ubuntu-latest
@@ -44,4 +48,6 @@ jobs:
             exit 0
           fi
           git commit -m "Update Animecia sitemap"
+          git fetch origin main
+          git rebase origin/main
           git push
