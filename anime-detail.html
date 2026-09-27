@@ -1936,6 +1936,24 @@
 
                 </section>
 
+                <section
+                    id="episodes-section"
+                    class="content-section"
+                    style="display:none;"
+                >
+                    <h2>エピソード</h2>
+                    <div id="episodes-list" class="item-list"></div>
+                </section>
+
+                <section
+                    id="tags-section"
+                    class="content-section"
+                    style="display:none;"
+                >
+                    <h2>タグ</h2>
+                    <div id="tags-list" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+                </section>
+
 
                 <section class="content-section">
 
@@ -3260,6 +3278,10 @@
                 loadSources(),
 
                 loadEngagementSummary(),
+
+                loadEpisodes(),
+
+                loadTags(),
 
                 loadRelatedAnime(),
 
@@ -5749,6 +5771,63 @@
             }
         } catch (error) {
             console.error("Animecia集計取得エラー:", error);
+        }
+    }
+
+    async function loadEpisodes() {
+        const section = document.getElementById("episodes-section");
+        const list = document.getElementById("episodes-list");
+        try {
+            const { data, error } = await supabaseClient
+                .from("anime_episodes")
+                .select("episode_number,title,synopsis,air_date,duration,thumbnail,site_url")
+                .eq("anime_id", Number(currentAnimeId))
+                .order("episode_number", { ascending: true });
+            if (error) throw error;
+            const rows = Array.isArray(data) ? data : [];
+            if (!rows.length) { section.style.display = "none"; return; }
+            list.innerHTML = rows.map(ep => {
+                const thumb = safeURL(ep.thumbnail);
+                const site = safeURL(ep.site_url);
+                const title = ep.title || ("第" + ep.episode_number + "話");
+                const meta = [ep.air_date, ep.duration ? ep.duration + "分" : ""].filter(Boolean).join(" / ");
+                let html = '<article class="item-card" style="display:flex;gap:12px;align-items:flex-start;">';
+                if (thumb) html += '<img src="' + escapeHTML(thumb) + '" alt="" loading="lazy" style="width:110px;height:62px;object-fit:cover;border-radius:8px;">';
+                html += '<div><strong>第' + escapeHTML(ep.episode_number) + '話</strong> ' + escapeHTML(title);
+                if (meta) html += '<br><small>' + escapeHTML(meta) + '</small>';
+                if (ep.synopsis) html += '<p style="margin:7px 0 0;color:#667085;">' + escapeHTML(ep.synopsis) + '</p>';
+                if (site) html += '<br><a href="' + escapeHTML(site) + '" target="_blank" rel="noopener noreferrer nofollow">エピソード情報を見る</a>';
+                return html + '</div></article>';
+            }).join("");
+            section.style.display = "block";
+        } catch (error) {
+            console.error("エピソード取得エラー:", error);
+            section.style.display = "none";
+        }
+    }
+
+    async function loadTags() {
+        const section = document.getElementById("tags-section");
+        const list = document.getElementById("tags-list");
+        try {
+            const { data, error } = await supabaseClient
+                .from("anime_tags")
+                .select("name,rank,is_spoiler")
+                .eq("anime_id", Number(currentAnimeId))
+                .order("rank", { ascending: true, nullsFirst: false })
+                .order("name", { ascending: true });
+            if (error) throw error;
+            const rows = Array.isArray(data) ? data : [];
+            if (!rows.length) { section.style.display = "none"; return; }
+            list.innerHTML = rows.map(tag =>
+                '<span style="display:inline-block;padding:6px 10px;border:1px solid #ddd;border-radius:999px;font-size:13px;">' +
+                escapeHTML(tag.name) + (tag.is_spoiler ? ' <small>(ネタバレ)</small>' : '') +
+                '</span>'
+            ).join("");
+            section.style.display = "block";
+        } catch (error) {
+            console.error("タグ取得エラー:", error);
+            section.style.display = "none";
         }
     }
 
