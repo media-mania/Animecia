@@ -1,0 +1,47 @@
+name: Animecia Sitemap
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "sitemap.xml"
+      - "sitemap-pages.xml"
+      - "sitemap-anime-*.xml"
+  schedule:
+    - cron: "20 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sitemap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Generate sitemap
+        run: node scripts/generate-sitemap.mjs
+
+      - name: Commit sitemap
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sitemap.xml sitemap-pages.xml sitemap-anime-*.xml
+          if git diff --cached --quiet; then
+            echo "No sitemap changes."
+            exit 0
+          fi
+          git commit -m "Update Animecia sitemap"
+          git push
