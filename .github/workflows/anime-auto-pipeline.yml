@@ -524,6 +524,7 @@ jobs:
                     bannerImage
                     siteUrl
                     externalLinks { url site type }
+                    streamingEpisodes { title thumbnail url site }
                     characters(perPage: 40, sort: [ROLE, FAVOURITES_DESC]) {
                       edges {
                         role
@@ -590,6 +591,25 @@ jobs:
               const official = officialCandidates.find(link => /OFFICIAL|ANIME_OFFICIAL/i.test(String(link.type || ''))) || officialCandidates.find(link => /official/i.test(String(link.site || '')));
               if (official?.url) payload.official_url = official.url;
 
+              payload._external_links = (media.externalLinks || [])
+                .filter(link => link?.url && /^https?:\/\//i.test(link.url))
+                .map(link => ({
+                  site: link.site || 'External',
+                  url: link.url,
+                  link_type: link.type || null,
+                  source: 'AniList',
+                }));
+
+              payload._streaming_links = (media.streamingEpisodes || [])
+                .filter(item => item?.url && /^https?:\/\//i.test(item.url))
+                .map(item => ({
+                  site: item.site || 'Streaming',
+                  url: item.url,
+                  title: item.title || null,
+                  thumbnail: item.thumbnail || null,
+                  source: 'AniList',
+                }));
+
               if (!payload.cover_image && media.coverImage?.extraLarge) payload.cover_image = media.coverImage.extraLarge;
               else if (!payload.cover_image && media.coverImage?.large) payload.cover_image = media.coverImage.large;
 
@@ -601,6 +621,12 @@ jobs:
                 const actor = voiceActors[0];
                 if (!actor?.name?.full) continue;
                 characterRows.push({
+                  character_external_id: Number.isInteger(Number(node.id)) ? Number(node.id) : null,
+                  character_name: node.name.full,
+                  voice_actor_external_id: Number.isInteger(Number(actor.id)) ? Number(actor.id) : null,
+                  voice_actor_name: actor.name.full,
+                  voice_actor_native: actor.name.native || null,
+                  voice_actor_image: actor.image?.large || null,
                   external_id: Number.isInteger(Number(actor.id)) ? Number(actor.id) : null,
                   name_first: actor.name.full,
                   name_last: '',
@@ -610,6 +636,19 @@ jobs:
                   role: `声優｜${node.name.full}`,
                 });
               }
+              payload._voice_actor_links = characterRows
+                .filter(row => row.character_external_id && row.voice_actor_external_id)
+                .map(row => ({
+                  character_external_id: row.character_external_id,
+                  character_name: row.character_name,
+                  staff_external_id: row.voice_actor_external_id,
+                  staff_name: row.voice_actor_name,
+                  staff_native: row.voice_actor_native,
+                  staff_image: row.voice_actor_image,
+                  language: 'Japanese',
+                  role: 'Voice Actor',
+                }));
+
               const mergedStaff = [...(payload._staff || []), ...characterRows];
               const seen = new Set();
               payload._staff = mergedStaff.filter(person => {
@@ -693,6 +732,9 @@ jobs:
                 _staff: collectStaff(anime),
                 _characters: collectCharacters(anime),
                 _relations: collectRelations(anime),
+                _external_links: [],
+                _streaming_links: [],
+                _voice_actor_links: [],
               },
             };
           }
@@ -749,7 +791,7 @@ jobs:
           async function upsertAnime(payload) {
             const row = {};
             for (const key of [
-              'title', 'english_title', 'title_english', 'title_native', 'title_japanese',
+              'title', 'english_title', 'title_english', 'title_native', 'title_japanese', 'title_romaji',
               'description', 'official_url', 'cover_image', 'banner_image', 'start_date',
               'end_date', 'episodes', 'duration', 'status', 'format', 'season', 'season_year',
               'source', 'average_score', 'popularity', 'favourites_count', 'site_url', 'external_id'
@@ -913,6 +955,65 @@ jobs:
             }
           }
 
+          async function linkExternalLinks(animeId, rows) {
+            if (!rows?.length) return;
+            for (const link of rows) {
+              const { error } = await supabase.from('anime_external_links').upsert({
+                anime_id: animeId,
+                site: link.site || 'External',
+                url: link.url,
+                link_type: link.link_type || null,
+                source: link.source || null,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'anime_id,site,url' });
+              if (error) throw error;
+            }
+          }
+
+          async function linkStreamingLinks(animeId, rows) {
+            if (!rows?.length) return;
+            for (const link of rows) {
+              const { error } = await supabase.from('anime_streaming_links').upsert({
+                anime_id: animeId,
+                site: link.site || 'Streaming',
+                url: link.url,
+                title: link.title || null,
+                thumbnail: link.thumbnail || null,
+                source: link.source || null,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'anime_id,site,url' });
+              if (error) throw error;
+            }
+          }
+
+          async function linkVoiceActors(animeId, rows) {
+            if (!rows?.length) return;
+            for (const row of rows) {
+              const characterQuery = row.character_external_id
+                ? await supabase.from('characters').select('id').eq('external_id', row.character_external_id).maybeSingle()
+                : { data: null, error: null };
+              if (characterQuery.error) throw characterQuery.error;
+              const character = characterQuery.data;
+              if (!character) continue;
+
+              const staffQuery = row.staff_external_id
+                ? await supabase.from('staff').select('id').eq('external_id', row.staff_external_id).maybeSingle()
+                : { data: null, error: null };
+              if (staffQuery.error) throw staffQuery.error;
+              const staff = staffQuery.data;
+              if (!staff) continue;
+
+              const { error } = await supabase.from('character_voice_actors').upsert({
+                anime_id: animeId,
+                character_id: character.id,
+                staff_id: staff.id,
+                language: row.language || 'Japanese',
+                role: row.role || 'Voice Actor',
+              }, { onConflict: 'anime_id,character_id,staff_id,language' });
+              if (error) throw error;
+            }
+          }
+
           async function processOne(reportRow) {
             const detailXml = await fetchText(`${ANN_DETAIL_URL}${reportRow.source_id}`);
             const detailParsed = parser.parse(detailXml);
@@ -938,6 +1039,9 @@ jobs:
             await linkStudios(anime.id, result.payload._companies);
             await linkStaff(anime.id, result.payload._staff);
             await linkCharacters(anime.id, result.payload._characters);
+            await linkVoiceActors(anime.id, result.payload._voice_actor_links);
+            await linkExternalLinks(anime.id, result.payload._external_links);
+            await linkStreamingLinks(anime.id, result.payload._streaming_links);
             await linkRelations(anime.id, result.payload._relations);
             await updateCandidateImported(candidateId, anime.id);
 
@@ -988,7 +1092,7 @@ jobs:
                 const payload = result.payload;
                 const updateRow = {};
                 for (const key of [
-                  'title', 'english_title', 'title_english', 'title_native', 'title_japanese',
+                  'title', 'english_title', 'title_english', 'title_native', 'title_japanese', 'title_romaji',
                   'description', 'official_url', 'cover_image', 'banner_image', 'start_date',
                   'end_date', 'episodes', 'duration', 'status', 'format', 'season', 'season_year',
                   'source', 'site_url'
@@ -1014,6 +1118,9 @@ jobs:
                 await linkStudios(row.id, payload._companies);
                 await linkStaff(row.id, payload._staff);
                 await linkCharacters(row.id, payload._characters);
+                await linkVoiceActors(row.id, payload._voice_actor_links);
+                await linkExternalLinks(row.id, payload._external_links);
+                await linkStreamingLinks(row.id, payload._streaming_links);
 
                 updated++;
               } catch (error) {
