@@ -1363,7 +1363,7 @@ jobs:
               .order('id', { ascending: true })
               .limit(500);
 
-            if (error) throw error;
+            if (animeRows === null) throw new Error('既存ANN作品の取得に失敗しました。');
             if (!animeRows?.length) {
               console.log('既存ANN作品の更新対象はありません。');
               return { scanned: 0, updated: 0, errors: 0 };
@@ -1372,7 +1372,7 @@ jobs:
             let updated = 0;
             let errors = 0;
 
-            for (const row of animeRows.slice(0, 2000)) {
+            for (const row of animeRows.slice(0, 500)) {
               const annId = Number(row.external_id) - ANN_EXTERNAL_ID_BASE;
               if (!Number.isInteger(annId) || annId <= 0) continue;
 
@@ -1470,7 +1470,8 @@ jobs:
               .eq('source', 'Anime News Network Encyclopedia')
               .gte('external_id', ANN_EXTERNAL_ID_BASE)
               .lt('external_id', ANN_EXTERNAL_ID_BASE + 2000000000)
-              .order('id', { ascending: true });
+              .order('id', { ascending: true })
+              .limit(300);
             if (relationError) throw relationError;
 
             for (const row of relationRows || []) {
@@ -1488,8 +1489,8 @@ jobs:
               await sleep(350);
             }
 
-            console.log(`EXISTING SYNC SUMMARY scanned=${Math.min(animeRows.length, 2000)} updated=${updated} errors=${errors}`);
-            return { scanned: Math.min(animeRows.length, 2000), updated, errors };
+            console.log(`EXISTING SYNC SUMMARY scanned=${Math.min(animeRows.length, 500)} updated=${updated} errors=${errors}`);
+            return { scanned: Math.min(animeRows.length, 500), updated, errors };
           }
 
           async function getAutomationOffset() {
