@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -15,33 +16,77 @@
     content="noindex,nofollow"
   >
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  ></script>
+
 
   <style>
+
     * {
       box-sizing: border-box;
     }
 
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+
     body {
       margin: 0;
+
       background: #f5f5f5;
       color: #111;
+
       font-family:
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
+        "Hiragino Kaku Gothic ProN",
+        "Hiragino Sans",
+        "Yu Gothic",
+        Meiryo,
         sans-serif;
     }
+
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+
+    /* =========================================================
+       Header
+    ========================================================= */
 
     header {
       background: #111;
       color: #fff;
+
+      border-bottom: 1px solid #222;
     }
 
+
     .header-inner {
-      width: min(1200px, calc(100% - 30px));
-      margin: 0 auto;
+      width: min(
+        1200px,
+        calc(100% - 30px)
+      );
+
       min-height: 64px;
+
+      margin: 0 auto;
 
       display: flex;
       align-items: center;
@@ -50,1535 +95,2307 @@
       gap: 20px;
     }
 
+
     .logo {
       color: #fff;
+
       text-decoration: none;
-      font-weight: 700;
+
       font-size: 20px;
+      font-weight: 700;
+
+      white-space: nowrap;
     }
+
 
     .header-actions {
       display: flex;
-      gap: 10px;
+
       align-items: center;
+
+      gap: 10px;
     }
+
 
     .header-actions a,
     .header-actions button {
-      border: 1px solid #444;
+      display: inline-flex;
+
+      align-items: center;
+      justify-content: center;
+
+      min-height: 40px;
+
+      padding:
+        8px 13px;
+
+      border:
+        1px solid #444;
+
+      border-radius: 8px;
+
       background: #222;
       color: #fff;
-      border-radius: 8px;
-      padding: 8px 12px;
 
       text-decoration: none;
-      font: inherit;
+
       cursor: pointer;
+
+      transition:
+        background-color .15s ease,
+        border-color .15s ease;
     }
+
 
     .header-actions a:hover,
     .header-actions button:hover {
       background: #333;
+      border-color: #555;
     }
+
+
+    /* =========================================================
+       Main
+    ========================================================= */
 
     main {
-      width: min(1200px, calc(100% - 30px));
+      width: min(
+        1200px,
+        calc(100% - 30px)
+      );
+
       margin: 0 auto;
-      padding: 35px 0 60px;
+
+      padding:
+        36px 0 70px;
     }
+
 
     .page-header {
-      margin-bottom: 25px;
+      margin-bottom: 24px;
     }
 
+
     .page-header h1 {
-      margin: 0 0 8px;
+      margin:
+        0 0 9px;
+
       font-size: 30px;
+      line-height: 1.3;
     }
+
 
     .page-header p {
       margin: 0;
+
       color: #666;
-      line-height: 1.7;
+
+      line-height: 1.8;
+
+      font-size: 14px;
     }
+
+
+    /* =========================================================
+       Status
+    ========================================================= */
 
     .status-bar {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
 
-      margin-bottom: 20px;
+      flex-wrap: wrap;
+
+      gap: 10px;
+
+      margin-bottom: 18px;
     }
+
 
     .badge {
       display: inline-flex;
+
       align-items: center;
 
+      gap: 6px;
+
+      padding:
+        7px 12px;
+
+      border:
+        1px solid #ddd;
+
       border-radius: 999px;
-      padding: 6px 11px;
 
       background: #fff;
-      border: 1px solid #ddd;
+
+      color: #333;
 
       font-size: 13px;
     }
 
+
+    .badge strong {
+      font-weight: 700;
+    }
+
+
+    /* =========================================================
+       Message
+    ========================================================= */
+
     .message {
       min-height: 24px;
-      margin-bottom: 18px;
+
+      margin:
+        0 0 18px;
 
       font-size: 14px;
     }
+
 
     .message.error {
       color: #b00020;
     }
 
+
     .message.success {
       color: #147333;
     }
 
+
+    /* =========================================================
+       Candidate list
+    ========================================================= */
+
     .candidate-list {
       display: grid;
+
       gap: 18px;
     }
 
+
     .candidate-card {
       background: #fff;
-      border: 1px solid #ddd;
+
+      border:
+        1px solid #ddd;
+
       border-radius: 14px;
+
       padding: 22px;
 
       box-shadow:
-        0 2px 10px rgba(0, 0, 0, 0.04);
+        0 2px 10px
+        rgba(0, 0, 0, .04);
     }
+
 
     .candidate-card.imported {
       border-color: #b7d8bf;
+
       background: #fbfffc;
     }
 
+
     .candidate-card.rejected {
       border-color: #e2baba;
+
       background: #fffafa;
     }
 
+
     .candidate-top {
       display: flex;
-      justify-content: space-between;
-      gap: 15px;
+
       align-items: flex-start;
+      justify-content: space-between;
+
+      gap: 16px;
 
       margin-bottom: 18px;
     }
 
+
     .candidate-title {
       margin: 0;
+
       font-size: 22px;
       line-height: 1.45;
+
+      word-break: break-word;
     }
+
 
     .candidate-meta {
       margin-top: 7px;
+
       color: #666;
+
       font-size: 13px;
     }
 
+
     .status-pill {
-      flex: 0 0 auto;
+      flex:
+        0 0 auto;
+
+      padding:
+        6px 10px;
 
       border-radius: 999px;
-      padding: 6px 10px;
+
+      background: #eee;
+
+      color: #333;
 
       font-size: 12px;
       font-weight: 700;
-
-      background: #eee;
     }
+
 
     .status-pill.pending {
       background: #fff2c2;
     }
 
+
     .status-pill.imported {
       background: #dff2e2;
     }
+
 
     .status-pill.rejected {
       background: #f6dddd;
     }
 
+
+    /* =========================================================
+       Fields
+    ========================================================= */
+
     .fields {
       display: grid;
 
       grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+        repeat(
+          2,
+          minmax(0, 1fr)
+        );
 
       gap: 14px;
     }
 
+
     .field {
       display: flex;
+
       flex-direction: column;
+
       gap: 6px;
     }
 
+
     .field.full {
-      grid-column: 1 / -1;
+      grid-column:
+        1 / -1;
     }
 
+
     .field label {
+      color: #555;
+
       font-size: 12px;
       font-weight: 700;
-      color: #555;
     }
+
 
     .field input,
     .field textarea,
     .field select {
       width: 100%;
 
-      border: 1px solid #d5d5d5;
+      padding:
+        10px 11px;
+
+      border:
+        1px solid #d5d5d5;
+
       border-radius: 8px;
 
-      padding: 10px 11px;
+      outline: none;
 
       background: #fff;
       color: #111;
-
-      font: inherit;
-      outline: none;
     }
+
 
     .field textarea {
-      min-height: 90px;
+      min-height: 100px;
+
       resize: vertical;
     }
+
 
     .field input:focus,
     .field textarea:focus,
     .field select:focus {
       border-color: #111;
+
+      box-shadow:
+        0 0 0 2px
+        rgba(0, 0, 0, .05);
     }
+
+
+    .field input:disabled,
+    .field textarea:disabled,
+    .field select:disabled {
+      background: #f4f4f4;
+
+      color: #777;
+
+      cursor: not-allowed;
+    }
+
+
+    /* =========================================================
+       Source
+    ========================================================= */
+
+    .source-area {
+      margin-top: 16px;
+
+      color: #555;
+
+      font-size: 13px;
+
+      line-height: 1.7;
+
+      word-break: break-word;
+    }
+
+
+    .source-area strong {
+      color: #333;
+    }
+
+
+    .source-area a {
+      color: #333;
+
+      text-decoration:
+        underline;
+    }
+
+
+    .source-area a:hover {
+      color: #000;
+    }
+
+
+    /* =========================================================
+       Actions
+    ========================================================= */
 
     .actions {
       display: flex;
+
       flex-wrap: wrap;
+
+      align-items: center;
+
       gap: 9px;
 
       margin-top: 20px;
+
       padding-top: 18px;
 
-      border-top: 1px solid #eee;
+      border-top:
+        1px solid #eee;
     }
 
-    .actions button {
-      border: 0;
+
+    .actions button,
+    .actions a {
+      display: inline-flex;
+
+      align-items: center;
+      justify-content: center;
+
+      min-height: 40px;
+
+      padding:
+        9px 14px;
+
       border-radius: 8px;
 
-      padding: 10px 14px;
+      text-decoration: none;
 
-      font: inherit;
+      font-size: 13px;
       font-weight: 600;
 
       cursor: pointer;
     }
+
+
+    .actions button {
+      border: 0;
+    }
+
 
     .btn-save {
       background: #111;
       color: #fff;
     }
 
+
+    .btn-save:hover {
+      background: #2a2a2a;
+    }
+
+
     .btn-approve {
       background: #1c7a3e;
       color: #fff;
     }
+
+
+    .btn-approve:hover {
+      background: #176533;
+    }
+
 
     .btn-reject {
       background: #a52b2b;
       color: #fff;
     }
 
-    .btn-reset {
-      background: #eee;
-      color: #222;
+
+    .btn-reject:hover {
+      background: #8b2525;
     }
 
+
+    .actions a {
+      background: #eee;
+
+      color: #222;
+
+      border:
+        1px solid #ddd;
+    }
+
+
+    .actions a:hover {
+      background: #e4e4e4;
+    }
+
+
     .actions button:disabled {
-      opacity: 0.5;
+      opacity: .55;
+
       cursor: not-allowed;
     }
 
-    .source-area {
-      margin-top: 15px;
-      font-size: 13px;
-      line-height: 1.7;
-    }
 
-    .source-area a {
-      color: #333;
-      word-break: break-all;
-    }
+    /* =========================================================
+       Empty / Loading
+    ========================================================= */
 
-    .empty {
-      padding: 50px 20px;
+    .empty,
+    .loading {
+      padding:
+        50px 20px;
 
       text-align: center;
 
       background: #fff;
-      border: 1px solid #ddd;
+
+      border:
+        1px solid #ddd;
+
       border-radius: 14px;
 
       color: #666;
     }
 
-    .loading {
-      padding: 35px;
-      text-align: center;
-      color: #666;
-    }
+
+    /* =========================================================
+       Responsive
+    ========================================================= */
 
     @media (max-width: 700px) {
+
       .header-inner {
         min-height: auto;
-        padding: 14px 0;
 
-        align-items: flex-start;
+        padding:
+          14px 0;
+
         flex-direction: column;
+
+        align-items: stretch;
       }
+
+
+      .logo {
+        text-align: center;
+      }
+
 
       .header-actions {
         width: 100%;
       }
 
+
       .header-actions a,
       .header-actions button {
         flex: 1;
-        text-align: center;
       }
+
+
+      main {
+        width:
+          min(
+            100% - 24px,
+            1200px
+          );
+
+        padding-top: 26px;
+      }
+
 
       .page-header h1 {
         font-size: 25px;
       }
 
+
+      .candidate-card {
+        padding: 17px;
+      }
+
+
       .candidate-top {
         flex-direction: column;
       }
+
+
+      .candidate-title {
+        font-size: 20px;
+      }
+
 
       .fields {
         grid-template-columns: 1fr;
       }
 
+
       .field.full {
         grid-column: auto;
       }
+
+
+      .actions {
+        flex-direction: column;
+
+        align-items: stretch;
+      }
+
+
+      .actions button,
+      .actions a {
+        width: 100%;
+      }
     }
+
+
   </style>
+
 </head>
+
 
 <body>
 
-<header>
-  <div class="header-inner">
 
-    <a
-      href="index.html"
-      class="logo"
-    >
-      Animecia
-    </a>
+  <!-- =======================================================
+       Header
+  ======================================================== -->
 
-    <div class="header-actions">
+  <header>
 
-      <a href="admin-dashboard.html">
-        管理画面へ戻る
+    <div class="header-inner">
+
+      <a
+        href="index.html"
+        class="logo"
+      >
+        Animecia
       </a>
 
-      <button
-        type="button"
-        id="logout-button"
-      >
-        ログアウト
-      </button>
+
+      <div class="header-actions">
+
+        <a
+          href="admin-dashboard.html"
+        >
+          管理画面へ戻る
+        </a>
+
+
+        <button
+          type="button"
+          id="logout-button"
+        >
+          ログアウト
+        </button>
+
+      </div>
 
     </div>
 
-  </div>
-</header>
+  </header>
 
 
-<main>
+  <!-- =======================================================
+       Main
+  ======================================================== -->
 
-  <section class="page-header">
-
-    <h1>
-      アニメ候補審査
-    </h1>
-
-    <p>
-      Anime News Networkから取得した作品候補を確認し、
-      必要に応じて修正してください。
-      承認した作品だけAnimeciaのアニメデータベースへ登録されます。
-    </p>
-
-  </section>
+  <main>
 
 
-  <div class="status-bar">
+    <section class="page-header">
 
-    <span class="badge">
-      保留：
-      <strong id="pending-count">
-        0
-      </strong>
-    </span>
+      <h1>
+        アニメ候補審査
+      </h1>
 
-    <span class="badge">
-      承認済み：
-      <strong id="imported-count">
-        0
-      </strong>
-    </span>
+      <p>
+        Anime News Networkから取得した作品候補を確認し、
+        必要に応じて情報を修正してください。
+        承認した作品だけAnimeciaのアニメデータベースへ登録されます。
+      </p>
 
-    <span class="badge">
-      却下：
-      <strong id="rejected-count">
-        0
-      </strong>
-    </span>
-
-  </div>
+    </section>
 
 
-  <div
-    id="message"
-    class="message"
-  ></div>
+    <!-- =====================================================
+         Status
+    ====================================================== -->
+
+    <div class="status-bar">
+
+      <span class="badge">
+        保留：
+        <strong id="pending-count">
+          0
+        </strong>
+      </span>
 
 
-  <section
-    id="candidate-list"
-    class="candidate-list"
-  >
-    <div class="loading">
-      候補を読み込んでいます……
+      <span class="badge">
+        登録済み：
+        <strong id="imported-count">
+          0
+        </strong>
+      </span>
+
+
+      <span class="badge">
+        却下：
+        <strong id="rejected-count">
+          0
+        </strong>
+      </span>
+
     </div>
-  </section>
-
-</main>
 
 
-<script>
-  /* =========================================================
-     Supabase
-  ========================================================= */
+    <!-- =====================================================
+         Message
+    ====================================================== -->
 
-  const SUPABASE_URL =
-    "https://bhgdjuwlxvbaeraaivmh.supabase.co";
-
-  const SUPABASE_KEY =
-    "sb_publishable_-rZ4H4Vezs5IlZQnUQ-Kw_SLUd8R0c";
-
-  const supabaseClient =
-    supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+    <div
+      id="message"
+      class="message"
+      aria-live="polite"
+    ></div>
 
 
-  /* =========================================================
-     DOM
-  ========================================================= */
+    <!-- =====================================================
+         Candidate list
+    ====================================================== -->
 
-  const candidateList =
-    document.getElementById(
-      "candidate-list"
-    );
+    <section
+      id="candidate-list"
+      class="candidate-list"
+      aria-label="アニメ候補一覧"
+    >
 
-  const messageElement =
-    document.getElementById(
-      "message"
-    );
+      <div class="loading">
+        候補を読み込んでいます……
+      </div>
 
-  const pendingCount =
-    document.getElementById(
-      "pending-count"
-    );
-
-  const importedCount =
-    document.getElementById(
-      "imported-count"
-    );
-
-  const rejectedCount =
-    document.getElementById(
-      "rejected-count"
-    );
-
-  const logoutButton =
-    document.getElementById(
-      "logout-button"
-    );
+    </section>
 
 
-  /* =========================================================
-     Message
-  ========================================================= */
+  </main>
 
-  function showMessage(
-    text,
-    type = ""
-  ) {
-    messageElement.textContent =
-      text || "";
 
-    messageElement.className =
-      "message";
+  <script>
 
-    if (type) {
-      messageElement.classList.add(
-        type
+    /* =========================================================
+       Supabase
+    ========================================================= */
+
+    const SUPABASE_URL =
+      "https://bhgdjuwlxvbaeraaivmh.supabase.co";
+
+
+    /*
+     * Animecia frontend Publishable Key
+     *
+     * 注意：
+     * sb_secret_... はここに絶対に入れない。
+     */
+    const SUPABASE_KEY =
+      "sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
+
+
+    const supabaseClient =
+      supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
       );
-    }
-  }
 
 
-  /* =========================================================
-     Escape
-  ========================================================= */
+    /* =========================================================
+       DOM
+    ========================================================= */
 
-  function escapeHtml(value) {
-    return String(
-      value ?? ""
-    )
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
+    const candidateList =
+      document.getElementById(
+        "candidate-list"
+      );
 
 
-  /* =========================================================
-     Admin check
-  ========================================================= */
+    const messageElement =
+      document.getElementById(
+        "message"
+      );
 
-  async function requireAdmin() {
 
-    const {
-      data: {
-        session
+    const pendingCount =
+      document.getElementById(
+        "pending-count"
+      );
+
+
+    const importedCount =
+      document.getElementById(
+        "imported-count"
+      );
+
+
+    const rejectedCount =
+      document.getElementById(
+        "rejected-count"
+      );
+
+
+    const logoutButton =
+      document.getElementById(
+        "logout-button"
+      );
+
+
+    /* =========================================================
+       Message
+    ========================================================= */
+
+    function showMessage(
+      text,
+      type = ""
+    ) {
+
+      messageElement.textContent =
+        text || "";
+
+
+      messageElement.className =
+        "message";
+
+
+      if (type) {
+
+        messageElement.classList.add(
+          type
+        );
       }
-    } =
-      await supabaseClient.auth.getSession();
 
-    if (!session?.user) {
-
-      window.location.href =
-        "admin.html";
-
-      return null;
     }
 
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from("admin_users")
-        .select("user_id")
-        .eq(
-          "user_id",
-          session.user.id
+
+    /* =========================================================
+       Escape HTML
+    ========================================================= */
+
+    function escapeHtml(
+      value
+    ) {
+
+      return String(
+        value ?? ""
+      )
+        .replaceAll(
+          "&",
+          "&amp;"
         )
-        .maybeSingle();
+        .replaceAll(
+          "<",
+          "&lt;"
+        )
+        .replaceAll(
+          ">",
+          "&gt;"
+        )
+        .replaceAll(
+          '"',
+          "&quot;"
+        )
+        .replaceAll(
+          "'",
+          "&#039;"
+        );
 
-    if (error) {
-
-      console.error(
-        "Admin check error:",
-        error
-      );
-
-      showMessage(
-        "管理者権限を確認できませんでした。",
-        "error"
-      );
-
-      return null;
     }
 
-    if (!data) {
 
-      showMessage(
-        "管理者権限がありません。",
-        "error"
-      );
+    /* =========================================================
+       Admin check
+    ========================================================= */
 
-      setTimeout(() => {
+    async function requireAdmin() {
+
+      const {
+        data: {
+          session
+        },
+        error: sessionError
+      } =
+        await supabaseClient.auth.getSession();
+
+
+      if (sessionError) {
+
+        console.error(
+          "Session error:",
+          sessionError
+        );
+
+        showMessage(
+          "ログイン状態を確認できませんでした。",
+          "error"
+        );
+
+        return null;
+      }
+
+
+      if (!session?.user) {
+
         window.location.href =
-          "index.html";
-      }, 1200);
+          "admin.html";
 
-      return null;
+        return null;
+      }
+
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .from("admin_users")
+          .select(
+            "user_id"
+          )
+          .eq(
+            "user_id",
+            session.user.id
+          )
+          .maybeSingle();
+
+
+      if (error) {
+
+        console.error(
+          "Admin check error:",
+          error
+        );
+
+        showMessage(
+          "管理者権限を確認できませんでした。",
+          "error"
+        );
+
+        return null;
+      }
+
+
+      if (!data) {
+
+        showMessage(
+          "管理者権限がありません。",
+          "error"
+        );
+
+
+        setTimeout(
+          () => {
+            window.location.href =
+              "index.html";
+          },
+          1200
+        );
+
+
+        return null;
+      }
+
+
+      return session;
     }
 
-    return session;
-  }
 
+    /* =========================================================
+       Load candidates
+    ========================================================= */
 
-  /* =========================================================
-     Load candidates
-  ========================================================= */
+    async function loadCandidates() {
 
-  async function loadCandidates() {
-
-    candidateList.innerHTML =
-      `
+      candidateList.innerHTML = `
         <div class="loading">
           候補を読み込んでいます……
         </div>
       `;
 
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from(
-          "anime_import_candidates"
-        )
-        .select("*")
-        .order(
-          "created_at",
-          {
-            ascending: false
-          }
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .from(
+            "anime_import_candidates"
+          )
+          .select("*")
+          .order(
+            "created_at",
+            {
+              ascending: false
+            }
+          );
+
+
+      if (error) {
+
+        console.error(
+          "Candidate load error:",
+          error
         );
 
-    if (error) {
 
-      console.error(
-        "Candidate load error:",
-        error
+        candidateList.innerHTML = `
+          <div class="empty">
+            候補を読み込めませんでした。
+          </div>
+        `;
+
+
+        showMessage(
+          "候補の読み込みに失敗しました。",
+          "error"
+        );
+
+        return;
+      }
+
+
+      updateCounts(
+        data || []
       );
 
-      showMessage(
-        "候補の読み込みに失敗しました。",
-        "error"
+
+      renderCandidates(
+        data || []
       );
 
-      return;
     }
 
-    updateCounts(
-      data || []
-    );
 
-    renderCandidates(
-      data || []
-    );
-  }
+    /* =========================================================
+       Counts
+    ========================================================= */
+
+    function updateCounts(
+      candidates
+    ) {
+
+      const counts = {
+
+        pending:
+          0,
+
+        imported:
+          0,
+
+        rejected:
+          0
+
+      };
 
 
-  /* =========================================================
-     Counts
-  ========================================================= */
+      candidates.forEach(
+        candidate => {
 
-  function updateCounts(
-    candidates
-  ) {
+          if (
+            Object.prototype.hasOwnProperty.call(
+              counts,
+              candidate.import_status
+            )
+          ) {
 
-    const counts = {
-      pending: 0,
-      imported: 0,
-      rejected: 0
-    };
+            counts[
+              candidate.import_status
+            ]++;
 
-    candidates.forEach(
-      candidate => {
+          }
 
-        if (
-          Object.prototype.hasOwnProperty.call(
-            counts,
-            candidate.import_status
-          )
-        ) {
-          counts[
-            candidate.import_status
-          ]++;
         }
-      }
-    );
-
-    pendingCount.textContent =
-      counts.pending;
-
-    importedCount.textContent =
-      counts.imported;
-
-    rejectedCount.textContent =
-      counts.rejected;
-  }
+      );
 
 
-  /* =========================================================
-     Render
-  ========================================================= */
+      pendingCount.textContent =
+        counts.pending;
 
-  function renderCandidates(
-    candidates
-  ) {
 
-    if (!candidates.length) {
+      importedCount.textContent =
+        counts.imported;
 
-      candidateList.innerHTML =
-        `
+
+      rejectedCount.textContent =
+        counts.rejected;
+
+    }
+
+
+    /* =========================================================
+       Render candidates
+    ========================================================= */
+
+    function renderCandidates(
+      candidates
+    ) {
+
+      if (!candidates.length) {
+
+        candidateList.innerHTML = `
           <div class="empty">
             アニメ候補はありません。
           </div>
         `;
 
-      return;
+        return;
+      }
+
+
+      candidateList.innerHTML =
+        candidates
+          .map(
+            candidate =>
+              renderCandidate(
+                candidate
+              )
+          )
+          .join("");
+
     }
 
-    candidateList.innerHTML =
-      candidates
-        .map(
-          candidate =>
-            renderCandidate(
-              candidate
-            )
-        )
-        .join("");
 
-  }
+    /* =========================================================
+       Render candidate
+    ========================================================= */
+
+    function renderCandidate(
+      candidate
+    ) {
+
+      const status =
+        candidate.import_status;
 
 
-  /* =========================================================
-     Candidate card
-  ========================================================= */
+      const isPending =
+        status === "pending";
 
-  function renderCandidate(
-    candidate
-  ) {
 
-    const status =
-      candidate.import_status;
+      let statusLabel =
+        "審査待ち";
 
-    const isPending =
-      status === "pending";
 
-    const statusLabel =
-      status === "pending"
-        ? "審査待ち"
-        : status === "imported"
-          ? "登録済み"
-          : "却下";
+      if (
+        status === "imported"
+      ) {
 
-    const startDate =
-      candidate.start_date || "";
+        statusLabel =
+          "登録済み";
 
-    const endDate =
-      candidate.end_date || "";
+      } else if (
+        status === "rejected"
+      ) {
 
-    const episodes =
-      candidate.episodes ?? "";
+        statusLabel =
+          "却下";
+      }
 
-    const duration =
-      candidate.duration ?? "";
 
-    const genre =
-      candidate.genre || "";
+      const title =
+        candidate.title || "";
 
-    const officialUrl =
-      candidate.official_url || "";
 
-    const sourceUrl =
-      candidate.source_url || "";
+      const titleJapanese =
+        candidate.title_japanese || "";
 
-    const title =
-      candidate.title || "";
 
-    const titleJapanese =
-      candidate.title_japanese || "";
+      const titleNative =
+        candidate.title_native || "";
 
-    const titleNative =
-      candidate.title_native || "";
 
-    const titleEnglish =
-      candidate.title_english || "";
+      const titleEnglish =
+        candidate.title_english || "";
 
-    const format =
-      candidate.format || "";
 
-    const statusOptions = [
-      ["TV", "TV"],
-      ["MOVIE", "映画"],
-      ["OVA", "OVA"],
-      ["ONA", "ONA"],
-      ["SPECIAL", "SPECIAL"]
-    ];
+      const format =
+        candidate.format || "";
 
-    const formatOptions =
-      statusOptions
+
+      const startDate =
+        candidate.start_date || "";
+
+
+      const endDate =
+        candidate.end_date || "";
+
+
+      const episodes =
+        candidate.episodes ?? "";
+
+
+      const duration =
+        candidate.duration ?? "";
+
+
+      const genre =
+        candidate.genre || "";
+
+
+      const officialUrl =
+        candidate.official_url || "";
+
+
+      const sourceUrl =
+        candidate.source_url || "";
+
+
+      const rejectionReason =
+        candidate.rejection_reason || "";
+
+
+      const formatOptions = [
+
+        [
+          "TV",
+          "TV"
+        ],
+
+        [
+          "MOVIE",
+          "映画"
+        ],
+
+        [
+          "OVA",
+          "OVA"
+        ],
+
+        [
+          "ONA",
+          "ONA"
+        ],
+
+        [
+          "SPECIAL",
+          "SPECIAL"
+        ]
+
+      ]
         .map(
           ([value, label]) =>
             `
               <option
-                value="${value}"
+                value="${escapeHtml(value)}"
                 ${
                   format === value
                     ? "selected"
                     : ""
                 }
               >
-                ${label}
+                ${escapeHtml(label)}
               </option>
             `
         )
         .join("");
 
-    const rejectionReason =
-      candidate.rejection_reason || "";
 
-    return `
-      <article
-        class="candidate-card ${escapeHtml(status)}"
-        data-id="${candidate.id}"
-      >
+      return `
 
-        <div class="candidate-top">
-
-          <div>
-            <h2 class="candidate-title">
-              ${escapeHtml(title)}
-            </h2>
-
-            <div class="candidate-meta">
-              ANN ID:
-              ${escapeHtml(candidate.source_id)}
-            </div>
-          </div>
-
-          <span
-            class="status-pill ${escapeHtml(status)}"
-          >
-            ${statusLabel}
-          </span>
-
-        </div>
+        <article
+          class="candidate-card ${escapeHtml(status)}"
+          data-id="${escapeHtml(candidate.id)}"
+        >
 
 
-        <div class="fields">
+          <div class="candidate-top">
 
-          <div class="field full">
-            <label>
-              タイトル
-            </label>
+            <div>
 
-            <input
-              type="text"
-              data-field="title"
-              value="${escapeHtml(title)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
+              <h2 class="candidate-title">
+                ${escapeHtml(title)}
+              </h2>
 
-
-          <div class="field">
-            <label>
-              日本語タイトル
-            </label>
-
-            <input
-              type="text"
-              data-field="title_japanese"
-              value="${escapeHtml(titleJapanese)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-
-          <div class="field">
-            <label>
-              Native title
-            </label>
-
-            <input
-              type="text"
-              data-field="title_native"
-              value="${escapeHtml(titleNative)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-
-          <div class="field">
-            <label>
-              英語タイトル
-            </label>
-
-            <input
-              type="text"
-              data-field="title_english"
-              value="${escapeHtml(titleEnglish)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-
-          <div class="field">
-            <label>
-              形式
-            </label>
-
-            <select
-              data-field="format"
-              ${isPending ? "" : "disabled"}
-            >
-              ${formatOptions}
-            </select>
-          </div>
-
-
-          <div class="field">
-            <label>
-              開始日
-            </label>
-
-            <input
-              type="date"
-              data-field="start_date"
-              value="${escapeHtml(startDate)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-
-          <div class="field">
-            <label>
-              終了日
-            </label>
-
-            <input
-              type="date"
-              data-field="end_date"
-              value="${escapeHtml(endDate)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-
-          <div class="field">
-            <label>
-              話数
-            </label>
-
-            <input
-              type="number"
-              min="0"
-              data-field="episodes"
-              value="${escapeHtml(episodes)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-
-          <div class="field">
-            <label>
-              1話の時間（分）
-            </label>
-
-            <input
-              type="number"
-              min="0"
-              data-field="duration"
-              value="${escapeHtml(duration)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-
-          <div class="field full">
-            <label>
-              ジャンル
-            </label>
-
-            <input
-              type="text"
-              data-field="genre"
-              value="${escapeHtml(genre)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-
-          <div class="field full">
-            <label>
-              公式サイトURL
-            </label>
-
-            <input
-              type="url"
-              data-field="official_url"
-              value="${escapeHtml(officialUrl)}"
-              ${isPending ? "" : "disabled"}
-            >
-          </div>
-
-        </div>
-
-
-        <div class="source-area">
-
-          <strong>
-            情報源：
-          </strong>
-
-          <a
-            href="${escapeHtml(sourceUrl)}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Anime News Network Encyclopedia
-          </a>
-
-        </div>
-
-
-        ${
-          rejectionReason
-            ? `
-              <div class="source-area">
-                <strong>
-                  却下理由：
-                </strong>
+              <div class="candidate-meta">
+                ANN ID:
                 ${escapeHtml(
-                  rejectionReason
+                  candidate.source_id
                 )}
               </div>
-            `
-            : ""
+
+            </div>
+
+
+            <span
+              class="status-pill ${escapeHtml(status)}"
+            >
+              ${escapeHtml(statusLabel)}
+            </span>
+
+          </div>
+
+
+          <div class="fields">
+
+
+            <div class="field full">
+
+              <label>
+                タイトル
+              </label>
+
+              <input
+                type="text"
+                data-field="title"
+                maxlength="500"
+                value="${escapeHtml(title)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                日本語タイトル
+              </label>
+
+              <input
+                type="text"
+                data-field="title_japanese"
+                maxlength="500"
+                value="${escapeHtml(titleJapanese)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                Native title
+              </label>
+
+              <input
+                type="text"
+                data-field="title_native"
+                maxlength="500"
+                value="${escapeHtml(titleNative)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                英語タイトル
+              </label>
+
+              <input
+                type="text"
+                data-field="title_english"
+                maxlength="500"
+                value="${escapeHtml(titleEnglish)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                形式
+              </label>
+
+              <select
+                data-field="format"
+                ${isPending ? "" : "disabled"}
+              >
+                ${formatOptions}
+              </select>
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                開始日
+              </label>
+
+              <input
+                type="date"
+                data-field="start_date"
+                value="${escapeHtml(startDate)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                終了日
+              </label>
+
+              <input
+                type="date"
+                data-field="end_date"
+                value="${escapeHtml(endDate)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                話数
+              </label>
+
+              <input
+                type="number"
+                min="0"
+                max="10000"
+                step="1"
+                data-field="episodes"
+                value="${escapeHtml(episodes)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                1話の時間（分）
+              </label>
+
+              <input
+                type="number"
+                min="0"
+                max="300"
+                step="1"
+                data-field="duration"
+                value="${escapeHtml(duration)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field full">
+
+              <label>
+                ジャンル
+              </label>
+
+              <input
+                type="text"
+                data-field="genre"
+                maxlength="1000"
+                value="${escapeHtml(genre)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+            <div class="field full">
+
+              <label>
+                公式サイトURL
+              </label>
+
+              <input
+                type="url"
+                data-field="official_url"
+                maxlength="2000"
+                value="${escapeHtml(officialUrl)}"
+                ${isPending ? "" : "disabled"}
+              >
+
+            </div>
+
+
+          </div>
+
+
+          <div class="source-area">
+
+            <strong>
+              情報源：
+            </strong>
+
+            ${
+              sourceUrl
+                ? `
+                  <a
+                    href="${escapeHtml(sourceUrl)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Anime News Network Encyclopedia
+                  </a>
+                `
+                : `
+                  Anime News Network Encyclopedia
+                `
+            }
+
+          </div>
+
+
+          ${
+            rejectionReason
+              ? `
+                <div class="source-area">
+
+                  <strong>
+                    却下理由：
+                  </strong>
+
+                  ${escapeHtml(
+                    rejectionReason
+                  )}
+
+                </div>
+              `
+              : ""
+          }
+
+
+          <div class="actions">
+
+
+            ${
+              isPending
+                ? `
+
+                  <button
+                    type="button"
+                    class="btn-save"
+                    data-action="save"
+                  >
+                    修正を保存
+                  </button>
+
+
+                  <button
+                    type="button"
+                    class="btn-approve"
+                    data-action="approve"
+                  >
+                    承認して登録
+                  </button>
+
+
+                  <button
+                    type="button"
+                    class="btn-reject"
+                    data-action="reject"
+                  >
+                    却下
+                  </button>
+
+                `
+                : ""
+            }
+
+
+            ${
+              sourceUrl
+                ? `
+                  <a
+                    href="${escapeHtml(sourceUrl)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    ANNページを開く
+                  </a>
+                `
+                : ""
+            }
+
+
+          </div>
+
+
+        </article>
+      `;
+    }
+
+
+    /* =========================================================
+       Read card values
+    ========================================================= */
+
+    function getCardValues(
+      card
+    ) {
+
+      function getValue(
+        field
+      ) {
+
+        const element =
+          card.querySelector(
+            `[data-field="${field}"]`
+          );
+
+
+        if (!element) {
+          return null;
         }
 
 
-        <div class="actions">
-
-          ${
-            isPending
-              ? `
-                <button
-                  type="button"
-                  class="btn-save"
-                  data-action="save"
-                >
-                  修正を保存
-                </button>
-
-                <button
-                  type="button"
-                  class="btn-approve"
-                  data-action="approve"
-                >
-                  承認して登録
-                </button>
-
-                <button
-                  type="button"
-                  class="btn-reject"
-                  data-action="reject"
-                >
-                  却下
-                </button>
-              `
-              : ""
-          }
-
-          ${
-            sourceUrl
-              ? `
-                <a
-                  href="${escapeHtml(sourceUrl)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  ANNページを開く
-                </a>
-              `
-              : ""
-          }
-
-        </div>
-
-      </article>
-    `;
-  }
+        const value =
+          element.value.trim();
 
 
-  /* =========================================================
-     Read card values
-  ========================================================= */
-
-  function getCardValues(
-    card
-  ) {
-
-    function getValue(
-      field
-    ) {
-
-      const element =
-        card.querySelector(
-          `[data-field="${field}"]`
-        );
-
-      if (!element) {
-        return null;
+        return value || null;
       }
 
-      const value =
-        element.value.trim();
 
-      return value || null;
-    }
-
-    const episodesValue =
-      getValue("episodes");
-
-    const durationValue =
-      getValue("duration");
-
-    return {
-
-      title:
-        getValue("title"),
-
-      title_japanese:
-        getValue("title_japanese"),
-
-      title_native:
-        getValue("title_native"),
-
-      title_english:
-        getValue("title_english"),
-
-      format:
-        getValue("format"),
-
-      start_date:
-        getValue("start_date"),
-
-      end_date:
-        getValue("end_date"),
-
-      episodes:
-        episodesValue === null
-          ? null
-          : Number(episodesValue),
-
-      duration:
-        durationValue === null
-          ? null
-          : Number(durationValue),
-
-      genre:
-        getValue("genre"),
-
-      official_url:
-        getValue("official_url")
-    };
-  }
-
-
-  /* =========================================================
-     Save candidate edits
-  ========================================================= */
-
-  async function saveCandidate(
-    card,
-    candidateId
-  ) {
-
-    const values =
-      getCardValues(
-        card
-      );
-
-    if (!values.title) {
-
-      showMessage(
-        "タイトルを入力してください。",
-        "error"
-      );
-
-      return false;
-    }
-
-    if (
-      values.episodes !== null
-      && (
-        !Number.isInteger(
-          values.episodes
-        )
-        || values.episodes < 0
-      )
-    ) {
-
-      showMessage(
-        "話数が正しくありません。",
-        "error"
-      );
-
-      return false;
-    }
-
-    if (
-      values.duration !== null
-      && (
-        !Number.isInteger(
-          values.duration
-        )
-        || values.duration < 0
-      )
-    ) {
-
-      showMessage(
-        "時間が正しくありません。",
-        "error"
-      );
-
-      return false;
-    }
-
-    const {
-      error
-    } =
-      await supabaseClient
-        .from(
-          "anime_import_candidates"
-        )
-        .update({
-          title:
-            values.title,
-
-          title_japanese:
-            values.title_japanese,
-
-          title_native:
-            values.title_native,
-
-          title_english:
-            values.title_english,
-
-          format:
-            values.format,
-
-          start_date:
-            values.start_date,
-
-          end_date:
-            values.end_date,
-
-          episodes:
-            values.episodes,
-
-          duration:
-            values.duration,
-
-          genre:
-            values.genre,
-
-          official_url:
-            values.official_url,
-
-          updated_at:
-            new Date().toISOString()
-        })
-        .eq(
-          "id",
-          candidateId
-        )
-        .eq(
-          "import_status",
-          "pending"
+      const episodesValue =
+        getValue(
+          "episodes"
         );
 
-    if (error) {
 
-      console.error(
-        "Save candidate error:",
-        error
-      );
-
-      showMessage(
-        "候補の修正保存に失敗しました。",
-        "error"
-      );
-
-      return false;
-    }
-
-    showMessage(
-      "候補情報を保存しました。",
-      "success"
-    );
-
-    return true;
-  }
-
-
-  /* =========================================================
-     Approve
-  ========================================================= */
-
-  async function approveCandidate(
-    card,
-    candidateId
-  ) {
-
-    const saved =
-      await saveCandidate(
-        card,
-        candidateId
-      );
-
-    if (!saved) {
-      return;
-    }
-
-    const confirmed =
-      window.confirm(
-        "この作品をAnimeciaへ登録しますか？"
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .rpc(
-          "approve_anime_candidate",
-          {
-            p_candidate_id:
-              candidateId
-          }
+      const durationValue =
+        getValue(
+          "duration"
         );
 
-    if (error) {
 
-      console.error(
-        "Approve error:",
-        error
-      );
-
-      showMessage(
-        "承認・登録に失敗しました。",
-        "error"
-      );
-
-      return;
-    }
-
-    showMessage(
-      `Animeciaへの登録が完了しました。作品ID: ${data}`,
-      "success"
-    );
-
-    await loadCandidates();
-  }
+      let episodes =
+        null;
 
 
-  /* =========================================================
-     Reject
-  ========================================================= */
+      if (
+        episodesValue !== null
+      ) {
 
-  async function rejectCandidate(
-    candidateId
-  ) {
-
-    const reason =
-      window.prompt(
-        "却下理由を入力してください。"
-      );
-
-    if (
-      reason === null
-    ) {
-      return;
-    }
-
-    const {
-      error
-    } =
-      await supabaseClient
-        .rpc(
-          "reject_anime_candidate",
-          {
-            p_candidate_id:
-              candidateId,
-
-            p_reason:
-              reason
-          }
-        );
-
-    if (error) {
-
-      console.error(
-        "Reject error:",
-        error
-      );
-
-      showMessage(
-        "候補の却下に失敗しました。",
-        "error"
-      );
-
-      return;
-    }
-
-    showMessage(
-      "候補を却下しました。",
-      "success"
-    );
-
-    await loadCandidates();
-  }
-
-
-  /* =========================================================
-     Click events
-  ========================================================= */
-
-  candidateList.addEventListener(
-    "click",
-    async event => {
-
-      const button =
-        event.target.closest(
-          "button[data-action]"
-        );
-
-      if (!button) {
-        return;
+        episodes =
+          Number(
+            episodesValue
+          );
       }
 
-      const card =
-        button.closest(
-          ".candidate-card"
-        );
 
-      if (!card) {
-        return;
+      let duration =
+        null;
+
+
+      if (
+        durationValue !== null
+      ) {
+
+        duration =
+          Number(
+            durationValue
+          );
       }
 
-      const candidateId =
-        Number(
-          card.dataset.id
-        );
 
-      const action =
-        button.dataset.action;
+      return {
 
-      button.disabled = true;
+        title:
+          getValue(
+            "title"
+          ),
 
-      try {
+        title_japanese:
+          getValue(
+            "title_japanese"
+          ),
+
+        title_native:
+          getValue(
+            "title_native"
+          ),
+
+        title_english:
+          getValue(
+            "title_english"
+          ),
+
+        format:
+          getValue(
+            "format"
+          ),
+
+        start_date:
+          getValue(
+            "start_date"
+          ),
+
+        end_date:
+          getValue(
+            "end_date"
+          ),
+
+        episodes,
+
+        duration,
+
+        genre:
+          getValue(
+            "genre"
+          ),
+
+        official_url:
+          getValue(
+            "official_url"
+          )
+
+      };
+    }
+
+
+    /* =========================================================
+       Validate candidate
+    ========================================================= */
+
+    function validateCandidate(
+      values
+    ) {
+
+      if (
+        !values.title
+      ) {
+
+        return "タイトルを入力してください。";
+      }
+
+
+      if (
+        values.episodes !== null
+      ) {
 
         if (
-          action === "save"
+          !Number.isInteger(
+            values.episodes
+          )
+          ||
+          values.episodes < 0
+          ||
+          values.episodes > 10000
         ) {
 
-          await saveCandidate(
-            card,
-            candidateId
-          );
+          return "話数が正しくありません。";
+        }
+      }
 
-        } else if (
-          action === "approve"
+
+      if (
+        values.duration !== null
+      ) {
+
+        if (
+          !Number.isInteger(
+            values.duration
+          )
+          ||
+          values.duration < 0
+          ||
+          values.duration > 300
         ) {
 
-          await approveCandidate(
-            card,
+          return "1話の時間が正しくありません。";
+        }
+      }
+
+
+      if (
+        values.start_date
+        &&
+        values.end_date
+        &&
+        values.start_date >
+          values.end_date
+      ) {
+
+        return "終了日は開始日以降にしてください。";
+      }
+
+
+      if (
+        values.official_url
+      ) {
+
+        try {
+
+          const url =
+            new URL(
+              values.official_url
+            );
+
+
+          if (
+            ![
+              "http:",
+              "https:"
+            ].includes(
+              url.protocol
+            )
+          ) {
+
+            return "公式サイトURLが正しくありません。";
+          }
+
+        } catch {
+
+          return "公式サイトURLが正しくありません.";
+        }
+      }
+
+
+      return null;
+    }
+
+
+    /* =========================================================
+       Save candidate edits
+    ========================================================= */
+
+    async function saveCandidate(
+      card,
+      candidateId
+    ) {
+
+      const values =
+        getCardValues(
+          card
+        );
+
+
+      const validationError =
+        validateCandidate(
+          values
+        );
+
+
+      if (
+        validationError
+      ) {
+
+        showMessage(
+          validationError,
+          "error"
+        );
+
+        return false;
+      }
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from(
+            "anime_import_candidates"
+          )
+          .update({
+
+            title:
+              values.title,
+
+            title_japanese:
+              values.title_japanese,
+
+            title_native:
+              values.title_native,
+
+            title_english:
+              values.title_english,
+
+            format:
+              values.format,
+
+            start_date:
+              values.start_date,
+
+            end_date:
+              values.end_date,
+
+            episodes:
+              values.episodes,
+
+            duration:
+              values.duration,
+
+            genre:
+              values.genre,
+
+            official_url:
+              values.official_url,
+
+            updated_at:
+              new Date()
+                .toISOString()
+
+          })
+          .eq(
+            "id",
             candidateId
+          )
+          .eq(
+            "import_status",
+            "pending"
           );
 
-        } else if (
-          action === "reject"
-        ) {
 
-          await rejectCandidate(
-            candidateId
+      if (error) {
+
+        console.error(
+          "Save candidate error:",
+          error
+        );
+
+
+        showMessage(
+          "候補の修正保存に失敗しました。",
+          "error"
+        );
+
+
+        return false;
+      }
+
+
+      showMessage(
+        "候補情報を保存しました。",
+        "success"
+      );
+
+
+      return true;
+    }
+
+
+    /* =========================================================
+       Approve candidate
+    ========================================================= */
+
+    async function approveCandidate(
+      card,
+      candidateId
+    ) {
+
+      const values =
+        getCardValues(
+          card
+        );
+
+
+      const validationError =
+        validateCandidate(
+          values
+        );
+
+
+      if (
+        validationError
+      ) {
+
+        showMessage(
+          validationError,
+          "error"
+        );
+
+        return;
+      }
+
+
+      const saveConfirmed =
+        await saveCandidate(
+          card,
+          candidateId
+        );
+
+
+      if (!saveConfirmed) {
+        return;
+      }
+
+
+      const confirmed =
+        window.confirm(
+          "この作品をAnimeciaへ登録しますか？"
+        );
+
+
+      if (!confirmed) {
+        return;
+      }
+
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .rpc(
+            "approve_anime_candidate",
+            {
+              p_candidate_id:
+                candidateId
+            }
           );
+
+
+      if (error) {
+
+        console.error(
+          "Approve candidate error:",
+          error
+        );
+
+
+        showMessage(
+          "承認・登録に失敗しました。",
+          "error"
+        );
+
+
+        return;
+      }
+
+
+      showMessage(
+        `Animeciaへの登録が完了しました。作品ID: ${data}`,
+        "success"
+      );
+
+
+      await loadCandidates();
+    }
+
+
+    /* =========================================================
+       Reject candidate
+    ========================================================= */
+
+    async function rejectCandidate(
+      candidateId
+    ) {
+
+      const reason =
+        window.prompt(
+          "却下理由を入力してください。"
+        );
+
+
+      if (
+        reason === null
+      ) {
+        return;
+      }
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .rpc(
+            "reject_anime_candidate",
+            {
+              p_candidate_id:
+                candidateId,
+
+              p_reason:
+                reason.trim() ||
+                null
+            }
+          );
+
+
+      if (error) {
+
+        console.error(
+          "Reject candidate error:",
+          error
+        );
+
+
+        showMessage(
+          "候補の却下に失敗しました。",
+          "error"
+        );
+
+
+        return;
+      }
+
+
+      showMessage(
+        "候補を却下しました。",
+        "success"
+      );
+
+
+      await loadCandidates();
+    }
+
+
+    /* =========================================================
+       Candidate click handling
+    ========================================================= */
+
+    candidateList.addEventListener(
+      "click",
+      async event => {
+
+        const button =
+          event.target.closest(
+            "button[data-action]"
+          );
+
+
+        if (!button) {
+          return;
         }
 
-      } finally {
 
-        button.disabled = false;
+        const card =
+          button.closest(
+            ".candidate-card"
+          );
+
+
+        if (!card) {
+          return;
+        }
+
+
+        const candidateId =
+          Number(
+            card.dataset.id
+          );
+
+
+        if (
+          !Number.isInteger(
+            candidateId
+          )
+          ||
+          candidateId <= 0
+        ) {
+
+          showMessage(
+            "候補IDが不正です。",
+            "error"
+          );
+
+          return;
+        }
+
+
+        const action =
+          button.dataset.action;
+
+
+        button.disabled =
+          true;
+
+
+        try {
+
+          if (
+            action === "save"
+          ) {
+
+            await saveCandidate(
+              card,
+              candidateId
+            );
+
+
+          } else if (
+            action === "approve"
+          ) {
+
+            await approveCandidate(
+              card,
+              candidateId
+            );
+
+
+          } else if (
+            action === "reject"
+          ) {
+
+            await rejectCandidate(
+              candidateId
+            );
+
+          }
+
+        } catch (error) {
+
+          console.error(
+            "Candidate action error:",
+            error
+          );
+
+
+          showMessage(
+            "処理中にエラーが発生しました。",
+            "error"
+          );
+
+        } finally {
+
+          button.disabled =
+            false;
+        }
+
       }
-    }
-  );
+    );
 
 
-  /* =========================================================
-     Logout
-  ========================================================= */
+    /* =========================================================
+       Logout
+    ========================================================= */
 
-  logoutButton.addEventListener(
-    "click",
-    async () => {
+    logoutButton.addEventListener(
+      "click",
+      async () => {
 
-      await supabaseClient.auth.signOut();
-
-      window.location.href =
-        "admin.html";
-    }
-  );
+        const {
+          error
+        } =
+          await supabaseClient.auth.signOut();
 
 
-  /* =========================================================
-     Auth state
-  ========================================================= */
+        if (error) {
 
-  supabaseClient.auth.onAuthStateChange(
-    (
-      event,
-      session
-    ) => {
+          console.error(
+            "Logout error:",
+            error
+          );
 
-      if (!session) {
+          return;
+        }
+
 
         window.location.href =
           "admin.html";
+
       }
+    );
+
+
+    /* =========================================================
+       Auth state
+    ========================================================= */
+
+    supabaseClient.auth.onAuthStateChange(
+      (
+        event,
+        session
+      ) => {
+
+        if (
+          event ===
+          "SIGNED_OUT"
+        ) {
+
+          window.location.href =
+            "admin.html";
+        }
+
+      }
+    );
+
+
+    /* =========================================================
+       Initialize
+    ========================================================= */
+
+    async function init() {
+
+      const session =
+        await requireAdmin();
+
+
+      if (!session) {
+        return;
+      }
+
+
+      await loadCandidates();
     }
-  );
 
 
-  /* =========================================================
-     Init
-  ========================================================= */
+    init();
 
-  async function init() {
-
-    const session =
-      await requireAdmin();
-
-    if (!session) {
-      return;
-    }
-
-    await loadCandidates();
-  }
-
-
-  init();
-</script>
+  </script>
 
 </body>
 </html>
