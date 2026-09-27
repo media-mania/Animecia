@@ -75,6 +75,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 <section class="panel">
 <div class="tabs">
 <button class="tab active" data-tab="favorites" type="button">お気に入り</button>
+<button class="tab" data-tab="follows" type="button">フォロー中</button>
 <button class="tab" data-tab="watching" type="button">視聴中</button>
 <button class="tab" data-tab="completed" type="button">視聴完了</button>
 <button class="tab" data-tab="plan_to_watch" type="button">視聴予定</button>
@@ -256,6 +257,39 @@ async function loadTab(){
 
   if(currentTab==="notifications"){await loadNotifications();return;}
   if(currentTab==="activity"){await loadActivity();return;}
+
+  if(currentTab==="follows"){
+    const {data,error}=await supabaseClient
+      .from("user_anime_follows")
+      .select("anime_id,notify_new_episode,notify_new_info,created_at")
+      .eq("user_id",currentUser.id)
+      .order("created_at",{ascending:false});
+
+    if(error){
+      console.error("Follow load error:",error);
+      el.innerHTML='<div class="error">フォロー中の作品を読み込めませんでした。</div>';
+      return;
+    }
+
+    const rows=data||[];
+    const map=await getAnime(rows.map(x=>x.anime_id));
+    el.innerHTML=rows.map(x=>{
+      const a=map.get(Number(x.anime_id));
+      if(!a)return"";
+      const notices=[];
+      if(x.notify_new_episode)notices.push("新エピソード通知");
+      if(x.notify_new_info)notices.push("作品情報通知");
+      return '<a class="list-item" href="anime-detail.html?id='+a.id+'">'+
+        imageMarkup(a.cover_image,titleOf(a))+
+        '<div class="grow"><div class="title">'+esc(titleOf(a))+'</div>'+
+        '<div class="meta"><span class="pill">フォロー中</span>'+
+        (notices.length?'<span>'+esc(notices.join(" / "))+'</span>':'')+
+        '</div></div></a>';
+    }).join("")||'<div class="empty">まだフォローしている作品はありません。</div>';
+
+    repairImages(el);
+    return;
+  }
 
   if(currentTab==="favorites"){
     const {data,error}=await supabaseClient.from("favorites").select("anime_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});
