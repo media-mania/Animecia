@@ -5584,6 +5584,10 @@ footer{margin-top:80px!important;background:#111216!important}
                 openAuth("login");
                 $("auth-message").textContent =
                     "新しいパスワードを入力してください。";
+            } else if (window.location.hash === "#login") {
+                openAuth("login");
+            } else if (window.location.hash === "#signup") {
+                openAuth("signup");
             }
 
             const { data, error } = await supabaseClient.auth.getSession();
