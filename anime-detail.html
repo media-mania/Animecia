@@ -2162,6 +2162,25 @@
 
                 </section>
 
+                <section
+                    id="streaming-section"
+                    class="content-section"
+                    style="display:none;"
+                >
+                    <h2>配信・視聴リンク</h2>
+                    <div id="streaming-list" class="item-list"></div>
+                </section>
+
+                <section
+                    id="external-links-section"
+                    class="content-section"
+                    style="display:none;"
+                >
+                    <h2>外部サイト</h2>
+                    <div id="external-links-list" class="item-list"></div>
+                </section>
+
+
 
                 <a
                     href="anime.html"
@@ -3162,6 +3181,12 @@
                 loadCharacters(),
 
                 loadStaff(),
+
+                loadVoiceActors(),
+
+                loadStreamingLinks(),
+
+                loadExternalLinks(),
 
                 loadRelatedAnime(),
 
@@ -5312,6 +5337,105 @@
     /* =========================================
        Reviews
     ========================================= */
+
+
+    async function loadStreamingLinks() {
+        const section = document.getElementById("streaming-section");
+        const list = document.getElementById("streaming-list");
+        try {
+            const { data, error } = await supabaseClient
+                .from("anime_streaming_links")
+                .select("site,url,title,episode_number,thumbnail,language")
+                .eq("anime_id", Number(currentAnimeId))
+                .order("site", { ascending: true });
+            if (error) throw error;
+            if (!data?.length) { section.style.display = "none"; return; }
+            list.innerHTML = data.map(link => {
+                const url = safeURL(link.url);
+                if (!url) return "";
+                return `
+                    <a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer nofollow"
+                       style="display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #eee;border-radius:10px;text-decoration:none;color:#222;">
+                        ${link.thumbnail ? `<img src="${escapeHTML(safeURL(link.thumbnail))}" alt="" style="width:72px;height:42px;object-fit:cover;border-radius:6px;" loading="lazy">` : ""}
+                        <span><strong>${escapeHTML(link.site || "配信サイト")}</strong><br><small>${escapeHTML(link.title || "作品ページを開く")}</small></span>
+                    </a>`;
+            }).join("");
+            section.style.display = "block";
+        } catch (error) {
+            console.error("配信リンク取得エラー:", error);
+            section.style.display = "none";
+        }
+    }
+
+    async function loadExternalLinks() {
+        const section = document.getElementById("external-links-section");
+        const list = document.getElementById("external-links-list");
+        try {
+            const { data, error } = await supabaseClient
+                .from("anime_external_links")
+                .select("site,url,link_type,language")
+                .eq("anime_id", Number(currentAnimeId))
+                .order("site", { ascending: true });
+            if (error) throw error;
+            const links = Array.isArray(data) ? data : [];
+            const officialUrl = safeURL(currentAnime?.official_url);
+            if (officialUrl && !links.some(x => x.url === officialUrl)) {
+                links.unshift({ site: "公式サイト", url: officialUrl, link_type: "OFFICIAL" });
+            }
+            if (!links.length) { section.style.display = "none"; return; }
+            list.innerHTML = links.map(link => {
+                const url = safeURL(link.url);
+                if (!url) return "";
+                return `
+                    <a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer nofollow"
+                       style="display:inline-flex;align-items:center;padding:10px 14px;border:1px solid #ddd;border-radius:9px;text-decoration:none;color:#222;">
+                        ${escapeHTML(link.site || "外部サイト")}
+                    </a>`;
+            }).join("");
+            section.style.display = "block";
+        } catch (error) {
+            console.error("外部リンク取得エラー:", error);
+            section.style.display = "none";
+        }
+    }
+
+    async function loadVoiceActors() {
+        try {
+            const { data, error } = await supabaseClient
+                .from("character_voice_actors")
+                .select(`
+                    language,
+                    role,
+                    characters ( id, name_first, name_last, name_native, image ),
+                    staff ( id, name_first, name_last, name_native, image )
+                `)
+                .eq("anime_id", Number(currentAnimeId));
+            if (error) throw error;
+            const rows = Array.isArray(data) ? data : [];
+            if (!rows.length) return;
+            const container = document.getElementById("character-list");
+            const existing = container.innerHTML;
+            const voiceHtml = rows.map(row => {
+                const character = row.characters;
+                const actor = row.staff;
+                if (!character || !actor) return "";
+                const characterName = character.name_native || [character.name_first, character.name_last].filter(Boolean).join(" ");
+                const actorName = actor.name_native || [actor.name_first, actor.name_last].filter(Boolean).join(" ");
+                const actorImage = safeURL(actor.image);
+                return `
+                    <div class="item-card" style="display:flex;gap:12px;align-items:center;">
+                        ${actorImage ? `<img src="${escapeHTML(actorImage)}" alt="${escapeHTML(actorName)}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" loading="lazy">` : ""}
+                        <div><strong>${escapeHTML(characterName)}</strong><br><span style="color:#777;">CV. ${escapeHTML(actorName)}</span></div>
+                    </div>`;
+            }).join("");
+            if (voiceHtml) {
+                container.innerHTML = existing + voiceHtml;
+                document.getElementById("character-section").style.display = "block";
+            }
+        } catch (error) {
+            console.error("声優取得エラー:", error);
+        }
+    }
 
     async function loadReviews() {
 
