@@ -736,6 +736,111 @@ jobs:
             return { status: 'imported', animeId: anime.id, candidateId };
           }
 
+          async function syncExistingAnnAnime() {
+            const { data: animeRows, error } = await supabase
+              .from('anime')
+              .select('id,external_id,title,start_date')
+              .eq('source', 'Anime News Network Encyclopedia')
+              .gte('external_id', ANN_EXTERNAL_ID_BASE)
+              .lt('external_id', ANN_EXTERNAL_ID_BASE + 2000000000)
+              .order('id', { ascending: true });
+
+            if (error) throw error;
+            if (!animeRows?.length) {
+              console.log('既存ANN作品の更新対象はありません。');
+              return { scanned: 0, updated: 0, errors: 0 };
+            }
+
+            let updated = 0;
+            let errors = 0;
+
+            for (const row of animeRows.slice(0, 2000)) {
+              const annId = Number(row.external_id) - ANN_EXTERNAL_ID_BASE;
+              if (!Number.isInteger(annId) || annId <= 0) continue;
+
+              try {
+                const detailXml = await fetchText(`${ANN_DETAIL_URL}${annId}`);
+                const detailParsed = parser.parse(detailXml);
+                const reportRow = {
+                  source_id: annId,
+                  title: row.title,
+                  format: '',
+                  vintage: row.start_date || '',
+                };
+                const result = buildAnimePayload(reportRow, detailParsed);
+                if (!result.allowed) {
+                  console.log(`UPDATE-SKIP ANN ${annId}: ${result.reasons.join(', ')}`);
+                  continue;
+                }
+
+                const payload = result.payload;
+                const updateRow = {};
+                for (const key of [
+                  'title', 'english_title', 'title_english', 'title_native', 'title_japanese',
+                  'description', 'official_url', 'cover_image', 'banner_image', 'start_date',
+                  'end_date', 'episodes', 'duration', 'status', 'format', 'season', 'season_year',
+                  'source', 'site_url'
+                ]) {
+                  if (payload[key] !== undefined && payload[key] !== null && payload[key] !== '') {
+                    updateRow[key] = payload[key];
+                  }
+                }
+
+                // 外部評価値は取り込まない。既存のAnimecia側集計値もここでは変更しない。
+                delete updateRow.average_score;
+                delete updateRow.popularity;
+                delete updateRow.favourites_count;
+                delete updateRow.external_id;
+
+                const { error: updateError } = await supabase
+                  .from('anime')
+                  .update(updateRow)
+                  .eq('id', row.id);
+                if (updateError) throw updateError;
+
+                await linkGenres(row.id, payload._genres);
+                await linkStudios(row.id, payload._companies);
+                await linkStaff(row.id, payload._staff);
+                await linkCharacters(row.id, payload._characters);
+
+                updated++;
+              } catch (error) {
+                errors++;
+                console.error(`UPDATE ERROR ANN ${annId} ${row.title}:`, error?.stack || error);
+              }
+
+              await sleep(500);
+            }
+
+            // 関連作品は同じ実行内で後から登録された作品も存在するため、最後にもう一度同期する。
+            const { data: relationRows, error: relationError } = await supabase
+              .from('anime')
+              .select('id,external_id,title')
+              .eq('source', 'Anime News Network Encyclopedia')
+              .gte('external_id', ANN_EXTERNAL_ID_BASE)
+              .lt('external_id', ANN_EXTERNAL_ID_BASE + 2000000000)
+              .order('id', { ascending: true });
+            if (relationError) throw relationError;
+
+            for (const row of relationRows || []) {
+              const annId = Number(row.external_id) - ANN_EXTERNAL_ID_BASE;
+              if (!Number.isInteger(annId) || annId <= 0) continue;
+              try {
+                const detailXml = await fetchText(`${ANN_DETAIL_URL}${annId}`);
+                const detailParsed = parser.parse(detailXml);
+                const anime = findAnimeNode(detailParsed);
+                await linkRelations(row.id, collectRelations(anime));
+              } catch (error) {
+                errors++;
+                console.error(`RELATION ERROR ANN ${annId} ${row.title}:`, error?.stack || error);
+              }
+              await sleep(350);
+            }
+
+            console.log(`EXISTING SYNC SUMMARY scanned=${Math.min(animeRows.length, 2000)} updated=${updated} errors=${errors}`);
+            return { scanned: Math.min(animeRows.length, 2000), updated, errors };
+          }
+
           async function main() {
             let allRows = [];
             for (let page = 0; page < ANN_MAX_PAGES; page++) {
@@ -772,8 +877,9 @@ jobs:
               await sleep(700);
             }
 
-            console.log(`SUMMARY discovered=${rows.length} imported=${imported} rejected=${rejected} errors=${errors}`);
-            if (errors > 0) {
+            const sync = await syncExistingAnnAnime();
+            console.log(`SUMMARY discovered=${rows.length} imported=${imported} rejected=${rejected} errors=${errors} existing_scanned=${sync.scanned} existing_updated=${sync.updated} sync_errors=${sync.errors}`);
+            if (errors > 0 || sync.errors > 0) {
               // Keep the workflow visibly failed when a record could not be processed,
               // but do not require a human decision. The next scheduled execution retries it.
               process.exitCode = 1;
