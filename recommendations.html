@@ -4,61 +4,68 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>おすすめ | Animecia</title>
-<meta name="description" content="Animeciaのおすすめ。">
+<meta name="description" content="Animeciaのおすすめ。お気に入り、視聴状況、評価からあなた向けの作品を表示します。">
 <link rel="stylesheet" href="site-theme.css">
 <link rel="canonical" href="https://media-mania.github.io/Animecia/recommendations.html">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#687386;--line:#e3e7ef;--accent:#5b5ce2;--accent2:#4547c7;--danger:#c33}
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text)}
-a{color:inherit;text-decoration:none}.wrap{max-width:1180px;margin:auto;padding:0 20px}
-header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}.head{height:68px;display:flex;align-items:center;gap:24px}.logo{font-size:25px;font-weight:800;color:var(--accent);letter-spacing:.02em}
-nav{display:flex;gap:18px;flex:1}nav a{color:#4c5668;font-weight:600}nav a:hover{color:var(--accent)}
-.userbar{display:flex;gap:10px;align-items:center}.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:var(--accent);color:white}.btn.secondary{background:#eef0ff;color:var(--accent)}.btn.ghost{background:#f0f2f6;color:#455066}
-main{padding:34px 0 60px}.hero{margin-bottom:24px}.hero h1{margin:0 0 8px;font-size:32px}.hero p{margin:0;color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 5px 20px rgba(31,42,68,.05)}.cover{width:100%;aspect-ratio:3/4;object-fit:cover;background:#e9edf5}.pad{padding:14px}.title{font-weight:800;line-height:1.45}.sub{color:var(--muted);font-size:13px;margin-top:4px}.meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:8px}.pill{display:inline-block;background:#eef0ff;color:var(--accent);padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tab{background:#eef0f4;border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}.tab.active{background:var(--accent);color:#fff}
-.empty,.loading,.error{padding:30px;text-align:center;color:var(--muted)}.error{color:var(--danger)}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}.field label{font-size:13px;color:var(--muted);font-weight:700}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;background:#fff}.field textarea{min-height:110px;resize:vertical}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{padding:15px;background:#f7f8fb;border-radius:12px}.stat b{display:block;font-size:24px}.list{display:flex;flex-direction:column;gap:10px}.list-item{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}.thumb{width:58px;height:78px;object-fit:cover;border-radius:7px;background:#edf0f5}.grow{flex:1}.rank{width:30px;font-size:20px;font-weight:900;text-align:center}
-@media(max-width:800px){nav{display:none}.row,.stats{grid-template-columns:1fr 1fr}.head{gap:12px}.hero h1{font-size:26px}}
-@media(max-width:520px){.stats{grid-template-columns:1fr 1fr}.wrap{padding:0 13px}}
+main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}.hero{margin-bottom:24px}.hero h1{margin:0 0 7px;font-size:32px}.hero p{margin:0;color:#737373}.panel{padding:22px;border-radius:14px;margin-bottom:18px}.list{display:grid;gap:10px}.list-item{display:flex;gap:13px;align-items:center;padding:13px;border:1px solid #e7e7e9;border-radius:11px;background:#fff}.thumb{width:62px;height:82px;object-fit:cover;border-radius:7px;background:#e5e7eb;flex:none}.grow{flex:1;min-width:0}.title{font-weight:800;line-height:1.5}.sub{color:#737373;font-size:13px;margin-top:4px}.meta{display:flex;gap:8px;flex-wrap:wrap;color:#737373;font-size:12px;margin-top:8px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f0f0f2;color:#333;font-size:12px;font-weight:700}.rank{width:30px;font-size:20px;font-weight:900;text-align:center;flex:none}.empty,.loading,.error{padding:34px 12px;text-align:center;color:#737373}.error{color:#b42318}@media(max-width:800px){nav{display:none}.hero h1{font-size:27px}}@media(max-width:520px){main{padding:26px 13px 50px}.panel{padding:18px}}
 </style>
 </head>
 <body>
-<header><div class="wrap head">
+<header>
+<div class="wrap head">
 <a class="logo" href="index.html">Animecia</a>
-<nav>
-<a href="index.html">ホーム</a><a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a><a href="season.html">今期アニメ</a><a href="recommendations.html">おすすめ</a><a href="mypage.html">マイページ</a><a href="compare.html">作品比較</a>
-</nav>
-<div class="userbar"><span id="user-name"></span><button id="auth-btn" class="btn secondary">ログイン</button></div>
-</div></header>
-<main><div class="wrap">
-<section class="hero"><h1>あなたへのおすすめ</h1><p>お気に入り、視聴状況、評価した作品のジャンルを使って、Animecia内の候補を表示します。</p></section>
+<nav><a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a><a href="season.html">今期アニメ</a><a href="recommendations.html">おすすめ</a><a href="mypage.html">マイページ</a><a href="compare.html">作品比較</a></nav>
+<div class="userbar"><span id="user-name"></span><button id="auth-btn" class="btn secondary" type="button">ログイン</button></div>
+</div>
+</header>
+<main>
+<section class="hero"><h1>あなたへのおすすめ</h1><p>お気に入り・視聴状況・評価した作品のジャンルをもとに、Animeciaのおすすめ候補を表示します。</p></section>
 <div id="login-panel" class="panel" style="display:none"><div class="empty">ログインするとおすすめを利用できます。<br><br><a class="btn" href="index.html#login">ログインする</a></div></div>
-<section id="recommend-panel" class="panel" style="display:none"><div id="recommend-list" class="list"></div></section></div></main>
+<section id="recommend-panel" class="panel" style="display:none"><div id="recommend-list" class="list"></div></section>
+</main>
 <script>
 const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
-const imgOf=a=>a?.cover_image||"";
+function imgMarkup(url,alt){return '<img class="thumb" data-image src="'+esc(url||"")+'" alt="'+esc(alt||"")+'" loading="lazy">'}
+function repairImages(root){root.querySelectorAll("img[data-image]").forEach(img=>{const placeholder=()=>{if(!img.isConnected)return;const d=document.createElement("div");d.className="thumb";d.style.display="grid";d.style.placeItems="center";d.style.fontSize="11px";d.style.color="#888";d.textContent="画像なし";img.replaceWith(d)};if(!img.src||img.src==="about:blank")placeholder();else img.addEventListener("error",placeholder,{once:true});});}
 async function authState(){
- const {data:{user}}=await supabaseClient.auth.getUser();
- const n=document.getElementById("user-name"),b=document.getElementById("auth-btn");
- if(user){n.textContent=user.email||"";b.textContent="ログアウト";b.onclick=async()=>{await supabaseClient.auth.signOut();location.reload()};}
- else{n.textContent="";b.textContent="ログイン";b.onclick=()=>location.href="index.html#login";}
- return user;
+  const {data:{user}}=await supabaseClient.auth.getUser();
+  const n=document.getElementById("user-name"),b=document.getElementById("auth-btn");
+  if(user){n.textContent=user.email||"";b.textContent="ログアウト";b.onclick=async()=>{await supabaseClient.auth.signOut();location.reload()};}
+  else{n.textContent="";b.textContent="ログイン";b.onclick=()=>location.href="index.html#login";}
+  return user;
 }
-</script>
-
 async function loadRecommendations(){
- const el=document.getElementById("recommend-list");el.innerHTML='<div class="loading">おすすめを作成中…</div>';
- const {data,error}=await supabaseClient.rpc("get_user_recommendations",{p_limit:30});if(error)return el.innerHTML='<div class="error">おすすめを取得できませんでした。</div>';
- const rows=data||[],ids=rows.map(x=>x.anime_id);if(!ids.length)return el.innerHTML='<div class="empty">まだおすすめを作れる視聴データがありません。お気に入りや評価を登録すると表示されます。</div>';
- const {data:anime}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,format").in("id",ids);const m=new Map((anime||[]).map(a=>[a.id,a]));
- el.innerHTML=rows.map((r,i)=>{const a=m.get(r.anime_id);if(!a)return"";return '<a class="list-item" href="anime-detail.html?id='+a.id+'"><div class="rank">'+(i+1)+'</div><img class="thumb" src="'+esc(imgOf(a))+'"><div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="sub">'+esc(r.reason||"おすすめ作品")+'</div><div class="meta"><span class="pill">スコア '+esc(r.score??0)+'</span></div></div></a>'}).join("");
+  const el=document.getElementById("recommend-list");
+  el.innerHTML='<div class="loading">おすすめを作成中…</div>';
+  const {data,error}=await supabaseClient.rpc("get_user_recommendations",{p_limit:50});
+  if(error){console.error(error);el.innerHTML='<div class="error">おすすめを取得できませんでした。</div>';return;}
+  const rows=data||[];
+  if(!rows.length){el.innerHTML='<div class="empty">まだおすすめを作れるデータがありません。お気に入り・視聴状況・評価を登録すると表示されます。</div>';return;}
+  const ids=[...new Set(rows.map(x=>Number(x.anime_id)).filter(Number.isInteger))];
+  const map=new Map();
+  for(let i=0;i<ids.length;i+=500){
+    const {data:anime,error:animeError}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,format").in("id",ids.slice(i,i+500));
+    if(animeError){console.error(animeError);continue;}
+    (anime||[]).forEach(a=>map.set(Number(a.id),a));
+  }
+  el.innerHTML=rows.map((r,i)=>{
+    const a=map.get(Number(r.anime_id));if(!a)return"";
+    return '<a class="list-item" href="anime-detail.html?id='+a.id+'"><div class="rank">'+(i+1)+'</div>'+imgMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="sub">'+esc(r.reason||"あなたへのおすすめ")+'</div><div class="meta"><span class="pill">おすすめ度 '+esc(r.score??0)+'</span><span>'+esc(a.format||"")+'</span></div></div></a>';
+  }).join("")||'<div class="empty">おすすめ作品がありません。</div>';
+  repairImages(el);
 }
-(async()=>{const u=await authState();if(!u){document.getElementById("login-panel").style.display="block";return}document.getElementById("recommend-panel").style.display="block";loadRecommendations()})();
-
-</body></html>
+(async()=>{
+  const u=await authState();
+  if(!u){document.getElementById("login-panel").style.display="block";return;}
+  document.getElementById("recommend-panel").style.display="block";
+  await loadRecommendations();
+})();
+</script>
+</body>
+</html>
