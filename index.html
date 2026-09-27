@@ -5237,6 +5237,21 @@
                 ) {
 
                     /*
+                     * Confirm Email有効時、既存メールの再登録では
+                     * identitiesが空のユーザー情報になる場合があります。
+                     */
+                    if (
+                        Array.isArray(data.user.identities) &&
+                        data.user.identities.length === 0
+                    ) {
+                        message.textContent =
+                            "このメールアドレスはすでに登録されています。ログインしてください。";
+                        authMode = "login";
+                        $("auth-resend").hidden = true;
+                        return;
+                    }
+
+                    /*
                      * メール確認を必須とするため、
                      * 登録直後のセッションはログイン扱いにしない。
                      */
