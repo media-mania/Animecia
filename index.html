@@ -1802,7 +1802,7 @@
 
             <a
                 id="season-nav"
-                href="anime.html"
+                href="season.html"
             >
                 今期アニメ
             </a>
@@ -1951,6 +1951,23 @@
                 type="button"
             >
                 新規登録はこちら
+            </button>
+
+            <button
+                id="auth-reset"
+                class="auth-switch"
+                type="button"
+            >
+                パスワードを忘れた場合
+            </button>
+
+            <button
+                id="auth-resend"
+                class="auth-switch"
+                type="button"
+                hidden
+            >
+                確認メールを再送する
             </button>
 
 
@@ -2128,7 +2145,7 @@
 
         <a
             id="season-card"
-            href="anime.html"
+            href="season.html"
             class="quick-card"
         >
 
@@ -4714,8 +4731,8 @@
         $("auth-description")
             .textContent =
             signup
-                ? "アカウントを作成してお気に入りや視聴状況を保存できます。"
-                : "お気に入りや視聴状況を保存できます。";
+                ? "メールアドレスを確認してからログインします。"
+                : "確認済みのアカウントでログインしてください。";
 
 
         $("auth-submit")
@@ -4741,6 +4758,14 @@
             .textContent =
             "";
 
+        $("auth-reset")
+            .hidden =
+            signup;
+
+        $("auth-resend")
+            .hidden =
+            true;
+
     }
 
 
@@ -4758,6 +4783,39 @@
                 "true"
             );
 
+    }
+
+
+    function isVerifiedUser(user) {
+        return Boolean(
+            user &&
+            user.is_anonymous !== true &&
+            user.email &&
+            user.email_confirmed_at
+        );
+    }
+
+
+    async function requireVerifiedUser(user) {
+
+        if (!user) {
+            return null;
+        }
+
+        if (isVerifiedUser(user)) {
+            return user;
+        }
+
+        try {
+            await supabaseClient.auth.signOut();
+        } catch (error) {
+            console.warn(
+                "未確認ユーザーのサインアウトに失敗:",
+                error
+            );
+        }
+
+        return null;
     }
 
 
@@ -4974,7 +5032,11 @@
                                         displayName ||
                                         "Animecia User"
 
-                                }
+                                },
+
+                                emailRedirectTo:
+                                    window.location.origin +
+                                    window.location.pathname
 
                             }
 
@@ -4994,30 +5056,19 @@
                     data?.user
                 ) {
 
-                    if (
-                        data.session
-                    ) {
-
-                        message.textContent =
-                            "登録しました。";
-
-
-                        await updateAuthUI(
-                            data.user
-                        );
-
-
-                        setTimeout(
-                            closeAuth,
-                            500
-                        );
-
-                    } else {
-
-                        message.textContent =
-                            "確認メールを確認してください。";
-
+                    /*
+                     * メール確認を必須とするため、
+                     * 登録直後のセッションはログイン扱いにしない。
+                     */
+                    if (data.session) {
+                        await supabaseClient.auth.signOut();
                     }
+
+                    message.textContent =
+                        "登録を受け付けました。確認メールのリンクを開いてからログインしてください。";
+
+                    $("auth-resend").hidden = false;
+                    $("auth-resend").dataset.email = email;
 
                 }
 
@@ -5048,10 +5099,24 @@
                 }
 
 
-                await updateAuthUI(
-                    data.user
-                );
+                const verifiedUser =
+                    await requireVerifiedUser(
+                        data.user
+                    );
 
+                if (!verifiedUser) {
+
+                    message.textContent =
+                        "メールアドレスの確認が完了していません。確認メールのリンクを開いてから再度ログインしてください。";
+
+                    $("auth-resend").hidden = false;
+                    $("auth-resend").dataset.email = email;
+                    return;
+                }
+
+                await updateAuthUI(
+                    verifiedUser
+                );
 
                 closeAuth();
 
@@ -5075,6 +5140,118 @@
 
             submit.disabled =
                 false;
+
+        }
+
+    }
+
+
+    async function resetPassword() {
+
+        const email =
+            $("auth-email")
+                .value
+                .trim();
+
+        const message =
+            $("auth-message");
+
+        if (!email) {
+
+            message.textContent =
+                "先にメールアドレスを入力してください。";
+
+            return;
+        }
+
+        try {
+
+            const {
+                error
+            } = await supabaseClient
+                .auth
+                .resetPasswordForEmail(
+                    email,
+                    {
+                        redirectTo:
+                            window.location.origin +
+                            window.location.pathname
+                    }
+                );
+
+            if (error) throw error;
+
+            message.textContent =
+                "パスワード再設定用メールを送信しました。";
+
+        } catch (error) {
+
+            console.error(
+                "パスワード再設定メール送信エラー:",
+                error
+            );
+
+            message.textContent =
+                error?.message ||
+                "メールを送信できませんでした。";
+
+        }
+
+    }
+
+
+    async function resendConfirmation() {
+
+        const email =
+            $("auth-resend")
+                .dataset
+                .email ||
+            $("auth-email")
+                .value
+                .trim();
+
+        const message =
+            $("auth-message");
+
+        if (!email) {
+
+            message.textContent =
+                "メールアドレスを入力してください。";
+
+            return;
+        }
+
+        try {
+
+            const {
+                error
+            } = await supabaseClient
+                .auth
+                .resend({
+                    type: "signup",
+                    email,
+                    options: {
+                        emailRedirectTo:
+                            window.location.origin +
+                            window.location.pathname
+                    }
+                });
+
+            if (error) throw error;
+
+            message.textContent =
+                "確認メールを再送しました。迷惑メールフォルダも確認してください。";
+
+        } catch (error) {
+
+            console.error(
+                "確認メール再送エラー:",
+                error
+            );
+
+            message.textContent =
+                error?.message ||
+                "確認メールを再送できませんでした。";
 
         }
 
@@ -5147,9 +5324,14 @@
             }
 
 
+            const verifiedUser =
+                await requireVerifiedUser(
+                    data?.session?.user ||
+                    null
+                );
+
             await updateAuthUI(
-                data?.session?.user ||
-                null
+                verifiedUser
             );
 
 
@@ -5179,10 +5361,19 @@
                     setTimeout(
                         () => {
 
-                            updateAuthUI(
-                                session?.user ||
-                                null
-                            );
+                            (async () => {
+
+                                const verifiedUser =
+                                    await requireVerifiedUser(
+                                        session?.user ||
+                                        null
+                                    );
+
+                                await updateAuthUI(
+                                    verifiedUser
+                                );
+
+                            })();
 
                         },
                         0
@@ -5279,6 +5470,20 @@
             .addEventListener(
                 "click",
                 logout
+            );
+
+
+        $("auth-reset")
+            .addEventListener(
+                "click",
+                resetPassword
+            );
+
+
+        $("auth-resend")
+            .addEventListener(
+                "click",
+                resendConfirmation
             );
 
 
