@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: animecia-auto-pipeline
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   import-and-enrich:
@@ -128,8 +128,15 @@ jobs:
           function nodesByKey(root, key) {
             const found = [];
             walk(root, (node, path) => {
-              const parent = path[path.length - 1];
-              if (parent === key) found.push(node);
+              const last = path[path.length - 1];
+              const previous = path[path.length - 2];
+
+              if (
+                last === key ||
+                previous === key
+              ) {
+                found.push(node);
+              }
             });
             return found;
           }
