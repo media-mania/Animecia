@@ -67,7 +67,7 @@ async function load(){
  app.innerHTML='<section class="profile">'+avatar+'<div><div class="name">'+esc(name)+'</div>'+
    (profile.username?'<div class="username">@'+esc(profile.username)+'</div>':'')+
    '<div class="bio">'+esc(profile.bio||"自己紹介はまだありません。")+'</div>'+
-   '<div class="stats"><div class="stat"><b>'+esc(reviewCount||0)+'</b>レビュー</div><div class="stat"><b>'+esc(ratingCount||0)+'</b>評価</div><div class="stat"><b>'+esc(new Date(profile.created_at).getFullYear())+'</b>登録年</div></div></div></section>'+
+   '<div class="stats"><div class="stat"><b>'+esc(reviewCount||0)+'</b>レビュー</div><div class="stat"><b>非公開</b>評価</div><div class="stat"><b>'+esc(new Date(profile.created_at).getFullYear())+'</b>登録年</div></div></div></section>'+
    '<section class="panel"><h2>レビュー</h2>'+(reviewHtml||'<div class="empty">公開されているレビューはありません。</div>')+'</section>';
 }
 load();
