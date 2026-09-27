@@ -38,7 +38,6 @@ async function load(){
  const {data:profile,error:profileError}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio,created_at").eq("id",id).maybeSingle();
  if(profileError||!profile){app.innerHTML='<div class="error">プロフィールを取得できませんでした。</div>';return}
  const {count:reviewCount}=await supabaseClient.from("reviews").select("id",{count:"exact",head:true}).eq("user_id",id);
- const {count:ratingCount}=await supabaseClient.from("user_ratings").select("anime_id",{count:"exact",head:true}).eq("user_id",id);
  const {data:reviews}=await supabaseClient.from("reviews").select("id,anime_id,title,content,rating,spoiler,created_at,likes_count").eq("user_id",id).order("created_at",{ascending:false}).limit(50);
  const ids=[...new Set((reviews||[]).map(r=>r.anime_id))];
  const {data:anime}=ids.length?await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image").in("id",ids):{data:[]};
