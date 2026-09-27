@@ -601,6 +601,99 @@
     }
 
 
+
+    /* =====================================================
+       Admin overview
+    ===================================================== */
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .overview-card {
+      padding: 18px;
+      border: 1px solid #e5e7eb;
+      border-radius: 11px;
+      background: #f8fafc;
+    }
+
+    .overview-label {
+      display: block;
+      color: #64748b;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .overview-value {
+      display: block;
+      color: #111827;
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .overview-sub {
+      margin-top: 5px;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .pipeline-box {
+      margin-top: 18px;
+      padding: 15px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+
+    .pipeline-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 13px;
+    }
+
+    .pipeline-row:last-child {
+      border-bottom: 0;
+    }
+
+    .pipeline-label {
+      color: #64748b;
+    }
+
+    .pipeline-value {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .candidate-list {
+      margin-top: 18px;
+    }
+
+    .candidate-item {
+      padding: 13px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .candidate-item:last-child {
+      border-bottom: 0;
+    }
+
+    .candidate-title {
+      font-weight: 700;
+    }
+
+    .candidate-meta {
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 12px;
+    }
+
     /* =====================================================
        Responsive
     ===================================================== */
@@ -763,6 +856,86 @@
         このページではAnimeciaの作品情報・おすすめ作品・レビュー・広告を管理できます。
         保存・削除などの操作はSupabaseのRLSによって制御されます。
       </div>
+
+
+
+      <!-- ===================================================
+           Overview
+      =================================================== -->
+
+      <section class="box">
+
+        <h2>Animecia 管理・自動化状況</h2>
+
+        <p class="help">
+          作品数・ユーザー活動・自動取り込み候補・データ同期状況を自動取得します。
+          作品ごとの確認作業は必要ありません。
+        </p>
+
+        <div class="overview-grid">
+
+          <div class="overview-card">
+            <span class="overview-label">登録作品</span>
+            <span id="overview-anime" class="overview-value">—</span>
+            <span class="overview-sub">anime</span>
+          </div>
+
+          <div class="overview-card">
+            <span class="overview-label">ユーザー</span>
+            <span id="overview-users" class="overview-value">—</span>
+            <span class="overview-sub">profiles</span>
+          </div>
+
+          <div class="overview-card">
+            <span class="overview-label">レビュー</span>
+            <span id="overview-reviews" class="overview-value">—</span>
+            <span class="overview-sub">reviews</span>
+          </div>
+
+          <div class="overview-card">
+            <span class="overview-label">お気に入り</span>
+            <span id="overview-favorites" class="overview-value">—</span>
+            <span class="overview-sub">favorites</span>
+          </div>
+
+          <div class="overview-card">
+            <span class="overview-label">評価</span>
+            <span id="overview-ratings" class="overview-value">—</span>
+            <span class="overview-sub">user_ratings</span>
+          </div>
+
+          <div class="overview-card">
+            <span class="overview-label">取り込み候補</span>
+            <span id="overview-candidates" class="overview-value">—</span>
+            <span id="overview-candidates-sub" class="overview-sub">自動取り込み管理</span>
+          </div>
+
+        </div>
+
+        <div class="pipeline-box">
+
+          <div class="pipeline-row">
+            <span class="pipeline-label">自動取り込み候補</span>
+            <span id="pipeline-candidates" class="pipeline-value">読み込み中…</span>
+          </div>
+
+          <div class="pipeline-row">
+            <span class="pipeline-label">最終データ同期</span>
+            <span id="pipeline-last-sync" class="pipeline-value">読み込み中…</span>
+          </div>
+
+          <div class="pipeline-row">
+            <span class="pipeline-label">最終自動判定</span>
+            <span id="pipeline-last-check" class="pipeline-value">読み込み中…</span>
+          </div>
+
+        </div>
+
+        <div id="candidate-list" class="candidate-list"></div>
+
+        <div id="overview-message" class="message"></div>
+
+      </section>
 
 
       <!-- ===================================================
@@ -4400,6 +4573,297 @@
       );
 
 
+
+    /* =====================================================
+       Admin overview / automation status
+    ===================================================== */
+
+    function formatAdminDate(value) {
+
+      if (!value) {
+        return "未取得";
+      }
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return "未取得";
+      }
+
+      return date.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+    }
+
+
+    function setOverviewValue(id, value) {
+
+      const element =
+        document.getElementById(id);
+
+      if (element) {
+        element.textContent =
+          value == null
+            ? "—"
+            : Number(value).toLocaleString("ja-JP");
+      }
+
+    }
+
+
+    async function loadAdminOverview() {
+
+      const message =
+        document.getElementById(
+          "overview-message"
+        );
+
+      message.textContent =
+        "管理情報を読み込んでいます……";
+
+      message.className =
+        "message info";
+
+
+      try {
+
+        const countQueries = await Promise.all([
+
+          supabaseClient
+            .from("anime")
+            .select("id", { count: "exact", head: true }),
+
+          supabaseClient
+            .from("profiles")
+            .select("id", { count: "exact", head: true }),
+
+          supabaseClient
+            .from("reviews")
+            .select("id", { count: "exact", head: true }),
+
+          supabaseClient
+            .from("favorites")
+            .select("anime_id", { count: "exact", head: true }),
+
+          supabaseClient
+            .from("user_ratings")
+            .select("anime_id", { count: "exact", head: true })
+
+        ]);
+
+
+        setOverviewValue("overview-anime", countQueries[0].count);
+        setOverviewValue("overview-users", countQueries[1].count);
+        setOverviewValue("overview-reviews", countQueries[2].count);
+        setOverviewValue("overview-favorites", countQueries[3].count);
+        setOverviewValue("overview-ratings", countQueries[4].count);
+
+
+        const candidateResult =
+          await supabaseClient
+            .from("anime_import_candidates")
+            .select("id,title,title_japanese,import_status,auto_decision,auto_confidence,auto_checked_at,created_at,updated_at")
+            .order("updated_at", { ascending: false })
+            .limit(8);
+
+
+        if (candidateResult.error) {
+
+          console.warn(
+            "Candidate overview load error:",
+            candidateResult.error
+          );
+
+          document.getElementById(
+            "overview-candidates"
+          ).textContent = "—";
+
+          document.getElementById(
+            "pipeline-candidates"
+          ).textContent = "取得できません";
+
+          document.getElementById(
+            "candidate-list"
+          ).innerHTML =
+            '<div class="empty">自動取り込み候補を取得できませんでした。</div>';
+
+        } else {
+
+          const candidates =
+            candidateResult.data || [];
+
+          setOverviewValue(
+            "overview-candidates",
+            candidates.length
+          );
+
+          const statusCounts =
+            candidates.reduce(
+              (result, item) => {
+
+                const key =
+                  item.import_status ||
+                  "unknown";
+
+                result[key] =
+                  (result[key] || 0) + 1;
+
+                return result;
+
+              },
+              {}
+            );
+
+          const statusText =
+            Object.entries(statusCounts)
+              .map(
+                ([key, value]) =>
+                  key + ": " + value
+              )
+              .join(" / ");
+
+          document.getElementById(
+            "pipeline-candidates"
+          ).textContent =
+            candidates.length
+              ? candidates.length + "件（" + statusText + "）"
+              : "候補なし";
+
+
+          const container =
+            document.getElementById(
+              "candidate-list"
+            );
+
+          container.innerHTML = "";
+
+          candidates.forEach(
+            candidate => {
+
+              const item =
+                document.createElement(
+                  "div"
+                );
+
+              item.className =
+                "candidate-item";
+
+              const title =
+                candidate.title_japanese ||
+                candidate.title ||
+                "タイトル未設定";
+
+              const decision =
+                candidate.auto_decision ||
+                "未判定";
+
+              const confidence =
+                candidate.auto_confidence == null
+                  ? ""
+                  : " / 信頼度 " + candidate.auto_confidence;
+
+              item.innerHTML =
+                '<div class="candidate-title">' +
+                escapeHTML(title) +
+                '</div>' +
+                '<div class="candidate-meta">' +
+                '状態: ' +
+                escapeHTML(candidate.import_status || "未設定") +
+                '｜自動判定: ' +
+                escapeHTML(decision) +
+                escapeHTML(confidence) +
+                '｜更新: ' +
+                escapeHTML(formatAdminDate(candidate.updated_at)) +
+                '</div>';
+
+              container.appendChild(item);
+
+            }
+          );
+
+          if (!candidates.length) {
+            container.innerHTML =
+              '<div class="empty">自動取り込み候補はありません。</div>';
+          }
+
+        }
+
+
+        const sourceResult =
+          await supabaseClient
+            .from("anime_sources")
+            .select("last_synced_at")
+            .order("last_synced_at", {
+              ascending: false,
+              nullsFirst: false
+            })
+            .limit(1)
+            .maybeSingle();
+
+
+        document.getElementById(
+          "pipeline-last-sync"
+        ).textContent =
+          sourceResult.error
+            ? "取得できません"
+            : formatAdminDate(
+                sourceResult.data &&
+                sourceResult.data.last_synced_at
+              );
+
+
+        const checkResult =
+          await supabaseClient
+            .from("anime_import_candidates")
+            .select("auto_checked_at")
+            .not("auto_checked_at", "is", null)
+            .order("auto_checked_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+
+        document.getElementById(
+          "pipeline-last-check"
+        ).textContent =
+          checkResult.error
+            ? "取得できません"
+            : formatAdminDate(
+                checkResult.data &&
+                checkResult.data.auto_checked_at
+              );
+
+
+        message.textContent =
+          "管理情報を更新しました。";
+
+        message.className =
+          "message success";
+
+
+      } catch (error) {
+
+        console.error(
+          "Admin overview error:",
+          error
+        );
+
+        message.textContent =
+          error.message ||
+          "管理情報の取得に失敗しました。";
+
+        message.className =
+          "message error";
+
+      }
+
+    }
+
+
     /* =====================================================
        Recommendation search
     ===================================================== */
@@ -6283,6 +6747,8 @@
 
           userEmail.textContent =
             session.user.email || "";
+
+          loadAdminOverview();
 
         }
       );
