@@ -5576,109 +5576,78 @@ footer{margin-top:80px!important;background:#111216!important}
 
 
     async function initAuth() {
-
         try {
+            /*
+             * Supabase v2では、パスワード再設定後の復帰は
+             * URLのhashだけに依存せず PASSWORD_RECOVERY イベントでも検出する。
+             */
+            const hashParams = new URLSearchParams(
+                window.location.hash.replace(/^#/, "")
+            );
 
-            const hashParams =
-                new URLSearchParams(
-                    window.location.hash.replace(
-                        /^#/,
-                        ""
-                    )
-                );
-
-            const authType =
-                hashParams.get(
-                    "type"
-                );
-
-            if (
-                authType === "recovery"
-            ) {
-
+            if (hashParams.get("type") === "recovery") {
                 authRecoveryMode = true;
                 authMode = "login";
-
+                updateAuthModeUI();
+                openAuth("login");
+                $("auth-message").textContent =
+                    "新しいパスワードを入力してください。";
             }
 
-            const {
-                data,
-                error
-            } =
-                await supabaseClient
-                    .auth
-                    .getSession();
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error) throw error;
 
+            const user = data?.session?.user || null;
+            const verifiedUser = await requireVerifiedUser(user);
 
-            if (
-                error
-            ) {
-
-                throw error;
-
+            if (verifiedUser) {
+                await ensureProfile(verifiedUser);
             }
 
-
-            const verifiedUser =
-                await requireVerifiedUser(
-                    data?.session?.user ||
-                    null
-                );
-
-            await updateAuthUI(
-                verifiedUser
-            );
-
+            await updateAuthUI(verifiedUser);
 
         } catch (error) {
-
-            console.error(
-                "認証初期化エラー:",
-                error
-            );
-
-
-            await updateAuthUI(
-                null
-            );
-
+            console.error("認証初期化エラー:", error);
+            await updateAuthUI(null);
         }
 
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            setTimeout(async () => {
+                try {
+                    if (event === "PASSWORD_RECOVERY") {
+                        authRecoveryMode = true;
+                        authMode = "login";
+                        updateAuthModeUI();
+                        openAuth("login");
+                        $("auth-message").textContent =
+                            "新しいパスワードを入力してください。";
+                        return;
+                    }
 
-        supabaseClient
-            .auth
-            .onAuthStateChange(
-                (
-                    _event,
-                    session
-                ) => {
+                    if (event === "SIGNED_IN" || event === "INITIAL_SESSION" ||
+                        event === "TOKEN_REFRESHED") {
+                        const verifiedUser = await requireVerifiedUser(
+                            session?.user || null
+                        );
 
-                    setTimeout(
-                        () => {
+                        if (verifiedUser) {
+                            await ensureProfile(verifiedUser);
+                        }
 
-                            (async () => {
+                        await updateAuthUI(verifiedUser);
+                        return;
+                    }
 
-                                const verifiedUser =
-                                    await requireVerifiedUser(
-                                        session?.user ||
-                                        null
-                                    );
-
-                                await updateAuthUI(
-                                    verifiedUser
-                                );
-
-                            })();
-
-                        },
-                        0
-                    );
-
+                    if (event === "SIGNED_OUT" || !session) {
+                        await updateAuthUI(null);
+                    }
+                } catch (error) {
+                    console.error("認証状態更新エラー:", error);
+                    await updateAuthUI(null);
                 }
-            );
-
+            }, 0);
+        });
     }
-
 
     /* =========================================
        Events
