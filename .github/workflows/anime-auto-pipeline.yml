@@ -570,15 +570,35 @@ jobs:
               const native = media.title?.native || null;
               const english = media.title?.english || null;
               const romaji = media.title?.romaji || null;
+              const userPreferred = media.title?.userPreferred || null;
               const looksJapanese = value => /[\u3040-\u30ff\u3400-\u9fff]/.test(String(value || ''));
 
               if (native && looksJapanese(native)) {
                 payload.title_native = native;
                 payload.title_japanese = native;
                 payload.title = native;
+              } else if (userPreferred && looksJapanese(userPreferred)) {
+                payload.title_user_preferred = userPreferred;
+                payload.title_japanese = userPreferred;
+                payload.title = userPreferred;
               }
+              if (userPreferred) payload.title_user_preferred = userPreferred;
               if (english) payload.title_english = english;
               if (romaji) payload.title_romaji = romaji;
+
+              const aliasRows = [];
+              for (const value of [native, userPreferred, english, romaji, payload.title, payload.english_title]) {
+                if (!value) continue;
+                const key = normalizeTitle(value);
+                if (!key || aliasRows.some(row => normalizeTitle(row.title) === key)) continue;
+                aliasRows.push({
+                  title: String(value).trim(),
+                  language: looksJapanese(value) ? 'Japanese' : null,
+                  title_type: value === native ? 'native' : value === userPreferred ? 'userPreferred' : value === english ? 'english' : value === romaji ? 'romaji' : 'title',
+                  source: 'AniList',
+                });
+              }
+              payload._aliases = aliasRows;
               if (!payload.banner_image && media.bannerImage) payload.banner_image = media.bannerImage;
 
               const officialCandidates = (media.externalLinks || [])
@@ -590,6 +610,16 @@ jobs:
                 });
               const official = officialCandidates.find(link => /OFFICIAL|ANIME_OFFICIAL/i.test(String(link.type || ''))) || officialCandidates.find(link => /official/i.test(String(link.site || '')));
               if (official?.url) payload.official_url = official.url;
+
+              payload._sources = [
+                ...(payload._sources || []),
+                {
+                  source: 'AniList',
+                  source_id: String(media.id),
+                  source_url: media.siteUrl || null,
+                  image_url: media.coverImage?.extraLarge || media.coverImage?.large || null,
+                },
+              ];
 
               payload._external_links = (media.externalLinks || [])
                 .filter(link => link?.url && /^https?:\/\//i.test(link.url))
@@ -612,6 +642,9 @@ jobs:
 
               if (!payload.cover_image && media.coverImage?.extraLarge) payload.cover_image = media.coverImage.extraLarge;
               else if (!payload.cover_image && media.coverImage?.large) payload.cover_image = media.coverImage.large;
+
+              payload._aliases = [...(payload._aliases || []), ...aliasRows]
+                .filter((row, index, arr) => arr.findIndex(x => normalizeTitle(x.title) === normalizeTitle(row.title)) === index);
 
               const characterRows = [];
               for (const edge of (media.characters?.edges || [])) {
@@ -676,6 +709,37 @@ jobs:
               }
             }
 
+            const baseAliasRows = [
+              {
+                title: payload.title,
+                language: /[\u3040-\u30ff\u3400-\u9fff]/.test(String(payload.title || '')) ? 'Japanese' : null,
+                title_type: 'title',
+                source: 'Anime News Network Encyclopedia',
+              },
+              {
+                title: payload.english_title,
+                language: null,
+                title_type: 'english',
+                source: 'Anime News Network Encyclopedia',
+              },
+            ].filter(row => row.title);
+            payload._aliases = [...baseAliasRows, ...(payload._aliases || [])]
+              .filter((row, index, arr) => arr.findIndex(x => normalizeTitle(x.title) === normalizeTitle(row.title)) === index);
+
+            if (!(payload._sources || []).some(row =>
+              row.source === 'Anime News Network Encyclopedia' &&
+              String(row.source_id) === String(payload._ann_id)
+            )) {
+              payload._sources = [
+                {
+                  source: 'Anime News Network Encyclopedia',
+                  source_id: String(payload._ann_id),
+                  source_url: payload._ann_source_url,
+                  image_url: payload.cover_image || null,
+                },
+                ...(payload._sources || []),
+              ];
+            }
             return payload;
           }
 
@@ -727,6 +791,13 @@ jobs:
                 external_id: ANN_EXTERNAL_ID_BASE + reportRow.source_id,
                 _ann_id: reportRow.source_id,
                 _ann_source_url: sourceUrl,
+                _aliases: [],
+                _sources: [{
+                  source: 'Anime News Network Encyclopedia',
+                  source_id: String(reportRow.source_id),
+                  source_url: sourceUrl,
+                  image_url: null,
+                }],
                 _genres: collectGenres(anime),
                 _companies: collectCompanies(anime).filter(isStudioCompany),
                 _staff: collectStaff(anime),
@@ -735,6 +806,8 @@ jobs:
                 _external_links: [],
                 _streaming_links: [],
                 _voice_actor_links: [],
+                _aliases: [],
+                _sources: [],
               },
             };
           }
@@ -791,7 +864,7 @@ jobs:
           async function upsertAnime(payload) {
             const row = {};
             for (const key of [
-              'title', 'english_title', 'title_english', 'title_native', 'title_japanese', 'title_romaji',
+              'title', 'english_title', 'title_english', 'title_native', 'title_japanese', 'title_romaji', 'title_user_preferred',
               'description', 'official_url', 'cover_image', 'banner_image', 'start_date',
               'end_date', 'episodes', 'duration', 'status', 'format', 'season', 'season_year',
               'source', 'average_score', 'popularity', 'favourites_count', 'site_url', 'external_id'
@@ -823,6 +896,37 @@ jobs:
               }
             }
             return data;
+          }
+
+          async function linkAliases(animeId, rows) {
+            if (!rows?.length) return;
+            for (const row of rows) {
+              if (!row?.title) continue;
+              const { error } = await supabase.from('anime_aliases').upsert({
+                anime_id: animeId,
+                title: row.title,
+                language: row.language || null,
+                title_type: row.title_type || null,
+                source: row.source || null,
+              }, { onConflict: 'anime_id,title' });
+              if (error) throw error;
+            }
+          }
+
+          async function linkAnimeSources(animeId, rows) {
+            if (!rows?.length) return;
+            for (const row of rows) {
+              if (!row?.source || !row?.source_id) continue;
+              const { error } = await supabase.from('anime_sources').upsert({
+                anime_id: animeId,
+                source: row.source,
+                source_id: String(row.source_id),
+                source_url: row.source_url || null,
+                image_url: row.image_url || null,
+                last_synced_at: new Date().toISOString(),
+              }, { onConflict: 'source,source_id' });
+              if (error) throw error;
+            }
           }
 
           async function linkGenres(animeId, names) {
@@ -1042,6 +1146,8 @@ jobs:
             await linkVoiceActors(anime.id, result.payload._voice_actor_links);
             await linkExternalLinks(anime.id, result.payload._external_links);
             await linkStreamingLinks(anime.id, result.payload._streaming_links);
+            await linkAliases(anime.id, result.payload._aliases);
+            await linkAnimeSources(anime.id, result.payload._sources);
             await linkRelations(anime.id, result.payload._relations);
             await updateCandidateImported(candidateId, anime.id);
 
@@ -1121,6 +1227,8 @@ jobs:
                 await linkVoiceActors(row.id, payload._voice_actor_links);
                 await linkExternalLinks(row.id, payload._external_links);
                 await linkStreamingLinks(row.id, payload._streaming_links);
+                 await linkAliases(row.id, payload._aliases);
+                 await linkAnimeSources(row.id, payload._sources);
 
                 updated++;
               } catch (error) {
