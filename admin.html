@@ -310,6 +310,7 @@
       }
     }
   </style>
+<link rel="stylesheet" href="site-theme.css">
 </head>
 
 <body>
@@ -513,6 +514,39 @@
           data.session.user
         ) {
 
+          const user =
+            data.session.user;
+
+          if (
+            user.is_anonymous === true ||
+            !user.email ||
+            !user.email_confirmed_at
+          ) {
+
+            await supabaseClient.auth.signOut();
+            return;
+
+          }
+
+          const {
+            data: adminRow,
+            error: adminError
+          } = await supabaseClient
+            .from("admin_users")
+            .select("user_id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (
+            adminError ||
+            !adminRow
+          ) {
+
+            await supabaseClient.auth.signOut();
+            return;
+
+          }
+
           setMessage(
             "ログイン済みです。管理画面へ移動します。",
             "success"
@@ -520,11 +554,9 @@
 
           setTimeout(
             function() {
-
               window.location.replace(
                 "admin-dashboard.html"
               );
-
             },
             300
           );
@@ -615,6 +647,51 @@
 
             setMessage(
               "ログインセッションを確認できませんでした。",
+              "error"
+            );
+
+            setLoading(false);
+
+            return;
+
+          }
+
+          if (
+            data.user.is_anonymous === true ||
+            !data.user.email_confirmed_at
+          ) {
+
+            await supabaseClient.auth.signOut();
+
+            setMessage(
+              "メールアドレスの確認が完了していないため、管理画面にはログインできません。",
+              "error"
+            );
+
+            setLoading(false);
+
+            return;
+
+          }
+
+          const {
+            data: adminRow,
+            error: adminError
+          } = await supabaseClient
+            .from("admin_users")
+            .select("user_id")
+            .eq("user_id", data.user.id)
+            .maybeSingle();
+
+          if (
+            adminError ||
+            !adminRow
+          ) {
+
+            await supabaseClient.auth.signOut();
+
+            setMessage(
+              "このアカウントには管理者権限がありません。",
               "error"
             );
 
