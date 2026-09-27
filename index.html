@@ -1904,7 +1904,7 @@
             >
 
 
-            <label for="auth-password">
+            <label id="auth-password-label" for="auth-password">
                 パスワード
             </label>
 
@@ -4762,9 +4762,15 @@
             .hidden =
             signup;
 
-        $("auth-resend")
-            .hidden =
-            true;
+        $("auth-resend").hidden = true;
+
+        authRecoveryMode = false;
+
+        $("auth-password-label").textContent =
+            "パスワード";
+
+        $("auth-password").autocomplete =
+            "current-password";
 
     }
 
@@ -4817,6 +4823,54 @@
 
         return null;
     }
+
+
+    async function ensureProfile(user, displayName = "") {
+
+        if (!user?.id) {
+            return;
+        }
+
+        try {
+
+            const {
+                data,
+                error
+            } = await supabaseClient
+                .from("profiles")
+                .select("id")
+                .eq("id", user.id)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            if (!data) {
+
+                await supabaseClient
+                    .from("profiles")
+                    .insert({
+                        id: user.id,
+                        display_name:
+                            displayName ||
+                            user.user_metadata?.display_name ||
+                            "Animecia User"
+                    });
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "プロフィール初期化エラー:",
+                error
+            );
+
+        }
+
+    }
+
+
+    let authRecoveryMode = false;
 
 
     async function updateAuthUI(
@@ -5008,6 +5062,40 @@
         try {
 
             if (
+                authRecoveryMode
+            ) {
+
+                const {
+                    error
+                } = await supabaseClient.auth.updateUser({
+                    password
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                message.textContent =
+                    "パスワードを変更しました。";
+
+                authRecoveryMode = false;
+                $("auth-password-label").textContent =
+                    "パスワード";
+                $("auth-password").autocomplete =
+                    "current-password";
+                $("auth-submit").textContent =
+                    "ログイン";
+
+                await updateAuthUI(
+                    (await supabaseClient.auth.getUser()).data.user
+                );
+
+                setTimeout(
+                    closeAuth,
+                    700
+                );
+
+            } else if (
                 authMode ===
                 "signup"
             ) {
@@ -5064,6 +5152,11 @@
                         await supabaseClient.auth.signOut();
                     }
 
+                    await ensureProfile(
+                        data.user,
+                        displayName
+                    );
+
                     message.textContent =
                         "登録を受け付けました。確認メールのリンクを開いてからログインしてください。";
 
@@ -5114,6 +5207,10 @@
                     return;
                 }
 
+                await ensureProfile(
+                    verifiedUser
+                );
+
                 await updateAuthUI(
                     verifiedUser
                 );
@@ -5131,9 +5228,21 @@
             );
 
 
-            message.textContent =
+            const errorMessage =
                 error?.message ||
                 "認証に失敗しました。";
+
+            message.textContent =
+                errorMessage;
+
+            if (
+                /not confirmed|email.*confirm|メール.*確認/i.test(
+                    String(errorMessage)
+                )
+            ) {
+                $("auth-resend").hidden = false;
+                $("auth-resend").dataset.email = email;
+            }
 
 
         } finally {
@@ -5182,7 +5291,7 @@
             if (error) throw error;
 
             message.textContent =
-                "パスワード再設定用メールを送信しました。";
+                "パスワード再設定用メールを送信しました。メールのリンクを開いてください。";
 
         } catch (error) {
 
@@ -5305,6 +5414,28 @@
     async function initAuth() {
 
         try {
+
+            const hashParams =
+                new URLSearchParams(
+                    window.location.hash.replace(
+                        /^#/,
+                        ""
+                    )
+                );
+
+            const authType =
+                hashParams.get(
+                    "type"
+                );
+
+            if (
+                authType === "recovery"
+            ) {
+
+                authRecoveryMode = true;
+                authMode = "login";
+
+            }
 
             const {
                 data,
