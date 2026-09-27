@@ -143,7 +143,10 @@ async function authState(){
     btn.textContent="ログイン";
     btn.onclick=()=>location.href="index.html#login";
   }
-  return user;
+  if(user && !isVerifiedUser(user)){
+    await supabaseClient.auth.signOut();
+  }
+  return isVerifiedUser(user) ? user : null;
 }
 
 async function loadStats(){
