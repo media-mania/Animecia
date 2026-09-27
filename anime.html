@@ -2563,6 +2563,32 @@
             }
 
 
+            try {
+                const ids = animeData.map(anime => anime.id).filter(Number.isInteger);
+                if (ids.length) {
+                    const aliasMap = new Map();
+                    for (let start = 0; start < ids.length; start += 500) {
+                        const batch = ids.slice(start, start + 500);
+                        const { data: aliasRows, error: aliasError } = await supabaseClient
+                            .from("anime_aliases")
+                            .select("anime_id,title")
+                            .in("anime_id", batch);
+                        if (aliasError) throw aliasError;
+                        (aliasRows || []).forEach(row => {
+                            const key = Number(row.anime_id);
+                            if (!aliasMap.has(key)) aliasMap.set(key, []);
+                            aliasMap.get(key).push(row.title);
+                        });
+                    }
+                    animeData = animeData.map(anime => ({
+                        ...anime,
+                        _aliases: aliasMap.get(Number(anime.id)) || []
+                    }));
+                }
+            } catch (aliasError) {
+                console.error("別名データ取得エラー:", aliasError);
+            }
+
             /*
              * ジャンル関連
              */
@@ -3094,6 +3120,10 @@
                                 anime.title_native,
 
                                 anime.title_japanese,
+
+                                anime.title_user_preferred,
+
+                                ...(anime._aliases || []),
 
                                 anime.description,
 
