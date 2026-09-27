@@ -3838,43 +3838,25 @@
                     default:
 
                         /*
-                         * recommendedを優先し、
-                         * 同じ場合は人気度
+                         * 初期表示は「評価」を使わず、
+                         * 公開日が新しい順→日本語タイトル順。
+                         * 評価はユーザー評価が蓄積された後だけ
+                         * 「評価順」で利用する。
                          */
+                        {
+                            const dateDiff =
+                                getDateValue(b.start_date) -
+                                getDateValue(a.start_date);
 
-                        if (
-                            Boolean(
-                                b.recommended
-                            ) !==
-                            Boolean(
-                                a.recommended
-                            )
-                        ) {
+                            if (dateDiff !== 0) {
+                                return dateDiff;
+                            }
 
-                            return Boolean(
-                                b.recommended
-                            )
-                                ? 1
-                                : -1;
-
+                            return getMainTitle(a).localeCompare(
+                                getMainTitle(b),
+                                "ja"
+                            );
                         }
-
-
-                        return (
-
-                            Number(
-                                b.popularity ||
-                                0
-                            )
-
-                            -
-
-                            Number(
-                                a.popularity ||
-                                0
-                            )
-
-                        );
 
                 }
 
