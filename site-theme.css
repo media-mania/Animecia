@@ -903,3 +903,145 @@ input:focus,select:focus,textarea:focus,
   .filters{grid-template-columns:1fr!important}
   .section-title{font-size:18px!important}
 }
+
+
+/* ---------- Auth / account UI ---------- */
+.auth-modal{
+  position:fixed!important;
+  inset:0!important;
+  z-index:1000!important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px!important;
+}
+.auth-modal-backdrop{
+  position:absolute!important;
+  inset:0!important;
+  background:rgba(7,10,14,.72)!important;
+  backdrop-filter:blur(8px)!important;
+}
+.auth-modal-card{
+  position:relative!important;
+  width:min(440px,100%)!important;
+  border:1px solid #e4e6ea!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.28)!important;
+  padding:28px!important;
+}
+.auth-close{
+  width:36px!important;
+  height:36px!important;
+  border-radius:50%!important;
+  background:#f1f2f4!important;
+  color:#333!important;
+  border:0!important;
+}
+.auth-submit{
+  width:100%!important;
+  min-height:46px!important;
+  background:var(--jp-red)!important;
+  color:#fff!important;
+  border:0!important;
+}
+.auth-switch{
+  color:var(--jp-red)!important;
+  font-weight:800!important;
+}
+
+/* ---------- Discovery chips ---------- */
+.chips{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:7px!important;
+}
+.chip{
+  padding:7px 11px!important;
+  background:#f3f4f6!important;
+  color:#4b515a!important;
+}
+.chip:hover{
+  background:var(--jp-red-soft)!important;
+  color:#a80024!important;
+}
+
+/* ---------- Season selector ---------- */
+.season-switch{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+  padding:5px!important;
+  background:#eef0f3!important;
+  border-radius:10px!important;
+}
+.season-button{
+  border:0!important;
+  border-radius:7px!important;
+  min-height:40px!important;
+  background:transparent!important;
+  color:#626975!important;
+  font-weight:850!important;
+}
+.season-button.active{
+  background:#fff!important;
+  color:var(--jp-red)!important;
+  box-shadow:0 2px 7px rgba(17,24,39,.08)!important;
+}
+
+/* ---------- Detail action area ---------- */
+.action-area{
+  display:flex!important;
+  flex-wrap:wrap;
+  gap:8px!important;
+}
+.action-button{
+  min-height:42px!important;
+  padding:0 15px!important;
+  background:rgba(255,255,255,.08)!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  color:#fff!important;
+}
+.action-button:hover{
+  background:rgba(255,255,255,.15)!important;
+}
+
+/* ---------- Ranking emphasis ---------- */
+.rank.rank-1:before,.rank.rank-2:before,.rank.rank-3:before{
+  content:"";
+  display:inline-block;
+  width:5px;height:5px;
+  margin-right:6px;
+  vertical-align:middle;
+  border-radius:50%;
+  background:var(--jp-red);
+}
+
+/* ---------- Information tables ---------- */
+.info-table{
+  width:100%!important;
+  border-collapse:collapse!important;
+}
+.info-table tr{
+  border-bottom:1px solid #eef0f2!important;
+}
+.info-table th{
+  width:130px;
+  padding:11px 14px!important;
+  background:#fafbfc!important;
+  color:#727983!important;
+  font-size:11px!important;
+  font-weight:850!important;
+  text-align:left!important;
+}
+.info-table td{
+  padding:11px 14px!important;
+  font-size:12px!important;
+}
+
+/* ---------- Small-screen detail ---------- */
+@media(max-width:760px){
+  .season-switch{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .auth-modal-card{padding:22px!important}
+  .info-table th{width:100px}
+}
