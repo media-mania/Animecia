@@ -1,0 +1,787 @@
+name: Animecia Auto Anime Pipeline
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: animecia-auto-pipeline
+  cancel-in-progress: false
+
+jobs:
+  import-and-enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      ANN_REPORT_URL: https://www.animenewsnetwork.com/encyclopedia/reports.xml?id=155&type=anime
+      ANN_DETAIL_URL: https://cdn.animenewsnetwork.com/encyclopedia/api.xml?anime=
+      ANN_PAGE_URL: https://www.animenewsnetwork.com/encyclopedia/anime.php?id=
+      # 2,000,000,000 + ANN ID is the dedicated ANN namespace used by Animecia.
+      ANN_EXTERNAL_ID_BASE: '2000000000'
+      # Process enough report rows to keep the catalog fresh without pulling the entire ANN DB each run.
+      ANN_PAGE_SIZE: '100'
+      ANN_MAX_PAGES: '10'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Install runtime dependencies
+        run: npm install --no-save --no-package-lock @supabase/supabase-js@2.117.2 fast-xml-parser@5.11.1
+
+      - name: Run automatic import, validation and enrichment
+        shell: bash
+        run: |
+          node <<'NODE'
+          const { createClient } = require('@supabase/supabase-js');
+          const { XMLParser } = require('fast-xml-parser');
+
+          const SUPABASE_URL = process.env.SUPABASE_URL;
+          const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
+          const ANN_REPORT_URL = process.env.ANN_REPORT_URL;
+          const ANN_DETAIL_URL = process.env.ANN_DETAIL_URL;
+          const ANN_PAGE_URL = process.env.ANN_PAGE_URL;
+          const ANN_EXTERNAL_ID_BASE = Number(process.env.ANN_EXTERNAL_ID_BASE || '2000000000');
+          const ANN_PAGE_SIZE = Number(process.env.ANN_PAGE_SIZE || '100');
+          const ANN_MAX_PAGES = Number(process.env.ANN_MAX_PAGES || '10');
+
+          if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
+            throw new Error('SUPABASE_URL / SUPABASE_SECRET_KEY が設定されていません。');
+          }
+
+          const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
+            auth: { persistSession: false, autoRefreshToken: false },
+          });
+
+          const parser = new XMLParser({
+            ignoreAttributes: false,
+            attributeNamePrefix: '@_',
+            textNodeName: '#text',
+            trimValues: true,
+            parseTagValue: true,
+            removeNSPrefix: true,
+            isArray: (tagName) => [
+              'item', 'name', 'genre', 'company', 'person', 'character',
+              'staff', 'cast', 'credit', 'relatedanime', 'related', 'info',
+              'episode', 'type', 'url', 'link', 'keyword', 'title'
+            ].includes(tagName),
+          });
+
+          const ALLOWED_FORMATS = new Set([
+            'TV', 'MOVIE', 'OVA', 'OAV', 'ONA', 'SPECIAL', 'OMNIBUS', 'MUSIC'
+          ]);
+
+          const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+          function arr(value) {
+            if (value == null) return [];
+            return Array.isArray(value) ? value : [value];
+          }
+
+          function text(value) {
+            if (value == null) return '';
+            if (typeof value === 'string' || typeof value === 'number') return String(value).trim();
+            if (typeof value === 'object') return String(value['#text'] ?? value.text ?? '').trim();
+            return '';
+          }
+
+          function attr(node, key) {
+            return node && typeof node === 'object' ? (node[`@_${key}`] ?? node[`@_${key.toLowerCase()}`]) : undefined;
+          }
+
+          function walk(node, fn, path = []) {
+            if (node == null) return;
+            if (Array.isArray(node)) {
+              for (let i = 0; i < node.length; i++) walk(node[i], fn, [...path, String(i)]);
+              return;
+            }
+            if (typeof node !== 'object') return;
+            fn(node, path);
+            for (const [key, value] of Object.entries(node)) {
+              if (key.startsWith('@_') || key === '#text') continue;
+              walk(value, fn, [...path, key]);
+            }
+          }
+
+          function nodesByKey(root, key) {
+            const found = [];
+            walk(root, (node, path) => {
+              const parent = path[path.length - 1];
+              if (parent === key) found.push(node);
+            });
+            return found;
+          }
+
+          function directValue(root, key) {
+            if (!root || typeof root !== 'object') return '';
+            const value = root[key];
+            if (Array.isArray(value)) return text(value[0]);
+            return text(value);
+          }
+
+          function normalizeTitle(s) {
+            return String(s || '').toLocaleLowerCase('ja-JP').replace(/\s+/g, ' ').trim();
+          }
+
+          function normalizeFormat(raw) {
+            const s = String(raw || '').trim().toUpperCase();
+            if (s === 'MOVIE') return 'MOVIE';
+            if (s === 'OAV') return 'OAV';
+            return s;
+          }
+
+          function parseDate(raw) {
+            if (!raw) return null;
+            const s = String(raw).trim();
+            const m = s.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+            if (!m) return null;
+            const date = `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+            const d = new Date(`${date}T00:00:00Z`);
+            return Number.isNaN(d.getTime()) ? null : date;
+          }
+
+          function parseYear(raw) {
+            const m = String(raw || '').match(/(\d{4})/);
+            return m ? Number(m[1]) : null;
+          }
+
+          function seasonFromDate(date) {
+            if (!date) return null;
+            const month = Number(date.slice(5, 7));
+            if (month >= 1 && month <= 3) return 'WINTER';
+            if (month >= 4 && month <= 6) return 'SPRING';
+            if (month >= 7 && month <= 9) return 'SUMMER';
+            return 'FALL';
+          }
+
+          function toInt(value) {
+            const n = Number.parseInt(String(value || ''), 10);
+            return Number.isFinite(n) ? n : null;
+          }
+
+          async function fetchText(url, attempts = 4) {
+            let lastError;
+            for (let i = 0; i < attempts; i++) {
+              try {
+                const response = await fetch(url, {
+                  headers: {
+                    'User-Agent': 'Animecia-Auto-Pipeline/1.0',
+                    'Accept': 'application/xml,text/xml;q=0.9,*/*;q=0.8',
+                  },
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+                return await response.text();
+              } catch (error) {
+                lastError = error;
+                await sleep(1000 * (i + 1));
+              }
+            }
+            throw lastError;
+          }
+
+          function reportRows(xml) {
+            const parsed = parser.parse(xml);
+            const root = parsed?.report || parsed;
+            const items = arr(root?.item);
+            return items.map(item => ({
+              source_id: toInt(directValue(item, 'id')),
+              title: directValue(item, 'name'),
+              format: directValue(item, 'type'),
+              vintage: directValue(item, 'vintage'),
+            })).filter(x => x.source_id && x.title);
+          }
+
+          function findAnimeNode(parsed) {
+            if (parsed?.anime) return Array.isArray(parsed.anime) ? parsed.anime[0] : parsed.anime;
+            let candidate = null;
+            walk(parsed, (node, path) => {
+              if (!candidate && path[path.length - 1] === 'anime') candidate = node;
+            });
+            return candidate || parsed;
+          }
+
+          function collectGenres(anime) {
+            const names = new Set();
+            for (const node of nodesByKey(anime, 'genre')) {
+              const value = text(node);
+              if (value) names.add(value);
+            }
+            return [...names].slice(0, 30);
+          }
+
+          function collectCompanies(anime) {
+            const result = [];
+            for (const node of nodesByKey(anime, 'company')) {
+              const name = text(node);
+              if (!name) continue;
+              result.push({
+                external_id: toInt(attr(node, 'id')),
+                name,
+                site_url: attr(node, 'url') || null,
+                type: attr(node, 'type') || attr(node, 'company') || '',
+              });
+            }
+            return result;
+          }
+
+          function isStudioCompany(company) {
+            const type = String(company.type || '').toLowerCase();
+            return /studio|producer|production|animation/.test(type) || !type;
+          }
+
+          function personName(node) {
+            const direct = text(node);
+            if (direct) return direct;
+            const first = directValue(node, 'first');
+            const last = directValue(node, 'last');
+            const name = [first, last].filter(Boolean).join(' ').trim();
+            if (name) return name;
+            return directValue(node, 'name');
+          }
+
+          function splitPersonName(name) {
+            const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+            if (parts.length <= 1) return { first: parts[0] || '', last: '' };
+            return { first: parts.slice(0, -1).join(' '), last: parts[parts.length - 1] };
+          }
+
+          function collectStaff(anime) {
+            const result = [];
+            for (const node of nodesByKey(anime, 'staff')) {
+              const role = directValue(node, 'task') || attr(node, 'task') || attr(node, 'role') || '';
+              const personNodes = arr(node.person);
+              for (const person of personNodes) {
+                const name = personName(person);
+                if (!name) continue;
+                const split = splitPersonName(name);
+                result.push({
+                  external_id: toInt(attr(person, 'id')),
+                  name_first: split.first,
+                  name_last: split.last,
+                  name_native: null,
+                  image: attr(person, 'img') || attr(person, 'image') || null,
+                  description: null,
+                  role: role || 'Staff',
+                });
+              }
+            }
+            return dedupePeople(result);
+          }
+
+          function collectCharacters(anime) {
+            const result = [];
+            for (const node of nodesByKey(anime, 'cast')) {
+              const characterNodes = arr(node.character);
+              const personNodes = arr(node.person);
+              for (const character of characterNodes) {
+                const characterName = personName(character);
+                if (!characterName) continue;
+                const person = personNodes[0];
+                const personDisplay = person ? personName(person) : '';
+                result.push({
+                  character_external_id: toInt(attr(character, 'id')),
+                  name: characterName,
+                  name_native: null,
+                  image: attr(character, 'img') || attr(character, 'image') || null,
+                  description: null,
+                  role: 'Main',
+                  person_external_id: person ? toInt(attr(person, 'id')) : null,
+                  person_name: personDisplay || null,
+                });
+              }
+            }
+            return dedupeCharacters(result);
+          }
+
+          function dedupePeople(rows) {
+            const map = new Map();
+            for (const row of rows) {
+              const key = row.external_id ? `id:${row.external_id}` : `name:${normalizeTitle(`${row.name_first} ${row.name_last}`)}`;
+              if (!map.has(key)) map.set(key, row);
+            }
+            return [...map.values()].slice(0, 1000);
+          }
+
+          function dedupeCharacters(rows) {
+            const map = new Map();
+            for (const row of rows) {
+              const key = row.character_external_id ? `id:${row.character_external_id}` : `name:${normalizeTitle(row.name)}`;
+              if (!map.has(key)) map.set(key, row);
+            }
+            return [...map.values()].slice(0, 1000);
+          }
+
+          function collectRelations(anime) {
+            const rows = [];
+            for (const node of [...nodesByKey(anime, 'relatedanime'), ...nodesByKey(anime, 'related')]) {
+              const id = toInt(attr(node, 'id') ?? directValue(node, 'id'));
+              if (!id) continue;
+              const relationType = String(attr(node, 'rel') || attr(node, 'type') || directValue(node, 'relation') || 'RELATED').trim();
+              rows.push({ related_external_id: ANN_EXTERNAL_ID_BASE + id, relation_type: relationType || 'RELATED' });
+            }
+            const seen = new Set();
+            return rows.filter(row => {
+              const key = `${row.related_external_id}:${row.relation_type}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            }).slice(0, 100);
+          }
+
+          function extractDescription(anime) {
+            const candidates = [];
+            walk(anime, (node, path) => {
+              const key = path[path.length - 1];
+              if (!['info', 'description', 'plot', 'synopsis'].includes(key)) return;
+              const value = text(node);
+              if (value) candidates.push(value);
+            });
+            return candidates.sort((a, b) => b.length - a.length)[0] || null;
+          }
+
+          function extractDates(anime, reportRow) {
+            const dateCandidates = [];
+            walk(anime, (node, path) => {
+              const key = path[path.length - 1];
+              if (!['date', 'startdate', 'enddate', 'aired', 'premiered', 'vintage'].includes(key)) return;
+              const value = text(node);
+              const date = parseDate(value);
+              if (date) dateCandidates.push({ key, date });
+            });
+            const sorted = dateCandidates.map(x => x.date).sort();
+            const start = dateCandidates.find(x => /start|premier|aired|vintage/.test(x.key))?.date || sorted[0] || null;
+            const end = dateCandidates.find(x => /end|aired/.test(x.key))?.date || sorted[sorted.length - 1] || null;
+            const reportYear = parseYear(reportRow.vintage);
+            const fallback = reportYear ? `${reportYear}-01-01` : null;
+            return {
+              start_date: start || fallback,
+              end_date: end && start && end >= start ? end : null,
+            };
+          }
+
+          function extractEpisodes(anime) {
+            const values = [];
+            walk(anime, (node, path) => {
+              const key = path[path.length - 1];
+              if (!['episodes', 'episodecount', 'numepisodes'].includes(key)) return;
+              const n = toInt(text(node));
+              if (n && n > 0 && n <= 10000) values.push(n);
+            });
+            return values[0] || null;
+          }
+
+          function extractDuration(anime) {
+            const values = [];
+            walk(anime, (node, path) => {
+              const key = path[path.length - 1];
+              if (!['duration', 'length', 'runtime'].includes(key)) return;
+              const n = toInt(text(node));
+              if (n && n > 0 && n <= 600) values.push(n);
+            });
+            return values[0] || null;
+          }
+
+          function extractOfficialUrl(anime) {
+            const urls = [];
+            walk(anime, (node, path) => {
+              const key = path[path.length - 1];
+              if (!['url', 'site', 'website'].includes(key)) return;
+              const value = text(node);
+              if (/^https?:\/\//i.test(value)) urls.push(value);
+              const attrUrl = attr(node, 'href') || attr(node, 'url');
+              if (/^https?:\/\//i.test(attrUrl || '')) urls.push(attrUrl);
+            });
+            return urls.find(url => !/animenewsnetwork\.com/i.test(url)) || null;
+          }
+
+          function extractTitles(anime, primaryTitle) {
+            const names = [];
+            for (const node of nodesByKey(anime, 'name')) {
+              const value = text(node);
+              if (!value) continue;
+              names.push({
+                value,
+                lang: attr(node, 'lang') || attr(node, 'type') || '',
+              });
+            }
+            const unique = [];
+            const seen = new Set();
+            for (const row of names) {
+              const k = normalizeTitle(row.value);
+              if (!seen.has(k)) {
+                seen.add(k);
+                unique.push(row);
+              }
+            }
+            const english = unique.find(x => /en|eng|english/i.test(x.lang))?.value || null;
+            const native = unique.find(x => /ja|jpn|jp|native/i.test(x.lang))?.value || null;
+            return {
+              title: primaryTitle || unique[0]?.value || '',
+              title_english: english,
+              title_native: native,
+            };
+          }
+
+          function buildAnimePayload(reportRow, detail) {
+            const anime = findAnimeNode(detail);
+            const format = normalizeFormat(reportRow.format || directValue(anime, 'type'));
+            const dates = extractDates(anime, reportRow);
+            const titles = extractTitles(anime, reportRow.title);
+            const officialUrl = extractOfficialUrl(anime);
+            const sourceUrl = `${ANN_PAGE_URL}${reportRow.source_id}`;
+            const reasons = [];
+            if (!ALLOWED_FORMATS.has(format)) reasons.push(`unsupported_format:${format || 'unknown'}`);
+            if (!titles.title) reasons.push('missing_title');
+            if (dates.start_date && dates.end_date && dates.end_date < dates.start_date) reasons.push('invalid_date_range');
+            const episodes = extractEpisodes(anime);
+            const duration = extractDuration(anime);
+            if (episodes != null && (episodes <= 0 || episodes > 10000)) reasons.push('invalid_episode_count');
+            if (duration != null && (duration <= 0 || duration > 600)) reasons.push('invalid_duration');
+
+            const allowed = reasons.length === 0;
+            const confidence = allowed ? 0.995 : 0.05;
+            return {
+              allowed,
+              confidence,
+              reasons,
+              payload: {
+                title: titles.title,
+                english_title: titles.title_english,
+                title_english: titles.title_english,
+                title_native: titles.title_native,
+                title_japanese: titles.title_native,
+                description: extractDescription(anime),
+                official_url: officialUrl,
+                cover_image: null,
+                banner_image: null,
+                start_date: dates.start_date,
+                end_date: dates.end_date,
+                episodes,
+                duration,
+                status: directValue(anime, 'status') || (dates.end_date ? 'FINISHED' : 'RELEASING'),
+                format,
+                season: seasonFromDate(dates.start_date),
+                season_year: parseYear(dates.start_date) || parseYear(reportRow.vintage),
+                source: 'Anime News Network Encyclopedia',
+                average_score: null,
+                popularity: null,
+                favourites_count: null,
+                site_url: sourceUrl,
+                external_id: ANN_EXTERNAL_ID_BASE + reportRow.source_id,
+                _ann_id: reportRow.source_id,
+                _ann_source_url: sourceUrl,
+                _genres: collectGenres(anime),
+                _companies: collectCompanies(anime).filter(isStudioCompany),
+                _staff: collectStaff(anime),
+                _characters: collectCharacters(anime),
+                _relations: collectRelations(anime),
+              },
+            };
+          }
+
+          async function getExistingAnimeByExternalId(externalId) {
+            const { data, error } = await supabase.from('anime').select('id').eq('external_id', externalId).maybeSingle();
+            if (error) throw error;
+            return data || null;
+          }
+
+          async function ensureCandidate(row, decision, confidence, reasons, details) {
+            const candidate = {
+              source: 'Anime News Network Encyclopedia',
+              source_id: row.source_id,
+              source_url: `${ANN_PAGE_URL}${row.source_id}`,
+              title: row.title,
+              title_native: details?.title_native || null,
+              title_japanese: details?.title_japanese || null,
+              title_english: details?.title_english || null,
+              format: details?.format || normalizeFormat(row.format),
+              start_date: details?.start_date || null,
+              end_date: details?.end_date || null,
+              episodes: details?.episodes || null,
+              duration: details?.duration || null,
+              genre: details?._genres?.join(', ') || null,
+              status: details?.status || null,
+              official_url: details?.official_url || null,
+              import_status: details?.allowed ? 'imported' : 'rejected',
+              auto_category: details?.allowed ? 'anime' : 'non_anime',
+              auto_decision: decision,
+              auto_confidence: confidence,
+              auto_reasons: reasons.length ? reasons : ['automatically_accepted'],
+              auto_checked_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            const { data, error } = await supabase
+              .from('anime_import_candidates')
+              .upsert(candidate, { onConflict: 'source,source_id' })
+              .select('id')
+              .single();
+            if (error) throw error;
+            return data.id;
+          }
+
+          async function updateCandidateImported(candidateId, animeId) {
+            const { error } = await supabase.from('anime_import_candidates').update({
+              import_status: 'imported',
+              imported_anime_id: animeId,
+              updated_at: new Date().toISOString(),
+            }).eq('id', candidateId);
+            if (error) throw error;
+          }
+
+          async function upsertAnime(payload) {
+            const row = {};
+            for (const key of [
+              'title', 'english_title', 'title_english', 'title_native', 'title_japanese',
+              'description', 'official_url', 'cover_image', 'banner_image', 'start_date',
+              'end_date', 'episodes', 'duration', 'status', 'format', 'season', 'season_year',
+              'source', 'average_score', 'popularity', 'favourites_count', 'site_url', 'external_id'
+            ]) {
+              row[key] = payload[key];
+            }
+            row.average_score = null; // Never preload external ratings.
+            const { data, error } = await supabase.from('anime')
+              .upsert(row, { onConflict: 'external_id' })
+              .select('id,external_id,title')
+              .single();
+            if (error) throw error;
+            return data;
+          }
+
+          async function ensureGenre(name) {
+            const clean = String(name || '').trim();
+            if (!clean) return null;
+            let { data, error } = await supabase.from('genres').select('id,name').eq('name', clean).maybeSingle();
+            if (error) throw error;
+            if (!data) {
+              const inserted = await supabase.from('genres').insert({ name: clean }).select('id,name').single();
+              if (inserted.error) {
+                const retry = await supabase.from('genres').select('id,name').eq('name', clean).maybeSingle();
+                if (retry.error) throw inserted.error;
+                data = retry.data;
+              } else {
+                data = inserted.data;
+              }
+            }
+            return data;
+          }
+
+          async function linkGenres(animeId, names) {
+            for (const name of names) {
+              const genre = await ensureGenre(name);
+              if (!genre) continue;
+              const { error } = await supabase.from('anime_genres').upsert({ anime_id: animeId, genre_id: genre.id }, { onConflict: 'anime_id,genre_id' });
+              if (error) throw error;
+            }
+          }
+
+          async function ensureStudio(company) {
+            const clean = String(company.name || '').trim();
+            if (!clean) return null;
+            let query = supabase.from('studios').select('id,name,external_id').limit(1);
+            if (company.external_id) query = query.eq('external_id', company.external_id);
+            else query = query.eq('name', clean);
+            let { data, error } = await query.maybeSingle();
+            if (error) throw error;
+            if (!data) {
+              const inserted = await supabase.from('studios').insert({
+                external_id: company.external_id || null,
+                name: clean,
+                site_url: company.site_url || null,
+              }).select('id,name,external_id').single();
+              if (inserted.error) {
+                let retry = supabase.from('studios').select('id,name,external_id').limit(1).eq('name', clean);
+                const r = await retry.maybeSingle();
+                if (r.error) throw inserted.error;
+                data = r.data;
+              } else {
+                data = inserted.data;
+              }
+            }
+            return data;
+          }
+
+          async function linkStudios(animeId, companies) {
+            for (const company of companies) {
+              const studio = await ensureStudio(company);
+              if (!studio) continue;
+              const { error } = await supabase.from('anime_studios').upsert({ anime_id: animeId, studio_id: studio.id }, { onConflict: 'anime_id,studio_id' });
+              if (error) throw error;
+            }
+          }
+
+          async function ensureStaff(person) {
+            let data = null;
+            if (person.external_id) {
+              const q = await supabase.from('staff').select('id').eq('external_id', person.external_id).maybeSingle();
+              if (q.error) throw q.error;
+              data = q.data;
+            }
+            if (!data) {
+              const q = await supabase.from('staff').select('id').eq('name_first', person.name_first || '').eq('name_last', person.name_last || '').limit(1).maybeSingle();
+              if (q.error) throw q.error;
+              data = q.data;
+            }
+            if (!data) {
+              const inserted = await supabase.from('staff').insert({
+                external_id: person.external_id || null,
+                name_first: person.name_first || '',
+                name_last: person.name_last || '',
+                name_native: person.name_native || null,
+                image: person.image || null,
+                description: person.description || null,
+              }).select('id').single();
+              if (inserted.error) throw inserted.error;
+              data = inserted.data;
+            }
+            return data;
+          }
+
+          async function linkStaff(animeId, rows) {
+            for (const person of rows) {
+              const staff = await ensureStaff(person);
+              if (!staff) continue;
+              const { error } = await supabase.from('anime_staff').upsert({ anime_id: animeId, staff_id: staff.id, role: person.role || 'Staff' }, { onConflict: 'anime_id,staff_id' });
+              if (error) throw error;
+            }
+          }
+
+          async function ensureCharacter(character) {
+            let data = null;
+            if (character.character_external_id) {
+              const q = await supabase.from('characters').select('id').eq('external_id', character.character_external_id).maybeSingle();
+              if (q.error) throw q.error;
+              data = q.data;
+            }
+            if (!data) {
+              const q = await supabase.from('characters').select('id').eq('name_first', character.name).limit(1).maybeSingle();
+              if (q.error) throw q.error;
+              data = q.data;
+            }
+            if (!data) {
+              const inserted = await supabase.from('characters').insert({
+                external_id: character.character_external_id || null,
+                name_first: character.name || '',
+                name_last: '',
+                name_native: character.name_native || null,
+                image: character.image || null,
+                description: character.description || null,
+              }).select('id').single();
+              if (inserted.error) throw inserted.error;
+              data = inserted.data;
+            }
+            return data;
+          }
+
+          async function linkCharacters(animeId, rows) {
+            for (const character of rows) {
+              const characterRow = await ensureCharacter(character);
+              if (!characterRow) continue;
+              const { error } = await supabase.from('anime_characters').upsert({ anime_id: animeId, character_id: characterRow.id, role: character.role || 'Main' }, { onConflict: 'anime_id,character_id' });
+              if (error) throw error;
+            }
+          }
+
+          async function linkRelations(animeId, rows) {
+            for (const relation of rows) {
+              const q = await supabase.from('anime').select('id').eq('external_id', relation.related_external_id).maybeSingle();
+              if (q.error) throw q.error;
+              if (!q.data || q.data.id === animeId) continue;
+              const { error } = await supabase.from('anime_relations').upsert({
+                anime_id: animeId,
+                related_anime_id: q.data.id,
+                relation_type: relation.relation_type,
+              }, { onConflict: 'anime_id,related_anime_id' });
+              if (error) throw error;
+            }
+          }
+
+          async function processOne(reportRow) {
+            const detailXml = await fetchText(`${ANN_DETAIL_URL}${reportRow.source_id}`);
+            const detailParsed = parser.parse(detailXml);
+            const result = buildAnimePayload(reportRow, detailParsed);
+            const candidateId = await ensureCandidate(
+              reportRow,
+              result.allowed ? 'accepted' : 'rejected',
+              result.confidence,
+              result.reasons,
+              result.payload,
+            );
+
+            if (!result.allowed) {
+              console.log(`SKIP ANN ${reportRow.source_id}: ${reportRow.title} :: ${result.reasons.join(', ')}`);
+              return { status: 'rejected', candidateId };
+            }
+
+            const anime = await upsertAnime(result.payload);
+            await linkGenres(anime.id, result.payload._genres);
+            await linkStudios(anime.id, result.payload._companies);
+            await linkStaff(anime.id, result.payload._staff);
+            await linkCharacters(anime.id, result.payload._characters);
+            await linkRelations(anime.id, result.payload._relations);
+            await updateCandidateImported(candidateId, anime.id);
+
+            console.log(`IMPORTED ANN ${reportRow.source_id}: ${reportRow.title} -> anime.id=${anime.id}`);
+            return { status: 'imported', animeId: anime.id, candidateId };
+          }
+
+          async function main() {
+            let allRows = [];
+            for (let page = 0; page < ANN_MAX_PAGES; page++) {
+              const offset = page * ANN_PAGE_SIZE;
+              const url = `${ANN_REPORT_URL}&nskip=${offset}&nlist=${ANN_PAGE_SIZE}`;
+              console.log(`Fetching ANN report page ${page + 1}/${ANN_MAX_PAGES}...`);
+              const xml = await fetchText(url);
+              const rows = reportRows(xml);
+              allRows.push(...rows);
+              if (rows.length < ANN_PAGE_SIZE) break;
+              await sleep(1200);
+            }
+
+            const map = new Map();
+            for (const row of allRows) map.set(row.source_id, row);
+            const rows = [...map.values()];
+
+            console.log(`ANN candidates discovered: ${rows.length}`);
+
+            let imported = 0;
+            let rejected = 0;
+            let errors = 0;
+
+            for (const row of rows) {
+              try {
+                const result = await processOne(row);
+                if (result.status === 'imported') imported++;
+                else rejected++;
+              } catch (error) {
+                errors++;
+                console.error(`ERROR ANN ${row.source_id} ${row.title}:`, error?.stack || error);
+                // The next scheduled run will retry failed items automatically.
+              }
+              await sleep(700);
+            }
+
+            console.log(`SUMMARY discovered=${rows.length} imported=${imported} rejected=${rejected} errors=${errors}`);
+            if (errors > 0) {
+              // Keep the workflow visibly failed when a record could not be processed,
+              // but do not require a human decision. The next scheduled execution retries it.
+              process.exitCode = 1;
+            }
+          }
+
+          main().catch(error => {
+            console.error(error?.stack || error);
+            process.exitCode = 1;
+          });
+          NODE
