@@ -1,10 +1,10 @@
-name: Import Anime Metadata
+name: Import Anime Candidates
 
 on:
   workflow_dispatch:
     inputs:
       max_records:
-        description: "Number of ANN anime records to test"
+        description: "Number of ANN anime candidates to fetch"
         required: false
         default: "10"
 
@@ -17,34 +17,72 @@ permissions:
   contents: read
 
 concurrency:
-  group: anime-import
+  group: anime-candidate-import
   cancel-in-progress: false
 
 jobs:
-  test-ann:
+  import-candidates:
     runs-on: ubuntu-latest
 
     env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+
       MAX_RECORDS: ${{ inputs.max_records || '10' }}
       OFFSET: ${{ inputs.offset || '0' }}
 
     steps:
-      - name: Test ANN anime import
+
+      - name: Check configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "::error::SUPABASE_URL is not configured."
+            exit 1
+          fi
+
+          if [ -z "${SUPABASE_SECRET_KEY:-}" ]; then
+            echo "::error::SUPABASE_SECRET_KEY is not configured."
+            exit 1
+          fi
+
+          echo "Configuration check passed."
+
+      - name: Fetch ANN candidates
         shell: bash
         run: |
           python3 <<'PY'
+
+          import json
           import os
           import re
+          import urllib.error
           import urllib.parse
           import urllib.request
           import xml.etree.ElementTree as ET
 
+          SUPABASE_URL = os.environ[
+              "SUPABASE_URL"
+          ].rstrip("/")
+
+          SUPABASE_SECRET_KEY = os.environ[
+              "SUPABASE_SECRET_KEY"
+          ]
+
           MAX_RECORDS = int(
-              os.environ.get("MAX_RECORDS", "10")
+              os.environ.get(
+                  "MAX_RECORDS",
+                  "10"
+              )
           )
 
           OFFSET = int(
-              os.environ.get("OFFSET", "0")
+              os.environ.get(
+                  "OFFSET",
+                  "0"
+              )
           )
 
           if MAX_RECORDS <= 0:
@@ -56,186 +94,151 @@ jobs:
           if OFFSET < 0:
               OFFSET = 0
 
-          URL = (
+          ANN_REPORT_URL = (
               "https://www.animenewsnetwork.com/"
-              "encyclopedia/reports.xml?"
-              + urllib.parse.urlencode({
+              "encyclopedia/reports.xml"
+          )
+
+          USER_AGENT = (
+              "Animecia/1.0 "
+              "(https://github.com/media-mania/Animecia)"
+          )
+
+          TIMEOUT = 60
+
+
+          # ==========================================
+          # HTTP
+          # ==========================================
+
+          def fetch_xml(url):
+
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "User-Agent": USER_AGENT,
+                      "Accept":
+                          "application/xml,text/xml,*/*",
+                  },
+                  method="GET",
+              )
+
+              with urllib.request.urlopen(
+                  request,
+                  timeout=TIMEOUT
+              ) as response:
+
+                  body = response.read()
+
+              if not body:
+                  raise RuntimeError(
+                      "ANN returned an empty response."
+                  )
+
+              try:
+                  return ET.fromstring(body)
+
+              except ET.ParseError as exc:
+
+                  preview = body[:1000].decode(
+                      "utf-8",
+                      errors="replace"
+                  )
+
+                  print(
+                      "ANN response preview:"
+                  )
+
+                  print(preview)
+
+                  raise RuntimeError(
+                      "ANN returned invalid XML."
+                  ) from exc
+
+
+          # ==========================================
+          # Text helper
+          # ==========================================
+
+          def clean_text(value):
+
+              if value is None:
+                  return None
+
+              value = re.sub(
+                  r"\s+",
+                  " ",
+                  str(value)
+              ).strip()
+
+              return value or None
+
+
+          # ==========================================
+          # ANN report
+          # ==========================================
+
+          def fetch_candidates():
+
+              params = {
                   "id": "155",
                   "type": "anime",
                   "nskip": str(OFFSET),
                   "nlist": str(MAX_RECORDS),
-              })
-          )
+              }
 
-          print("========================================")
-          print("Animecia ANN Test")
-          print("========================================")
-          print("URL:")
-          print(URL)
-          print()
-
-          request = urllib.request.Request(
-              URL,
-              headers={
-                  "User-Agent":
-                      "Animecia/1.0 "
-                      "(https://github.com/media-mania/Animecia)",
-                  "Accept":
-                      "application/xml,text/xml,*/*",
-              },
-              method="GET",
-          )
-
-          with urllib.request.urlopen(
-              request,
-              timeout=60
-          ) as response:
-              body = response.read()
-
-          print(
-              "HTTP response bytes:",
-              len(body)
-          )
-
-          if not body:
-              raise RuntimeError(
-                  "ANN returned an empty response."
+              url = (
+                  ANN_REPORT_URL
+                  + "?"
+                  + urllib.parse.urlencode(params)
               )
-
-          try:
-              root = ET.fromstring(body)
-          except ET.ParseError as exc:
-              preview = body[:1000].decode(
-                  "utf-8",
-                  errors="replace"
-              )
-
-              print()
-              print("ANN response preview:")
-              print(preview)
-
-              raise RuntimeError(
-                  "ANN returned invalid XML."
-              ) from exc
-
-          print(
-              "Root element:",
-              root.tag
-          )
-
-          candidates = []
-
-          # --------------------------------------------
-          # ANN report structure:
-          #
-          # <item>
-          #   <id>123</id>
-          #   <gid>...</gid>
-          #   <type>TV</type>
-          #   <name>...</name>
-          #   ...
-          # </item>
-          #
-          # id/name/type are child elements, not attributes.
-          # --------------------------------------------
-
-          for item in root.iter():
-
-              if item.tag.lower() != "item":
-                  continue
-
-              values = {}
-
-              for child in item:
-
-                  tag = child.tag.lower().strip()
-
-                  text = " ".join(
-                      part.strip()
-                      for part in child.itertext()
-                      if part and part.strip()
-                  )
-
-                  text = re.sub(
-                      r"\s+",
-                      " ",
-                      text
-                  ).strip()
-
-                  values[tag] = text
-
-              ann_id = values.get("id")
-              title = values.get("name")
-              anime_type = values.get("type")
-
-              if not ann_id:
-                  continue
-
-              if not re.fullmatch(
-                  r"\d+",
-                  ann_id
-              ):
-                  continue
-
-              if not title:
-                  continue
-
-              candidates.append({
-                  "id": int(ann_id),
-                  "title": title,
-                  "type": anime_type or "",
-              })
-
-          # Remove duplicate IDs.
-          unique = []
-          seen = set()
-
-          for item in candidates:
-
-              if item["id"] in seen:
-                  continue
-
-              seen.add(
-                  item["id"]
-              )
-
-              unique.append(
-                  item
-              )
-
-          candidates = unique[:MAX_RECORDS]
-
-          print(
-              "Candidates found:",
-              len(candidates)
-          )
-
-          print()
-
-          if not candidates:
 
               print(
-                  "No candidates were extracted."
+                  "========================================"
               )
 
-              print()
               print(
-                  "First 20 report items:"
+                  "ANN report URL:"
               )
 
-              shown = 0
+              print(url)
+
+              print(
+                  "========================================"
+              )
+
+              root = fetch_xml(
+                  url
+              )
+
+              candidates = []
+
+              seen_ids = set()
+
+              # ANN report structure:
+              #
+              # <item>
+              #   <id>...</id>
+              #   <gid>...</gid>
+              #   <type>...</type>
+              #   <name>...</name>
+              #   ...
+              # </item>
 
               for item in root.iter():
 
                   if item.tag.lower() != "item":
                       continue
 
-                  print()
-                  print(
-                      "ITEM:"
-                  )
+                  values = {}
 
                   for child in item:
+
+                      key = (
+                          child.tag
+                          .lower()
+                          .strip()
+                      )
 
                       text = " ".join(
                           part.strip()
@@ -249,49 +252,261 @@ jobs:
                           text
                       ).strip()
 
-                      print(
-                          f"  {child.tag}: {text}"
-                      )
+                      values[key] = text
 
-                  shown += 1
+                  ann_id = values.get(
+                      "id"
+                  )
 
-                  if shown >= 20:
+                  title = clean_text(
+                      values.get("name")
+                  )
+
+                  anime_type = clean_text(
+                      values.get("type")
+                  )
+
+                  if not ann_id:
+                      continue
+
+                  if not re.fullmatch(
+                      r"\d+",
+                      ann_id
+                  ):
+                      continue
+
+                  if not title:
+                      continue
+
+                  if int(ann_id) in seen_ids:
+                      continue
+
+                  seen_ids.add(
+                      int(ann_id)
+                  )
+
+                  candidates.append({
+                      "source":
+                          "Anime News Network Encyclopedia",
+
+                      "source_id":
+                          int(ann_id),
+
+                      "source_url":
+                          (
+                              "https://www.animenewsnetwork.com/"
+                              "encyclopedia/anime.php?id="
+                              f"{ann_id}"
+                          ),
+
+                      "title":
+                          title,
+
+                      "format":
+                          anime_type or None,
+
+                      "import_status":
+                          "pending",
+                  })
+
+                  if len(candidates) >= MAX_RECORDS:
                       break
 
-              raise RuntimeError(
-                  "ANN response was received, "
-                  "but no anime candidates "
-                  "could be extracted."
+              return candidates
+
+
+          # ==========================================
+          # Supabase
+          # ==========================================
+
+          def save_candidates(records):
+
+              if not records:
+                  return
+
+              url = (
+                  f"{SUPABASE_URL}"
+                  "/rest/v1/anime_import_candidates"
+                  "?on_conflict=source,source_id"
               )
 
-          print(
-              "========================================"
-          )
-          print(
-              "Candidates"
-          )
+              payload = json.dumps(
+                  records,
+                  ensure_ascii=False
+              ).encode(
+                  "utf-8"
+              )
+
+              request = urllib.request.Request(
+                  url,
+                  data=payload,
+                  method="POST",
+                  headers={
+
+                      "apikey":
+                          SUPABASE_SECRET_KEY,
+
+                      "Authorization":
+                          (
+                              "Bearer "
+                              + SUPABASE_SECRET_KEY
+                          ),
+
+                      "Content-Type":
+                          "application/json",
+
+                      "Accept":
+                          "application/json",
+
+                      "Prefer":
+                          (
+                              "resolution=merge-duplicates,"
+                              "return=minimal"
+                          ),
+                  }
+              )
+
+              try:
+
+                  with urllib.request.urlopen(
+                      request,
+                      timeout=120
+                  ) as response:
+
+                      if response.status not in {
+                          200,
+                          201,
+                          204,
+                      }:
+
+                          body = (
+                              response.read()
+                              .decode(
+                                  "utf-8",
+                                  errors="replace"
+                              )
+                          )
+
+                          raise RuntimeError(
+                              "Supabase returned "
+                              f"HTTP {response.status}: "
+                              f"{body[:2000]}"
+                          )
+
+              except urllib.error.HTTPError as exc:
+
+                  body = (
+                      exc.read()
+                      .decode(
+                          "utf-8",
+                          errors="replace"
+                      )
+                  )
+
+                  raise RuntimeError(
+                      "Supabase returned "
+                      f"HTTP {exc.code}: "
+                      f"{body[:2000]}"
+                  ) from exc
+
+
+          # ==========================================
+          # Main
+          # ==========================================
+
           print(
               "========================================"
           )
 
-          for index, item in enumerate(
+          print(
+              "Animecia Candidate Import"
+          )
+
+          print(
+              "Source: Anime News Network Encyclopedia"
+          )
+
+          print(
+              "Offset:",
+              OFFSET
+          )
+
+          print(
+              "Max records:",
+              MAX_RECORDS
+          )
+
+          print(
+              "========================================"
+          )
+
+          candidates = fetch_candidates()
+
+          print(
+              "Candidates found:",
+              len(candidates)
+          )
+
+          if not candidates:
+
+              raise RuntimeError(
+                  "No ANN anime candidates were found."
+              )
+
+          print()
+          print(
+              "Candidates:"
+          )
+
+          for index, candidate in enumerate(
               candidates,
               start=1
           ):
 
               print(
                   f"{index}. "
-                  f"{item['title']} "
-                  f"[{item['type']}] "
-                  f"(ANN ID: {item['id']})"
+                  f"{candidate['title']} "
+                  f"[{candidate['format']}] "
+                  f"(ANN ID: "
+                  f"{candidate['source_id']})"
               )
+
+          save_candidates(
+              candidates
+          )
 
           print()
           print(
-              "ANN test completed successfully."
+              "========================================"
           )
+
           print(
-              "No data was written to Supabase."
+              "Candidate import completed."
+          )
+
+          print(
+              "Saved candidates:",
+              len(candidates)
+          )
+
+          print(
+              "anime table was NOT modified."
+          )
+
+          print(
+              "External ratings were NOT imported."
+          )
+
+          print(
+              "External reviews were NOT imported."
+          )
+
+          print(
+              "All candidates are pending review."
+          )
+
+          print(
+              "========================================"
           )
 
           PY
