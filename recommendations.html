@@ -34,12 +34,19 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
 function imgMarkup(url,alt){return '<img class="thumb" data-image src="'+esc(url||"")+'" alt="'+esc(alt||"")+'" loading="lazy">'}
 function repairImages(root){root.querySelectorAll("img[data-image]").forEach(img=>{const placeholder=()=>{if(!img.isConnected)return;const d=document.createElement("div");d.className="thumb";d.style.display="grid";d.style.placeItems="center";d.style.fontSize="11px";d.style.color="#888";d.textContent="画像なし";img.replaceWith(d)};if(!img.src||img.src==="about:blank")placeholder();else img.addEventListener("error",placeholder,{once:true});});}
+function isVerifiedUser(user){
+  return Boolean(user && user.is_anonymous !== true && user.email && user.email_confirmed_at);
+}
+
 async function authState(){
   const {data:{user}}=await supabaseClient.auth.getUser();
   const n=document.getElementById("user-name"),b=document.getElementById("auth-btn");
   if(user){n.textContent=user.email||"";b.textContent="ログアウト";b.onclick=async()=>{await supabaseClient.auth.signOut();location.reload()};}
   else{n.textContent="";b.textContent="ログイン";b.onclick=()=>location.href="index.html#login";}
-  return user;
+  if(user && !isVerifiedUser(user)){
+    await supabaseClient.auth.signOut();
+  }
+  return isVerifiedUser(user) ? user : null;
 }
 async function loadRecommendations(){
   const el=document.getElementById("recommend-list");
