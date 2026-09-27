@@ -66,9 +66,7 @@ const pageXml = [
   ...fixedPages.map(loc => urlEntry(loc)),
   "</urlset>",
 ].join("\n");
-await Bun.write?.("sitemap-pages.xml", pageXml).catch?.(() => {});
 
-const { writeFile } = await import("node:fs/promises");
 await writeFile("sitemap-pages.xml", pageXml, "utf8");
 
 const chunkSize = 5000;
