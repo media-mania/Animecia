@@ -1299,6 +1299,18 @@
 
                 </div>
 
+                <div class="filter-item">
+
+                    <label for="studio-filter">
+                        スタジオ
+                    </label>
+
+                    <select id="studio-filter">
+                        <option value="">すべて</option>
+                    </select>
+
+                </div>
+
 
                 <div class="filter-item">
 
@@ -1584,6 +1596,12 @@
     const sortFilter =
         document.getElementById(
             "sort-filter"
+        );
+
+
+    const studioFilter =
+        document.getElementById(
+            "studio-filter"
         );
 
 
@@ -2217,6 +2235,12 @@
         const genre =
             params.get(
                 "genre"
+            );
+
+
+        const studio =
+            params.get(
+                "studio"
             );
 
 
@@ -2952,9 +2976,11 @@
 
 
             await loadAnimeGenres();
+            await loadAnimeStudios();
 
             createYearOptions();
             createGenreOptions();
+            createStudioOptions();
 
             loadURLParameters();
 
@@ -3082,6 +3108,87 @@
             console.error(
                 "Anime genre loading error:",
                 error
+            );
+
+        }
+
+    }
+
+
+    async function loadAnimeStudios() {
+
+        animeData.forEach(
+            anime => {
+                anime._studios = [];
+            }
+        );
+
+        const ids =
+            animeData
+                .map(anime => anime.id)
+                .filter(Number.isInteger);
+
+        const map =
+            new Map(
+                animeData.map(
+                    anime => [
+                        String(anime.id),
+                        anime
+                    ]
+                )
+            );
+
+        for (
+            let start = 0;
+            start < ids.length;
+            start += 500
+        ) {
+
+            const batch =
+                ids.slice(
+                    start,
+                    start + 500
+                );
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient
+                    .from("anime_studios")
+                    .select("anime_id,studio_id,studios(id,name)")
+                    .in("anime_id",batch);
+
+            if(error){
+                console.error(
+                    "Anime studio loading error:",
+                    error
+                );
+                return;
+            }
+
+            (data || []).forEach(
+                row => {
+
+                    const anime =
+                        map.get(
+                            String(row.anime_id)
+                        );
+
+                    if(
+                        anime &&
+                        row.studio_id !== null &&
+                        row.studios?.name
+                    ){
+
+                        anime._studios.push({
+                            id: row.studio_id,
+                            name: row.studios.name
+                        });
+
+                    }
+
+                }
             );
 
         }
@@ -3355,6 +3462,67 @@
     }
 
 
+    function createStudioOptions() {
+
+        const map = new Map();
+
+        animeData.forEach(
+            anime => {
+
+                (anime._studios || [])
+                    .forEach(
+                        studio => {
+
+                            if(
+                                studio?.id !== null &&
+                                studio?.id !== undefined &&
+                                studio?.name
+                            ){
+
+                                map.set(
+                                    String(studio.id),
+                                    studio.name
+                                );
+
+                            }
+
+                        }
+                    );
+
+            }
+        );
+
+        studioFilter.innerHTML =
+            '<option value="">すべて</option>';
+
+        [...map.entries()]
+            .sort(
+                (a,b) =>
+                    String(a[1])
+                        .localeCompare(
+                            String(b[1]),
+                            "ja"
+                        )
+            )
+            .forEach(
+                ([id,name]) => {
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+                    option.value = id;
+                    option.textContent = name;
+
+                    studioFilter.appendChild(option);
+
+                }
+            );
+
+    }
+
+
     /* =========================================
        Apply filters
     ========================================= */
@@ -3397,6 +3565,10 @@
 
         const genre =
             genreFilter.value;
+
+
+        const studio =
+            studioFilter.value;
 
 
         const sort =
@@ -3557,6 +3729,33 @@
 
                         if (
                             !hasGenre
+                        ) {
+
+                            return false;
+
+                        }
+
+                    }
+
+
+                    if (
+                        studio
+                    ) {
+
+                        const hasStudio =
+                            (anime._studios || [])
+                                .some(
+                                    item =>
+                                        String(
+                                            item.id
+                                        ) ===
+                                        String(
+                                            studio
+                                        )
+                                );
+
+                        if (
+                            !hasStudio
                         ) {
 
                             return false;
@@ -4697,6 +4896,10 @@
             "";
 
 
+        studioFilter.value =
+            "";
+
+
         sortFilter.value =
             "default";
 
@@ -4802,6 +5005,18 @@
 
 
     genreFilter.addEventListener(
+        "change",
+        () => {
+
+            applyFilters(
+                true
+            );
+
+        }
+    );
+
+
+    studioFilter.addEventListener(
         "change",
         () => {
 
