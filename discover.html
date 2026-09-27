@@ -67,11 +67,11 @@ async function load(){
  rows=(ar.data||[]).map(a=>({...a,e:em.get(Number(a.id))||{},g:genreIds.get(Number(a.id))||[]}));
  const years=[...new Set(rows.map(a=>Number(a.season_year)).filter(Number.isInteger))].sort((a,b)=>b-a);
  document.getElementById("year").innerHTML='<option value="">すべて</option>'+years.map(y=>'<option>'+y+'</option>').join("");
- renderGenres(gr.data||[]);render();
+ renderGenres(gr.data||[]);const initialGenre=new URLSearchParams(location.search).get("genre");if(initialGenre){selectedGenres.add(Number(initialGenre));}renderGenres(gr.data||[]);render();
 }
 function renderGenres(gs){
  document.getElementById("genre-chips").innerHTML=gs.map(g=>'<button class="chip" data-id="'+g.id+'">'+esc(g.name)+'</button>').join("")||'<span class="empty">ジャンルがありません。</span>';
- document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.id);selectedGenres.has(id)?selectedGenres.delete(id):selectedGenres.add(id);b.classList.toggle("active",selectedGenres.has(id));render()});
+ document.querySelectorAll(".chip").forEach(b=>{if(selectedGenres.has(Number(b.dataset.id)))b.classList.add("active");b.onclick=()=>{const id=Number(b.dataset.id);selectedGenres.has(id)?selectedGenres.delete(id):selectedGenres.add(id);b.classList.toggle("active",selectedGenres.has(id));render()});
 }
 function render(){
  let r=[...rows],q=document.getElementById("q").value.trim().toLowerCase(),f=document.getElementById("format").value,y=document.getElementById("year").value,st=document.getElementById("status").value,min=document.getElementById("rating").value,sort=document.getElementById("sort").value;
