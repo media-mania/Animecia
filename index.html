@@ -3055,7 +3055,7 @@
 
         return (
 
-            "anime.html?year=" +
+            "season.html?year=" +
 
             encodeURIComponent(
                 getCurrentYear()
@@ -3164,6 +3164,7 @@
 
         const score =
             formatScore(
+                anime._animecia_rating ??
                 anime.average_score
             );
 
