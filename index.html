@@ -4825,6 +4825,42 @@
     }
 
 
+    async function getAuthServiceSettings() {
+
+        try {
+
+            const response =
+                await fetch(
+                    SUPABASE_URL +
+                    "/auth/v1/settings",
+                    {
+                        headers: {
+                            apikey:
+                                SUPABASE_KEY
+                        }
+                    }
+                );
+
+            if (!response.ok) {
+                return null;
+            }
+
+            return await response.json();
+
+        } catch (error) {
+
+            console.warn(
+                "Auth settings取得エラー:",
+                error
+            );
+
+            return null;
+
+        }
+
+    }
+
+
     async function ensureProfile(user, displayName = "") {
 
         if (!user?.id) {
@@ -5157,8 +5193,22 @@
                         displayName
                     );
 
-                    message.textContent =
-                        "登録を受け付けました。確認メールのリンクを開いてからログインしてください。";
+                    const authSettings =
+                        await getAuthServiceSettings();
+
+                    if (
+                        authSettings?.mailer_autoconfirm === true
+                    ) {
+
+                        message.textContent =
+                            "現在、Supabase側でメール確認が無効になっているため、確認メール方式を利用できません。管理設定を確認してください。";
+
+                    } else {
+
+                        message.textContent =
+                            "登録を受け付けました。確認メールのリンクを開いてからログインしてください。";
+
+                    }
 
                     $("auth-resend").hidden = false;
                     $("auth-resend").dataset.email = email;
@@ -5348,8 +5398,22 @@
 
             if (error) throw error;
 
-            message.textContent =
-                "確認メールを再送しました。迷惑メールフォルダも確認してください。";
+            const authSettings =
+                await getAuthServiceSettings();
+
+            if (
+                authSettings?.mailer_autoconfirm === true
+            ) {
+
+                message.textContent =
+                    "Supabase側でメール確認が無効になっています。確認メールを送るには、メール確認を有効にする必要があります。";
+
+            } else {
+
+                message.textContent =
+                    "確認メールを再送しました。迷惑メールフォルダも確認してください。";
+
+            }
 
         } catch (error) {
 
