@@ -1960,6 +1960,12 @@
                     >
 
                         <input
+                            type="hidden"
+                            id="review-edit-id"
+                            value=""
+                        >
+
+                        <input
                             type="text"
                             id="review-title"
                             maxlength="100"
@@ -1997,8 +2003,17 @@
 
                         <button
                             type="submit"
+                            id="review-submit-button"
                         >
                             レビューを投稿
+                        </button>
+
+                        <button
+                            type="button"
+                            id="review-cancel-edit"
+                            style="display:none;"
+                        >
+                            編集をキャンセル
                         </button>
 
 
@@ -6217,6 +6232,21 @@
                                             type="button"
                                             class="
                                                 review-like-button
+                                                review-edit-button
+                                            "
+                                            data-review-id="${escapeHTML(
+                                                review.id
+                                            )}"
+                                        >
+
+                                            編集
+
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            class="
+                                                review-like-button
                                                 review-delete-button
                                             "
                                             data-review-id="${escapeHTML(
@@ -6305,6 +6335,21 @@
                     }
 
 
+                    const editButton =
+                        item.querySelector(
+                            ".review-edit-button"
+                        );
+
+                    if (editButton) {
+                        editButton.addEventListener(
+                            "click",
+                            () =>
+                                startEditReview(
+                                    review
+                                )
+                        );
+                    }
+
                     const deleteButton =
                         item.querySelector(
                             ".review-delete-button"
@@ -6354,6 +6399,30 @@
         }
     }
 
+
+    function startEditReview(review) {
+        if (!currentUser || currentUser.id !== review.user_id) return;
+        document.getElementById("review-edit-id").value = String(review.id);
+        document.getElementById("review-title").value = review.title || "";
+        document.getElementById("review-content").value = review.content || "";
+        document.getElementById("review-rating").value = review.rating == null ? "" : String(review.rating);
+        document.getElementById("review-spoiler").checked = !!review.spoiler;
+        document.getElementById("review-submit-button").textContent = "レビューを更新";
+        document.getElementById("review-cancel-edit").style.display = "inline-block";
+        document.getElementById("review-message").textContent = "編集中です。";
+        document.getElementById("review-form").scrollIntoView({behavior:"smooth",block:"center"});
+    }
+
+    function cancelEditReview() {
+        document.getElementById("review-edit-id").value = "";
+        document.getElementById("review-title").value = "";
+        document.getElementById("review-content").value = "";
+        document.getElementById("review-rating").value = "";
+        document.getElementById("review-spoiler").checked = false;
+        document.getElementById("review-submit-button").textContent = "レビューを投稿";
+        document.getElementById("review-cancel-edit").style.display = "none";
+        document.getElementById("review-message").textContent = "";
+    }
 
     async function submitReview(event) {
 
@@ -6473,41 +6542,66 @@
 
         try {
 
-            const {
-                error
-            } =
-                await supabaseClient
+            const editId =
+                document
+                    .getElementById("review-edit-id")
+                    .value
+                    .trim();
 
-                    .from("reviews")
+            const reviewPayload = {
+                user_id:
+                    currentUser.id,
 
-                    .insert({
+                anime_id:
+                    Number(
+                        currentAnimeId
+                    ),
 
-                        user_id:
-                            currentUser.id,
+                title:
+                    title ||
+                    null,
 
-                        anime_id:
-                            Number(
-                                currentAnimeId
-                            ),
+                content:
+                    content,
 
-                        title:
-                            title ||
-                            null,
+                rating:
+                    rating,
 
-                        content:
-                            content,
+                spoiler:
+                    spoiler,
 
-                        rating:
-                            rating,
+                updated_at:
+                    new Date()
+                        .toISOString()
+            };
 
-                        spoiler:
-                            spoiler
+            let reviewError = null;
 
-                    });
+            if (editId) {
+                const {
+                    error
+                } =
+                    await supabaseClient
+                        .from("reviews")
+                        .update(reviewPayload)
+                        .eq("id", Number(editId))
+                        .eq("user_id", currentUser.id)
+                        .eq("anime_id", Number(currentAnimeId));
 
+                reviewError = error;
+            } else {
+                const {
+                    error
+                } =
+                    await supabaseClient
+                        .from("reviews")
+                        .insert(reviewPayload);
 
-            if (error) {
-                throw error;
+                reviewError = error;
+            }
+
+            if (reviewError) {
+                throw reviewError;
             }
 
 
@@ -6543,14 +6637,24 @@
                 false;
 
 
-            await logActivity("review", {
-                title: title || null,
-                rating,
-                spoiler
-            });
+            if (editId) {
+                await logActivity("review", {
+                    action: "edit",
+                    review_id: Number(editId),
+                    rating
+                });
+            } else {
+                await logActivity("review", {
+                    title: title || null,
+                    rating,
+                    spoiler
+                });
+            }
 
             message.textContent =
-                "レビューを投稿しました。";
+                editId
+                    ? "レビューを更新しました。"
+                    : "レビューを投稿しました。";
 
 
             await loadReviews();
