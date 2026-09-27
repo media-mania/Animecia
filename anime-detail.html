@@ -2181,6 +2181,28 @@
                 </section>
 
                 <section
+                    id="follow-section"
+                    class="content-section"
+                >
+                    <h2>作品をフォロー</h2>
+                    <p id="follow-login-message" class="spoiler" style="display:none;">
+                        ログインすると新しい情報やエピソードの通知設定を保存できます。
+                    </p>
+                    <div id="follow-area" style="display:none;">
+                        <button type="button" id="follow-button" class="action-button">☆ フォロー</button>
+                        <label style="display:block;margin-top:10px;">
+                            <input type="checkbox" id="notify-episode" checked>
+                            新しいエピソードを通知
+                        </label>
+                        <label style="display:block;margin-top:7px;">
+                            <input type="checkbox" id="notify-info" checked>
+                            新しい情報を通知
+                        </label>
+                        <p id="follow-message" class="status-message"></p>
+                    </div>
+                </section>
+
+                <section
                     id="aliases-section"
                     class="content-section"
                     style="display:none;"
@@ -4614,6 +4636,140 @@
     }
 
 
+    async function logActivity(activityType, metadata = {}) {
+        if (!currentUser) return;
+        try {
+            const { error } = await supabaseClient
+                .from("user_activity")
+                .insert({
+                    user_id: currentUser.id,
+                    anime_id: Number(currentAnimeId),
+                    activity_type: activityType,
+                    metadata
+                });
+            if (error) throw error;
+        } catch (error) {
+            console.error("アクティビティ記録エラー:", error);
+        }
+    }
+
+    async function loadFollow() {
+        const loginMessage = document.getElementById("follow-login-message");
+        const area = document.getElementById("follow-area");
+        const button = document.getElementById("follow-button");
+        if (!currentUser) {
+            loginMessage.style.display = "block";
+            area.style.display = "none";
+            return;
+        }
+        loginMessage.style.display = "none";
+        area.style.display = "block";
+        try {
+            const { data, error } = await supabaseClient
+                .from("user_anime_follows")
+                .select("notify_new_episode,notify_new_info")
+                .eq("user_id", currentUser.id)
+                .eq("anime_id", Number(currentAnimeId))
+                .maybeSingle();
+            if (error) throw error;
+            const followed = !!data;
+            button.classList.toggle("active", followed);
+            button.textContent = followed ? "★ フォロー中" : "☆ フォロー";
+            document.getElementById("notify-episode").checked = data?.notify_new_episode ?? true;
+            document.getElementById("notify-info").checked = data?.notify_new_info ?? true;
+        } catch (error) {
+            console.error("フォロー取得エラー:", error);
+        }
+    }
+
+    async function saveFollowPreferences() {
+        if (!currentUser) return;
+        const button = document.getElementById("follow-button");
+        const message = document.getElementById("follow-message");
+        button.disabled = true;
+        try {
+            const { data: existing, error: readError } = await supabaseClient
+                .from("user_anime_follows")
+                .select("anime_id")
+                .eq("user_id", currentUser.id)
+                .eq("anime_id", Number(currentAnimeId))
+                .maybeSingle();
+            if (readError) throw readError;
+            const exists = !!existing;
+            if (exists) {
+                const { error } = await supabaseClient
+                    .from("user_anime_follows")
+                    .update({
+                        notify_new_episode: document.getElementById("notify-episode").checked,
+                        notify_new_info: document.getElementById("notify-info").checked
+                    })
+                    .eq("user_id", currentUser.id)
+                    .eq("anime_id", Number(currentAnimeId));
+                if (error) throw error;
+                message.textContent = "通知設定を保存しました。";
+            } else {
+                const { error } = await supabaseClient
+                    .from("user_anime_follows")
+                    .insert({
+                        user_id: currentUser.id,
+                        anime_id: Number(currentAnimeId),
+                        notify_new_episode: document.getElementById("notify-episode").checked,
+                        notify_new_info: document.getElementById("notify-info").checked
+                    });
+                if (error) throw error;
+                await logActivity("follow", {
+                    notify_new_episode: document.getElementById("notify-episode").checked,
+                    notify_new_info: document.getElementById("notify-info").checked
+                });
+                message.textContent = "作品をフォローしました。";
+            }
+            await loadFollow();
+        } catch (error) {
+            console.error("フォロー保存エラー:", error);
+            message.textContent = "フォロー設定の保存に失敗しました。";
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    async function toggleFollow() {
+        if (!currentUser) {
+            alert("フォロー機能を使うにはログインしてください。");
+            return;
+        }
+        const button = document.getElementById("follow-button");
+        const message = document.getElementById("follow-message");
+        button.disabled = true;
+        try {
+            const { data, error } = await supabaseClient
+                .from("user_anime_follows")
+                .select("anime_id")
+                .eq("user_id", currentUser.id)
+                .eq("anime_id", Number(currentAnimeId))
+                .maybeSingle();
+            if (error) throw error;
+            if (data) {
+                const { error: deleteError } = await supabaseClient
+                    .from("user_anime_follows")
+                    .delete()
+                    .eq("user_id", currentUser.id)
+                    .eq("anime_id", Number(currentAnimeId));
+                if (deleteError) throw deleteError;
+                await logActivity("follow", { action: "unfollow" });
+                message.textContent = "フォローを解除しました。";
+            } else {
+                await saveFollowPreferences();
+                return;
+            }
+            await loadFollow();
+        } catch (error) {
+            console.error("フォロー更新エラー:", error);
+            message.textContent = "フォローの更新に失敗しました。";
+        } finally {
+            button.disabled = false;
+        }
+    }
+
     /* =========================================
        User state
     ========================================= */
@@ -4719,7 +4875,9 @@
 
             loadWatchStatus(),
 
-            loadUserRating()
+            loadUserRating(),
+
+            loadFollow()
 
         ]);
     }
@@ -4876,6 +5034,8 @@
 
             if (data) {
 
+                await logActivity("favorite", { action: "unfavorite" });
+
                 const {
                     error:
                         deleteError
@@ -4904,6 +5064,8 @@
                 }
 
             } else {
+
+                await logActivity("favorite", { action: "favorite" });
 
                 const {
                     error:
@@ -5156,6 +5318,11 @@
             }
 
 
+            await logActivity("status_change", {
+                status,
+                progress
+            });
+
             message.textContent =
                 "視聴状況を保存しました。";
 
@@ -5346,6 +5513,10 @@
                 throw error;
             }
 
+
+            await logActivity("rating", {
+                rating
+            });
 
             message.textContent =
                 "評価を保存しました。";
@@ -6363,6 +6534,12 @@
                 false;
 
 
+            await logActivity("review", {
+                title: title || null,
+                rating,
+                spoiler
+            });
+
             message.textContent =
                 "レビューを投稿しました。";
 
@@ -6982,6 +7159,33 @@
             toggleFavorite
         );
 
+
+    document
+        .getElementById(
+            "follow-button"
+        )
+        .addEventListener(
+            "click",
+            toggleFollow
+        );
+
+    document
+        .getElementById(
+            "notify-episode"
+        )
+        .addEventListener(
+            "change",
+            saveFollowPreferences
+        );
+
+    document
+        .getElementById(
+            "notify-info"
+        )
+        .addEventListener(
+            "change",
+            saveFollowPreferences
+        );
 
     document
         .getElementById(
