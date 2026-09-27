@@ -264,7 +264,7 @@ async function loadRankingData(){
   }
 
   const {data:anime,error:animeError}=await supabaseClient
-    .from("anime")
+    .from("anime").eq("anime_verification_status","verified")
     .select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,season,season_year,format")
     .in("id",ids);
 
