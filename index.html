@@ -4106,62 +4106,117 @@
         const container =
             $("score-grid");
 
-
         try {
+
+            const {
+                data:
+                    summaries,
+                error:
+                    summaryError
+            } =
+                await supabaseClient
+                    .from(
+                        "anime_engagement_summary"
+                    )
+                    .select(
+                        "anime_id,average_rating,review_count"
+                    )
+                    .not(
+                        "average_rating",
+                        "is",
+                        null
+                    )
+                    .order(
+                        "average_rating",
+                        {
+                            ascending: false
+                        }
+                    )
+                    .order(
+                        "review_count",
+                        {
+                            ascending: false
+                        }
+                    )
+                    .limit(5);
+
+            if (summaryError) {
+                throw summaryError;
+            }
+
+            const ids =
+                (summaries || [])
+                    .map(
+                        row =>
+                            row.anime_id
+                    )
+                    .filter(
+                        Number.isInteger
+                    );
+
+            if (!ids.length) {
+
+                showGridMessage(
+                    container,
+                    "まだ評価データがありません。"
+                );
+
+                return;
+
+            }
 
             const {
                 data,
                 error
             } =
                 await supabaseClient
-
-                    .from(
-                        "anime"
-                    )
-
+                    .from("anime")
                     .select(
                         ANIME_SELECT
                     )
-
-                    .not(
-                        "average_score",
-                        "is",
-                        null
-                    )
-
-                    .order(
-                        "average_score",
-                        {
-                            ascending:
-                                false,
-                            nullsFirst:
-                                false
-                        }
-                    )
-
-                    .limit(
-                        5
+                    .in(
+                        "id",
+                        ids
                     );
-
 
             if (error) {
                 throw error;
             }
 
+            const map =
+                new Map(
+                    (data || []).map(
+                        anime => [
+                            Number(
+                                anime.id
+                            ),
+                            anime
+                        ]
+                    )
+                );
+
+            const ordered =
+                ids
+                    .map(
+                        id =>
+                            map.get(
+                                Number(id)
+                            )
+                    )
+                    .filter(Boolean);
 
             renderAnimeGrid(
                 container,
-                data,
+                ordered,
                 "まだ評価データがありません。"
             );
 
         } catch (error) {
 
             console.error(
-                "高評価作品取得エラー:",
+                "Animecia高評価作品取得エラー:",
                 error
             );
-
 
             showGridMessage(
                 container,
