@@ -33,7 +33,6 @@ jobs:
         shell: bash
         run: |
           python3 <<'PY'
-
           import os
           import re
           import urllib.parse
@@ -91,7 +90,6 @@ jobs:
               request,
               timeout=60
           ) as response:
-
               body = response.read()
 
           print(
@@ -106,18 +104,14 @@ jobs:
 
           try:
               root = ET.fromstring(body)
-
           except ET.ParseError as exc:
-
               preview = body[:1000].decode(
                   "utf-8",
                   errors="replace"
               )
 
               print()
-              print(
-                  "ANN response preview:"
-              )
+              print("ANN response preview:")
               print(preview)
 
               raise RuntimeError(
@@ -131,32 +125,34 @@ jobs:
 
           candidates = []
 
-          # ANN report responses may use different
-          # element names. We inspect all elements
-          # carrying a numeric id and a title-like value.
-          for element in root.iter():
+          # --------------------------------------------
+          # ANN report structure:
+          #
+          # <item>
+          #   <id>123</id>
+          #   <gid>...</gid>
+          #   <type>TV</type>
+          #   <name>...</name>
+          #   ...
+          # </item>
+          #
+          # id/name/type are child elements, not attributes.
+          # --------------------------------------------
 
-              ann_id = element.get("id")
+          for item in root.iter():
 
-              if not ann_id:
+              if item.tag.lower() != "item":
                   continue
 
-              if not re.fullmatch(
-                  r"\d+",
-                  str(ann_id)
-              ):
-                  continue
+              values = {}
 
-              title = (
-                  element.get("name")
-                  or element.get("title")
-              )
+              for child in item:
 
-              if not title:
-                  # Try text content.
+                  tag = child.tag.lower().strip()
+
                   text = " ".join(
                       part.strip()
-                      for part in element.itertext()
+                      for part in child.itertext()
                       if part and part.strip()
                   )
 
@@ -166,8 +162,20 @@ jobs:
                       text
                   ).strip()
 
-                  if text:
-                      title = text
+                  values[tag] = text
+
+              ann_id = values.get("id")
+              title = values.get("name")
+              anime_type = values.get("type")
+
+              if not ann_id:
+                  continue
+
+              if not re.fullmatch(
+                  r"\d+",
+                  ann_id
+              ):
+                  continue
 
               if not title:
                   continue
@@ -175,12 +183,11 @@ jobs:
               candidates.append({
                   "id": int(ann_id),
                   "title": title,
-                  "tag": element.tag,
+                  "type": anime_type or "",
               })
 
           # Remove duplicate IDs.
           unique = []
-
           seen = set()
 
           for item in candidates:
@@ -188,9 +195,13 @@ jobs:
               if item["id"] in seen:
                   continue
 
-              seen.add(item["id"])
+              seen.add(
+                  item["id"]
+              )
 
-              unique.append(item)
+              unique.append(
+                  item
+              )
 
           candidates = unique[:MAX_RECORDS]
 
@@ -209,23 +220,42 @@ jobs:
 
               print()
               print(
-                  "First XML elements:"
+                  "First 20 report items:"
               )
 
-              count = 0
+              shown = 0
 
-              for element in root.iter():
+              for item in root.iter():
 
+                  if item.tag.lower() != "item":
+                      continue
+
+                  print()
                   print(
-                      "TAG:",
-                      element.tag,
-                      "ATTR:",
-                      dict(element.attrib)
+                      "ITEM:"
                   )
 
-                  count += 1
+                  for child in item:
 
-                  if count >= 30:
+                      text = " ".join(
+                          part.strip()
+                          for part in child.itertext()
+                          if part and part.strip()
+                      )
+
+                      text = re.sub(
+                          r"\s+",
+                          " ",
+                          text
+                      ).strip()
+
+                      print(
+                          f"  {child.tag}: {text}"
+                      )
+
+                  shown += 1
+
+                  if shown >= 20:
                       break
 
               raise RuntimeError(
@@ -252,12 +282,16 @@ jobs:
               print(
                   f"{index}. "
                   f"{item['title']} "
+                  f"[{item['type']}] "
                   f"(ANN ID: {item['id']})"
               )
 
           print()
           print(
               "ANN test completed successfully."
+          )
+          print(
+              "No data was written to Supabase."
           )
 
           PY
