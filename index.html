@@ -5270,270 +5270,140 @@ footer{margin-top:80px!important;background:#111216!important}
     }
 
 
-    async function handleAuthSubmit(
-        event
-    ) {
-
+    async function handleAuthSubmit(event) {
         event.preventDefault();
 
+        const email = $("auth-email").value.trim().toLowerCase();
+        const password = $("auth-password").value;
+        const displayName = $("auth-display-name").value.trim();
+        const message = $("auth-message");
+        const submit = $("auth-submit");
 
-        const email =
-            $("auth-email")
-                .value
-                .trim();
-
-
-        const password =
-            $("auth-password")
-                .value;
-
-
-        const displayName =
-            $("auth-display-name")
-                .value
-                .trim();
-
-
-        const message =
-            $("auth-message");
-
-
-        const submit =
-            $("auth-submit");
-
-
-        message.textContent =
-            "";
-
-
-        submit.disabled =
-            true;
-
+        message.textContent = "";
+        submit.disabled = true;
 
         try {
+            if (!email) {
+                throw new Error("メールアドレスを入力してください。");
+            }
 
-            if (
-                authRecoveryMode
-            ) {
-
-                const {
-                    error
-                } = await supabaseClient.auth.updateUser({
-                    password
-                });
-
-                if (error) {
-                    throw error;
+            if (authRecoveryMode) {
+                if (password.length < 8) {
+                    throw new Error("新しいパスワードは8文字以上で入力してください。");
                 }
 
-                message.textContent =
-                    "パスワードを変更しました。";
+                const { error } = await supabaseClient.auth.updateUser({ password });
+                if (error) throw error;
 
                 authRecoveryMode = false;
-                $("auth-password-label").textContent =
-                    "パスワード";
-                $("auth-password").autocomplete =
-                    "current-password";
-                $("auth-submit").textContent =
-                    "ログイン";
+                message.textContent = "パスワードを変更しました。新しいパスワードでログインできます。";
+                $("auth-password-label").textContent = "パスワード";
+                $("auth-password").autocomplete = "current-password";
+                $("auth-submit").textContent = "ログイン";
+                return;
+            }
 
-                await updateAuthUI(
-                    (await supabaseClient.auth.getUser()).data.user
-                );
-
-                setTimeout(
-                    closeAuth,
-                    700
-                );
-
-            } else if (
-                authMode ===
-                "signup"
-            ) {
-
-                const {
-                    data,
-                    error
-                } =
-                    await supabaseClient
-                        .auth
-                        .signUp({
-
-                            email,
-
-                            password,
-
-                            options: {
-
-                                data: {
-
-                                    display_name:
-                                        displayName ||
-                                        "Animecia User"
-
-                                },
-
-                                emailRedirectTo:
-                                    window.location.origin +
-                                    window.location.pathname
-
-                            }
-
-                        });
-
-
-                if (
-                    error
-                ) {
-
-                    throw error;
-
+            if (authMode === "signup") {
+                if (password.length < 8) {
+                    throw new Error("パスワードは8文字以上で入力してください。");
+                }
+                if (displayName.length > 30) {
+                    throw new Error("表示名は30文字以内で入力してください。");
                 }
 
-
-                if (
-                    data?.user
-                ) {
-
-                    /*
-                     * Confirm Email有効時、既存メールの再登録では
-                     * identitiesが空のユーザー情報になる場合があります。
-                     */
-                    if (
-                        Array.isArray(data.user.identities) &&
-                        data.user.identities.length === 0
-                    ) {
-                        message.textContent =
-                            "このメールアドレスはすでに登録されています。ログインしてください。";
-                        authMode = "login";
-                        $("auth-resend").hidden = true;
-                        return;
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            display_name: displayName || "Animecia User"
+                        },
+                        emailRedirectTo: new URL("index.html", window.location.origin + window.location.pathname).href
                     }
+                });
 
-                    /*
-                     * メール確認を必須とするため、
-                     * 登録直後のセッションはログイン扱いにしない。
-                     */
-                    if (data.session) {
-                        await supabaseClient.auth.signOut();
-                    }
+                if (error) throw error;
 
-                    await ensureProfile(
-                        data.user,
-                        displayName
-                    );
-
-                    const authSettings =
-                        await getAuthServiceSettings();
-
-                    if (
-                        authSettings?.mailer_autoconfirm === true
-                    ) {
-
-                        message.textContent =
-                            "現在、Supabase側でメール確認が無効になっているため、確認メール方式を利用できません。管理設定を確認してください。";
-
-                    } else {
-
-                        message.textContent =
-                            "登録を受け付けました。確認メールのリンクを開いてからログインしてください。";
-
-                    }
-
-                    $("auth-resend").hidden = false;
-                    $("auth-resend").dataset.email = email;
-
+                if (!data?.user) {
+                    throw new Error("アカウントを作成できませんでした。");
                 }
 
-
-            } else {
-
-                const {
-                    data,
-                    error
-                } =
-                    await supabaseClient
-                        .auth
-                        .signInWithPassword({
-
-                            email,
-
-                            password
-
-                        });
-
-
-                if (
-                    error
-                ) {
-
-                    throw error;
-
-                }
-
-
-                const verifiedUser =
-                    await requireVerifiedUser(
-                        data.user
-                    );
-
-                if (!verifiedUser) {
-
-                    message.textContent =
-                        "メールアドレスの確認が完了していません。確認メールのリンクを開いてから再度ログインしてください。";
-
-                    $("auth-resend").hidden = false;
-                    $("auth-resend").dataset.email = email;
+                if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+                    authMode = "login";
+                    updateAuthModeUI();
+                    $("auth-resend").hidden = true;
+                    message.textContent = "このメールアドレスはすでに登録されています。ログインしてください。";
                     return;
                 }
 
-                await ensureProfile(
-                    verifiedUser
-                );
+                /*
+                 * メール確認を必須とするため、登録直後にセッションが返っても
+                 * アプリ上ではログイン済みとして扱わない。
+                 */
+                if (data.session) {
+                    await supabaseClient.auth.signOut();
+                }
 
-                await updateAuthUI(
-                    verifiedUser
-                );
+                await ensureProfile(data.user, displayName);
 
-                closeAuth();
-
-            }
-
-
-        } catch (error) {
-
-            console.error(
-                "認証エラー:",
-                error
-            );
-
-
-            const errorMessage =
-                error?.message ||
-                "認証に失敗しました。";
-
-            message.textContent =
-                errorMessage;
-
-            if (
-                /not confirmed|email.*confirm|メール.*確認/i.test(
-                    String(errorMessage)
-                )
-            ) {
                 $("auth-resend").hidden = false;
                 $("auth-resend").dataset.email = email;
+                $("auth-password").value = "";
+
+                message.textContent =
+                    "登録しました。確認メールを送信しています。メール内のリンクを開いて確認を完了してからログインしてください。";
+
+                return;
             }
 
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password
+            });
 
+            if (error) throw error;
+
+            /*
+             * Supabase側でメール確認が必要な設定でも、念のためフロント側でも確認する。
+             * 未確認ユーザーをアプリ内に残さない。
+             */
+            if (!isVerifiedUser(data?.user)) {
+                await supabaseClient.auth.signOut();
+                $("auth-resend").hidden = false;
+                $("auth-resend").dataset.email = email;
+                message.textContent =
+                    "このメールアドレスはまだ確認されていません。確認メールのリンクを開いてからログインしてください。";
+                return;
+            }
+
+            await ensureProfile(data.user);
+            await updateAuthUI(data.user);
+            closeAuth();
+
+        } catch (error) {
+            console.error("認証エラー:", error);
+            const raw = String(error?.message || "");
+            let errorMessage = raw || "認証に失敗しました。";
+
+            if (/invalid login credentials/i.test(raw)) {
+                errorMessage = "メールアドレスまたはパスワードが正しくありません。";
+            } else if (/email not confirmed/i.test(raw)) {
+                $("auth-resend").hidden = false;
+                $("auth-resend").dataset.email = email;
+                errorMessage = "メールアドレスが確認されていません。確認メールを再送できます。";
+            } else if (/user already registered/i.test(raw)) {
+                authMode = "login";
+                updateAuthModeUI();
+                errorMessage = "このメールアドレスはすでに登録されています。ログインしてください。";
+            } else if (/password.*(weak|8 characters|too short)/i.test(raw)) {
+                errorMessage = "パスワードは8文字以上で設定してください。";
+            }
+
+            message.textContent = errorMessage;
         } finally {
-
-            submit.disabled =
-                false;
-
+            submit.disabled = false;
         }
-
     }
-
 
     async function resetPassword() {
 
