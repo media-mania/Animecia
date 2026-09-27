@@ -354,6 +354,84 @@ jobs:
             return [...map.values()].slice(0, 1000);
           }
 
+          function collectEpisodes(anime) {
+            const rows = [];
+            for (const node of nodesByKey(anime, 'episode')) {
+              const number = toInt(
+                attr(node, 'number') ??
+                attr(node, 'epnum') ??
+                directValue(node, 'number') ??
+                directValue(node, 'epnum') ??
+                directValue(node, 'episode')
+              );
+              if (!number || number <= 0 || number > 10000) continue;
+
+              const title =
+                directValue(node, 'title') ||
+                directValue(node, 'name') ||
+                attr(node, 'title') ||
+                null;
+
+              const synopsis =
+                directValue(node, 'synopsis') ||
+                directValue(node, 'summary') ||
+                directValue(node, 'description') ||
+                null;
+
+              const airDateValue =
+                directValue(node, 'airdate') ||
+                directValue(node, 'airDate') ||
+                directValue(node, 'date') ||
+                attr(node, 'date') ||
+                null;
+
+              const durationValue =
+                toInt(
+                  directValue(node, 'duration') ??
+                  directValue(node, 'length') ??
+                  attr(node, 'duration')
+                );
+
+              rows.push({
+                episode_number: number,
+                title,
+                synopsis,
+                air_date: parseDate(airDateValue),
+                duration: durationValue && durationValue > 0 && durationValue <= 600 ? durationValue : null,
+                thumbnail: attr(node, 'img') || attr(node, 'image') || null,
+                site_url: attr(node, 'url') || null,
+              });
+            }
+
+            const seen = new Set();
+            return rows.filter(row => {
+              if (seen.has(row.episode_number)) return false;
+              seen.add(row.episode_number);
+              return true;
+            }).sort((a, b) => a.episode_number - b.episode_number).slice(0, 10000);
+          }
+
+          function collectTags(anime) {
+            const rows = [];
+            for (const key of ['tag', 'keyword']) {
+              for (const node of nodesByKey(anime, key)) {
+                const name = text(node).trim();
+                if (!name) continue;
+                rows.push({
+                  name,
+                  source: 'Anime News Network Encyclopedia',
+                });
+              }
+            }
+            const seen = new Set();
+            return rows.filter(row => {
+              const key = normalizeTitle(row.name);
+              if (!key || seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            }).slice(0, 1000);
+          }
+
           function collectRelations(anime) {
             const rows = [];
             for (const node of [...nodesByKey(anime, 'relatedanime'), ...nodesByKey(anime, 'related')]) {
@@ -815,6 +893,8 @@ jobs:
                 _voice_actor_links: [],
                 _aliases: [],
                 _sources: [],
+                _episodes: collectEpisodes(anime),
+                _tags: collectTags(anime),
               },
             };
           }
@@ -903,6 +983,39 @@ jobs:
               }
             }
             return data;
+          }
+
+          async function linkEpisodes(animeId, rows) {
+            if (!rows?.length) return;
+            for (const episode of rows) {
+              const payload = {
+                anime_id: animeId,
+                episode_number: episode.episode_number,
+                title: episode.title || null,
+                synopsis: episode.synopsis || null,
+                air_date: episode.air_date || null,
+                duration: episode.duration || null,
+                thumbnail: episode.thumbnail || null,
+                site_url: episode.site_url || null,
+                updated_at: new Date().toISOString(),
+              };
+              const { error } = await supabase.from('anime_episodes').upsert(payload, {
+                onConflict: 'anime_id,episode_number',
+              });
+              if (error) throw error;
+            }
+          }
+
+          async function linkTags(animeId, rows) {
+            if (!rows?.length) return;
+            for (const tag of rows) {
+              const { error } = await supabase.from('anime_tags').upsert({
+                anime_id: animeId,
+                name: tag.name,
+                source: tag.source || null,
+              }, { onConflict: 'anime_id,name' });
+              if (error) throw error;
+            }
           }
 
           async function linkAliases(animeId, rows) {
@@ -1184,6 +1297,8 @@ jobs:
             await linkStreamingLinks(anime.id, result.payload._streaming_links);
             await linkAliases(anime.id, result.payload._aliases);
             await linkAnimeSources(anime.id, result.payload._sources);
+            await linkEpisodes(anime.id, result.payload._episodes);
+            await linkTags(anime.id, result.payload._tags);
             await linkRelations(anime.id, result.payload._relations);
             await updateCandidateImported(candidateId, anime.id);
 
