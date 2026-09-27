@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       max_records:
-        description: "Number of ANN anime candidates to fetch"
+        description: "Number of ANN candidates to check"
         required: false
         default: "10"
 
@@ -33,6 +33,10 @@ jobs:
 
     steps:
 
+      # ========================================================
+      # 1. 設定確認
+      # ========================================================
+
       - name: Check configuration
         shell: bash
         run: |
@@ -50,7 +54,12 @@ jobs:
 
           echo "Configuration check passed."
 
-      - name: Fetch ANN candidates
+
+      # ========================================================
+      # 2. ANN取得・自動判定
+      # ========================================================
+
+      - name: Fetch and classify ANN candidates
         shell: bash
         run: |
           python3 <<'PY'
@@ -62,6 +71,11 @@ jobs:
           import urllib.parse
           import urllib.request
           import xml.etree.ElementTree as ET
+
+
+          # ========================================================
+          # Environment
+          # ========================================================
 
           SUPABASE_URL = os.environ[
               "SUPABASE_URL"
@@ -85,43 +99,77 @@ jobs:
               )
           )
 
+
           if MAX_RECORDS <= 0:
               MAX_RECORDS = 10
+
 
           if MAX_RECORDS > 50:
               MAX_RECORDS = 50
 
+
           if OFFSET < 0:
               OFFSET = 0
+
+
+          # ========================================================
+          # ANN
+          # ========================================================
 
           ANN_REPORT_URL = (
               "https://www.animenewsnetwork.com/"
               "encyclopedia/reports.xml"
           )
 
+
           USER_AGENT = (
               "Animecia/1.0 "
               "(https://github.com/media-mania/Animecia)"
           )
 
+
           TIMEOUT = 60
 
 
-          # ==========================================
+          # ========================================================
+          # Allowed anime types
+          # ========================================================
+
+          ALLOWED_TYPES = {
+              "TV",
+              "MOVIE",
+              "OVA",
+              "OAV",
+              "ONA",
+              "SPECIAL",
+              "OMNIBUS",
+          }
+
+
+          # ========================================================
           # HTTP
-          # ==========================================
+          # ========================================================
 
           def fetch_xml(url):
 
               request = urllib.request.Request(
+
                   url,
+
                   headers={
-                      "User-Agent": USER_AGENT,
+                      "User-Agent":
+                          USER_AGENT,
+
                       "Accept":
-                          "application/xml,text/xml,*/*",
+                          (
+                              "application/xml,"
+                              "text/xml,*/*"
+                          ),
                   },
+
                   method="GET",
               )
+
 
               with urllib.request.urlopen(
                   request,
@@ -130,13 +178,19 @@ jobs:
 
                   body = response.read()
 
+
               if not body:
+
                   raise RuntimeError(
                       "ANN returned an empty response."
                   )
 
+
               try:
-                  return ET.fromstring(body)
+
+                  return ET.fromstring(
+                      body
+                  )
 
               except ET.ParseError as exc:
 
@@ -156,14 +210,15 @@ jobs:
                   ) from exc
 
 
-          # ==========================================
-          # Text helper
-          # ==========================================
+          # ========================================================
+          # Text
+          # ========================================================
 
           def clean_text(value):
 
               if value is None:
                   return None
+
 
               value = re.sub(
                   r"\s+",
@@ -171,27 +226,99 @@ jobs:
                   str(value)
               ).strip()
 
+
               return value or None
 
 
-          # ==========================================
-          # ANN report
-          # ==========================================
+          # ========================================================
+          # Date validation
+          # ========================================================
+
+          def validate_date(
+              date_text
+          ):
+
+              if not date_text:
+                  return False
+
+
+              return bool(
+                  re.fullmatch(
+                      r"\d{4}-\d{2}-\d{2}",
+                      date_text
+                  )
+              )
+
+
+          # ========================================================
+          # Vintage parser
+          # ========================================================
+
+          def parse_vintage(
+              text
+          ):
+
+              if not text:
+                  return None, None
+
+
+              dates = re.findall(
+                  r"\d{4}-\d{2}-\d{2}",
+                  text
+              )
+
+
+              if not dates:
+
+                  return None, None
+
+
+              start_date = dates[0]
+
+
+              end_date = (
+                  dates[1]
+                  if len(dates) >= 2
+                  else None
+              )
+
+
+              return (
+                  start_date,
+                  end_date
+              )
+
+
+          # ========================================================
+          # Report取得
+          # ========================================================
 
           def fetch_candidates():
 
               params = {
-                  "id": "155",
-                  "type": "anime",
-                  "nskip": str(OFFSET),
-                  "nlist": str(MAX_RECORDS),
+
+                  "id":
+                      "155",
+
+                  "type":
+                      "anime",
+
+                  "nskip":
+                      str(OFFSET),
+
+                  "nlist":
+                      str(MAX_RECORDS),
               }
+
 
               url = (
                   ANN_REPORT_URL
                   + "?"
-                  + urllib.parse.urlencode(params)
+                  + urllib.parse.urlencode(
+                      params
+                  )
               )
+
 
               print(
                   "========================================"
@@ -201,36 +328,33 @@ jobs:
                   "ANN report URL:"
               )
 
-              print(url)
+              print(
+                  url
+              )
 
               print(
                   "========================================"
               )
 
+
               root = fetch_xml(
                   url
               )
+
 
               candidates = []
 
               seen_ids = set()
 
-              # ANN report structure:
-              #
-              # <item>
-              #   <id>...</id>
-              #   <gid>...</gid>
-              #   <type>...</type>
-              #   <name>...</name>
-              #   ...
-              # </item>
 
               for item in root.iter():
 
                   if item.tag.lower() != "item":
                       continue
 
+
                   values = {}
+
 
                   for child in item:
 
@@ -240,11 +364,13 @@ jobs:
                           .strip()
                       )
 
+
                       text = " ".join(
                           part.strip()
                           for part in child.itertext()
                           if part and part.strip()
                       )
+
 
                       text = re.sub(
                           r"\s+",
@@ -252,22 +378,38 @@ jobs:
                           text
                       ).strip()
 
+
                       values[key] = text
+
 
                   ann_id = values.get(
                       "id"
                   )
 
+
                   title = clean_text(
                       values.get("name")
                   )
+
 
                   anime_type = clean_text(
                       values.get("type")
                   )
 
+
+                  vintage = clean_text(
+                      values.get("vintage")
+                  )
+
+
+                  precision = clean_text(
+                      values.get("precision")
+                  )
+
+
                   if not ann_id:
                       continue
+
 
                   if not re.fullmatch(
                       r"\d+",
@@ -275,22 +417,28 @@ jobs:
                   ):
                       continue
 
-                  if not title:
-                      continue
 
-                  if int(ann_id) in seen_ids:
-                      continue
-
-                  seen_ids.add(
-                      int(ann_id)
+                  ann_id = int(
+                      ann_id
                   )
 
+
+                  if ann_id in seen_ids:
+                      continue
+
+
+                  seen_ids.add(
+                      ann_id
+                  )
+
+
                   candidates.append({
+
                       "source":
                           "Anime News Network Encyclopedia",
 
                       "source_id":
-                          int(ann_id),
+                          ann_id,
 
                       "source_url":
                           (
@@ -302,33 +450,318 @@ jobs:
                       "title":
                           title,
 
-                      "format":
-                          anime_type or None,
+                      "ann_type":
+                          anime_type,
 
-                      "import_status":
-                          "pending",
+                      "vintage":
+                          vintage,
+
+                      "precision":
+                          precision,
+
                   })
+
 
                   if len(candidates) >= MAX_RECORDS:
                       break
 
+
               return candidates
 
 
-          # ==========================================
-          # Supabase
-          # ==========================================
+          # ========================================================
+          # 自動判定
+          # ========================================================
 
-          def save_candidates(records):
+          def classify_candidate(
+              candidate
+          ):
+
+              title = candidate.get(
+                  "title"
+              )
+
+
+              ann_type = (
+                  candidate.get(
+                      "ann_type"
+                  )
+                  or ""
+              ).upper().strip()
+
+
+              vintage = candidate.get(
+                  "vintage"
+              )
+
+
+              precision = (
+                  candidate.get(
+                      "precision"
+                  )
+                  or ""
+              ).lower()
+
+
+              reasons = []
+
+              score = 100
+
+
+              # ----------------------------------------------------
+              # Title
+              # ----------------------------------------------------
+
+              if not title:
+
+                  return {
+                      "category":
+                          "non_anime",
+
+                      "decision":
+                          "rejected",
+
+                      "confidence":
+                          100,
+
+                      "reasons":
+                          [
+                              "タイトルが存在しません。"
+                          ],
+                  }
+
+
+              if len(title) > 300:
+
+                  score -= 15
+
+                  reasons.append(
+                      "タイトルが非常に長いです。"
+                  )
+
+
+              # ----------------------------------------------------
+              # Type
+              # ----------------------------------------------------
+
+              if ann_type not in ALLOWED_TYPES:
+
+                  return {
+                      "category":
+                          "non_anime",
+
+                      "decision":
+                          "rejected",
+
+                      "confidence":
+                          100,
+
+                      "reasons":
+                          [
+                              (
+                                  "ANNの作品種別が"
+                                  f"対象外です: {ann_type}"
+                              )
+                          ],
+                  }
+
+
+              reasons.append(
+                  f"ANN種別が{ann_type}です。"
+              )
+
+
+              # ----------------------------------------------------
+              # Vintage
+              # ----------------------------------------------------
+
+              start_date, end_date = (
+                  parse_vintage(
+                      vintage
+                  )
+              )
+
+
+              if vintage and not start_date:
+
+                  score -= 25
+
+                  reasons.append(
+                      "放送・公開期間を正しく解析できませんでした。"
+                  )
+
+
+              elif not vintage:
+
+                  score -= 10
+
+                  reasons.append(
+                      "放送・公開期間の情報がありません。"
+                  )
+
+
+              else:
+
+                  reasons.append(
+                      "日付情報を確認できました。"
+                  )
+
+
+              if (
+                  start_date
+                  and end_date
+                  and end_date < start_date
+              ):
+
+                  score -= 30
+
+                  reasons.append(
+                      "終了日が開始日より前になっています。"
+                  )
+
+
+              # ----------------------------------------------------
+              # Precision
+              # ----------------------------------------------------
+
+              if precision:
+
+                  if (
+                      precision
+                      not in {
+                          "high",
+                          "medium",
+                          "low",
+                      }
+                  ):
+
+                      score -= 5
+
+                      reasons.append(
+                          "ANNの精度情報を確認する必要があります。"
+                      )
+
+
+              # ----------------------------------------------------
+              # Special formats
+              # ----------------------------------------------------
+
+              if ann_type in {
+                  "SPECIAL",
+                  "OMNIBUS",
+              }:
+
+                  score -= 5
+
+                  reasons.append(
+                      "特殊形式の作品なので確認推奨です。"
+                  )
+
+
+              # ----------------------------------------------------
+              # OVA/OAV
+              # ----------------------------------------------------
+
+              if ann_type in {
+                  "OVA",
+                  "OAV",
+              }:
+
+                  reasons.append(
+                      "OVA/OAV作品として判定しました。"
+                  )
+
+
+              # ----------------------------------------------------
+              # Confidence
+              # ----------------------------------------------------
+
+              score = max(
+                  0,
+                  min(
+                      100,
+                      score
+                  )
+              )
+
+
+              # ----------------------------------------------------
+              # Decision
+              # ----------------------------------------------------
+
+              if score >= 90:
+
+                  decision = (
+                      "accepted"
+                  )
+
+                  category = (
+                      "anime"
+                  )
+
+              elif score >= 65:
+
+                  decision = (
+                      "review"
+                  )
+
+                  category = (
+                      "uncertain"
+                  )
+
+              else:
+
+                  decision = (
+                      "rejected"
+                  )
+
+                  category = (
+                      "non_anime"
+                  )
+
+
+              if not reasons:
+
+                  reasons.append(
+                      "基本チェックを通過しました。"
+                  )
+
+
+              return {
+
+                  "category":
+                      category,
+
+                  "decision":
+                      decision,
+
+                  "confidence":
+                      score,
+
+                  "reasons":
+                      reasons,
+
+              }
+
+
+          # ========================================================
+          # Candidate保存
+          # ========================================================
+
+          def save_candidates(
+              records
+          ):
 
               if not records:
                   return
+
 
               url = (
                   f"{SUPABASE_URL}"
                   "/rest/v1/anime_import_candidates"
                   "?on_conflict=source,source_id"
               )
+
 
               payload = json.dumps(
                   records,
@@ -337,10 +770,15 @@ jobs:
                   "utf-8"
               )
 
+
               request = urllib.request.Request(
+
                   url,
+
                   data=payload,
+
                   method="POST",
+
                   headers={
 
                       "apikey":
@@ -363,8 +801,9 @@ jobs:
                               "resolution=merge-duplicates,"
                               "return=minimal"
                           ),
-                  }
+                  },
               )
+
 
               try:
 
@@ -387,11 +826,13 @@ jobs:
                               )
                           )
 
+
                           raise RuntimeError(
                               "Supabase returned "
                               f"HTTP {response.status}: "
                               f"{body[:2000]}"
                           )
+
 
               except urllib.error.HTTPError as exc:
 
@@ -403,6 +844,7 @@ jobs:
                       )
                   )
 
+
                   raise RuntimeError(
                       "Supabase returned "
                       f"HTTP {exc.code}: "
@@ -410,20 +852,16 @@ jobs:
                   ) from exc
 
 
-          # ==========================================
+          # ========================================================
           # Main
-          # ==========================================
+          # ========================================================
 
           print(
               "========================================"
           )
 
           print(
-              "Animecia Candidate Import"
-          )
-
-          print(
-              "Source: Anime News Network Encyclopedia"
+              "Animecia Automatic Anime Classification"
           )
 
           print(
@@ -440,42 +878,211 @@ jobs:
               "========================================"
           )
 
+
           candidates = fetch_candidates()
+
 
           print(
               "Candidates found:",
               len(candidates)
           )
 
+
           if not candidates:
 
               raise RuntimeError(
-                  "No ANN anime candidates were found."
+                  "No ANN candidates were found."
               )
 
+
+          output_records = []
+
+
+          for candidate in candidates:
+
+              result = classify_candidate(
+                  candidate
+              )
+
+
+              record = {
+
+                  "source":
+                      candidate[
+                          "source"
+                      ],
+
+                  "source_id":
+                      candidate[
+                          "source_id"
+                      ],
+
+                  "source_url":
+                      candidate[
+                          "source_url"
+                      ],
+
+                  "title":
+                      candidate[
+                          "title"
+                      ],
+
+                  "title_native":
+                      None,
+
+                  "title_japanese":
+                      None,
+
+                  "title_english":
+                      None,
+
+                  "format":
+                      (
+                          candidate[
+                              "ann_type"
+                          ]
+                          or None
+                      ),
+
+                  "start_date":
+                      None,
+
+                  "end_date":
+                      None,
+
+                  "episodes":
+                      None,
+
+                  "duration":
+                      None,
+
+                  "genre":
+                      None,
+
+                  "status":
+                      None,
+
+                  "official_url":
+                      None,
+
+                  "auto_category":
+                      result[
+                          "category"
+                      ],
+
+                  "auto_decision":
+                      result[
+                          "decision"
+                      ],
+
+                  "auto_confidence":
+                      result[
+                          "confidence"
+                      ],
+
+                  "auto_reasons":
+                      result[
+                          "reasons"
+                      ],
+
+                  "auto_checked_at":
+                      (
+                          __import__(
+                              "datetime"
+                          ).datetime.now(
+                              __import__(
+                                  "datetime"
+                              ).timezone.utc
+                          ).isoformat()
+                      ),
+
+                  "import_status":
+                      "pending",
+
+              }
+
+
+              output_records.append(
+                  record
+              )
+
+
+          # ========================================================
+          # 結果表示
+          # ========================================================
+
           print()
+
           print(
-              "Candidates:"
+              "========================================"
           )
 
-          for index, candidate in enumerate(
-              candidates,
+          print(
+              "Automatic classification result"
+          )
+
+          print(
+              "========================================"
+          )
+
+
+          for index, record in enumerate(
+              output_records,
               start=1
           ):
 
+              print()
+
               print(
                   f"{index}. "
-                  f"{candidate['title']} "
-                  f"[{candidate['format']}] "
-                  f"(ANN ID: "
-                  f"{candidate['source_id']})"
+                  f"{record['title']}"
               )
 
+              print(
+                  "   Format:",
+                  record["format"]
+              )
+
+              print(
+                  "   Category:",
+                  record["auto_category"]
+              )
+
+              print(
+                  "   Decision:",
+                  record["auto_decision"]
+              )
+
+              print(
+                  "   Confidence:",
+                  record["auto_confidence"]
+              )
+
+              print(
+                  "   Reasons:"
+              )
+
+              for reason in (
+                  record["auto_reasons"]
+              ):
+
+                  print(
+                      "     -",
+                      reason
+                  )
+
+
+          # ========================================================
+          # 保存
+          # ========================================================
+
           save_candidates(
-              candidates
+              output_records
           )
 
+
           print()
+
           print(
               "========================================"
           )
@@ -486,7 +1093,7 @@ jobs:
 
           print(
               "Saved candidates:",
-              len(candidates)
+              len(output_records)
           )
 
           print(
@@ -498,11 +1105,7 @@ jobs:
           )
 
           print(
-              "External reviews were NOT imported."
-          )
-
-          print(
-              "All candidates are pending review."
+              "All candidates remain pending."
           )
 
           print(
