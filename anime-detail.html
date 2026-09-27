@@ -1618,6 +1618,14 @@
                             共有
                         </button>
 
+                        <button
+                            type="button"
+                            id="compare-button"
+                            class="action-button"
+                        >
+                            比較に追加
+                        </button>
+
 
                         <a
                             id="official-button"
@@ -7147,6 +7155,71 @@
     }
 
 
+    function getCompareIds() {
+        try {
+            const ids = JSON.parse(localStorage.getItem("animecia_compare") || "[]");
+            return Array.isArray(ids)
+                ? ids.map(Number).filter(id => Number.isInteger(id)).slice(0, 5)
+                : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveCompareIds(ids) {
+        localStorage.setItem(
+            "animecia_compare",
+            JSON.stringify(
+                [...new Set(ids.map(Number).filter(id => Number.isInteger(id)))].slice(0, 5)
+            )
+        );
+    }
+
+    function updateCompareButton() {
+        const button = document.getElementById("compare-button");
+        if (!button) return;
+        const ids = getCompareIds();
+        const currentId = Number(currentAnimeId);
+        if (ids.includes(currentId)) {
+            button.textContent = ids.length >= 2
+                ? "比較を見る（" + ids.length + "作品）"
+                : "比較に追加済み";
+            button.classList.add("active");
+        } else {
+            button.textContent = ids.length >= 5
+                ? "比較は最大5作品"
+                : "比較に追加";
+            button.classList.remove("active");
+        }
+    }
+
+    function toggleCompare() {
+        const currentId = Number(currentAnimeId);
+        if (!Number.isInteger(currentId)) return;
+        let ids = getCompareIds();
+        if (ids.includes(currentId)) {
+            if (ids.length >= 2) {
+                location.href = "compare.html?ids=" + encodeURIComponent(ids.join(","));
+                return;
+            }
+            ids = ids.filter(id => id !== currentId);
+        } else {
+            if (ids.length >= 5) {
+                alert("比較できる作品は5作品までです。");
+                return;
+            }
+            ids.push(currentId);
+        }
+        saveCompareIds(ids);
+        updateCompareButton();
+        if (ids.length >= 2) {
+            const message = document.getElementById("share-message");
+            if (message) {
+                message.textContent = "比較に追加しました。もう一度押すと比較ページを開きます。";
+            }
+        }
+    }
+
     /* =========================================
        Events
     ========================================= */
@@ -7187,6 +7260,17 @@
             "change",
             saveFollowPreferences
         );
+
+    document
+        .getElementById(
+            "compare-button"
+        )
+        .addEventListener(
+            "click",
+            toggleCompare
+        );
+
+    updateCompareButton();
 
     document
         .getElementById(
