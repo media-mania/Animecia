@@ -25,6 +25,7 @@ jobs:
       ANN_PAGE_URL: https://www.animenewsnetwork.com/encyclopedia/anime.php?id=
       # 2,000,000,000 + ANN ID is the dedicated ANN namespace used by Animecia.
       ANN_EXTERNAL_ID_BASE: '2000000000'
+      ANILIST_API_URL: https://graphql.anilist.co
       # Process enough report rows to keep the catalog fresh without pulling the entire ANN DB each run.
       ANN_PAGE_SIZE: '100'
       ANN_MAX_PAGES: '10'
@@ -186,6 +187,29 @@ jobs:
               } catch (error) {
                 lastError = error;
                 await sleep(1000 * (i + 1));
+              }
+            }
+            throw lastError;
+          }
+
+
+          async function fetchJson(url, options = {}, attempts = 4) {
+            let lastError;
+            for (let i = 0; i < attempts; i++) {
+              try {
+                const response = await fetch(url, {
+                  ...options,
+                  headers: {
+                    'User-Agent': 'Animecia-Auto-Pipeline/1.0',
+                    'Accept': 'application/json',
+                    ...(options.headers || {}),
+                  },
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+                return await response.json();
+              } catch (error) {
+                lastError = error;
+                await sleep(1200 * (i + 1));
               }
             }
             throw lastError;
@@ -432,6 +456,188 @@ jobs:
               title_english: english,
               title_native: native,
             };
+          }
+
+
+          function cleanHtmlText(value) {
+            return String(value || '')
+              .replace(/<[^>]*>/g, ' ')
+              .replace(/&nbsp;/gi, ' ')
+              .replace(/&amp;/gi, '&')
+              .replace(/&quot;/gi, '"')
+              .replace(/&#39;|&#039;/gi, "'")
+              .replace(/\s+/g, ' ')
+              .trim();
+          }
+
+          function extractMeta(html, key) {
+            const source = String(html || '');
+            const patterns = [
+              new RegExp(`<meta[^>]+(?:property|name)=["']${key}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i'),
+              new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${key}["'][^>]*>`, 'i'),
+            ];
+            for (const pattern of patterns) {
+              const match = source.match(pattern);
+              if (match && match[1]) return cleanHtmlText(match[1]);
+            }
+            return null;
+          }
+
+          function normalizeForMatch(value) {
+            return normalizeTitle(String(value || '')
+              .normalize('NFKC')
+              .replace(/[：:・]/g, ' ')
+              .replace(/[!?！？.,。]/g, ' ')
+            );
+          }
+
+          function titleMatchScore(query, media) {
+            const q = normalizeForMatch(query);
+            if (!q) return 0;
+            const titles = [
+              media?.title?.native,
+              media?.title?.romaji,
+              media?.title?.english,
+              media?.title?.userPreferred,
+            ].filter(Boolean).map(normalizeForMatch);
+            let score = 0;
+            for (const title of titles) {
+              if (title === q) score = Math.max(score, 1);
+              else if (title.startsWith(q) || q.startsWith(title)) score = Math.max(score, 0.88);
+              else if (title.includes(q) || q.includes(title)) score = Math.max(score, 0.76);
+              const qWords = new Set(q.split(/\s+/).filter(Boolean));
+              const tWords = new Set(title.split(/\s+/).filter(Boolean));
+              const overlap = [...qWords].filter(w => tWords.has(w)).length;
+              if (overlap && qWords.size) score = Math.max(score, overlap / qWords.size * 0.7);
+            }
+            return score;
+          }
+
+          async function fetchAniListMedia(search) {
+            const query = `
+              query ($search: String!) {
+                Page(page: 1, perPage: 6) {
+                  media(search: $search, type: ANIME, isAdult: false, sort: SEARCH_MATCH) {
+                    id
+                    title { romaji english native userPreferred }
+                    coverImage { large extraLarge }
+                    bannerImage
+                    siteUrl
+                    externalLinks { url site type }
+                    characters(perPage: 40, sort: [ROLE, FAVOURITES_DESC]) {
+                      edges {
+                        role
+                        node {
+                          id
+                          name { full native }
+                          image { large }
+                          description
+                        }
+                        voiceActors(language: JAPANESE, sort: [FAVOURITES_DESC]) {
+                          id
+                          name { full native }
+                          image { large }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            const response = await fetchJson(process.env.ANILIST_API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query, variables: { search: String(search || '') } }),
+            });
+            if (response.errors?.length) throw new Error(response.errors.map(e => e.message).join('; '));
+            const media = response?.data?.Page?.media || [];
+            if (!media.length) return null;
+            media.sort((a, b) => titleMatchScore(search, b) - titleMatchScore(search, a));
+            const best = media[0];
+            return titleMatchScore(search, best) >= 0.55 ? best : null;
+          }
+
+          async function enrichPayloadWithExternalSources(payload) {
+            let media = null;
+            try {
+              media = await fetchAniListMedia(payload.title);
+            } catch (error) {
+              console.warn(`AniList lookup failed for "${payload.title}": ${error.message}`);
+            }
+
+            if (media) {
+              const native = media.title?.native || null;
+              const english = media.title?.english || null;
+              const romaji = media.title?.romaji || null;
+              const looksJapanese = value => /[\u3040-\u30ff\u3400-\u9fff]/.test(String(value || ''));
+
+              if (native && looksJapanese(native)) {
+                payload.title_native = native;
+                payload.title_japanese = native;
+                payload.title = native;
+              }
+              if (english) payload.title_english = english;
+              if (romaji) payload.title_romaji = romaji;
+              if (!payload.banner_image && media.bannerImage) payload.banner_image = media.bannerImage;
+
+              const officialCandidates = (media.externalLinks || [])
+                .filter(link => link?.url && /^https?:\/\//i.test(link.url))
+                .sort((a, b) => {
+                  const aScore = /OFFICIAL|ANIME_OFFICIAL/i.test(String(a.type || '')) ? 2 : /official/i.test(String(a.site || '')) ? 1 : 0;
+                  const bScore = /OFFICIAL|ANIME_OFFICIAL/i.test(String(b.type || '')) ? 2 : /official/i.test(String(b.site || '')) ? 1 : 0;
+                  return bScore - aScore;
+                });
+              const official = officialCandidates.find(link => /OFFICIAL|ANIME_OFFICIAL/i.test(String(link.type || ''))) || officialCandidates.find(link => /official/i.test(String(link.site || '')));
+              if (official?.url) payload.official_url = official.url;
+
+              if (!payload.cover_image && media.coverImage?.extraLarge) payload.cover_image = media.coverImage.extraLarge;
+              else if (!payload.cover_image && media.coverImage?.large) payload.cover_image = media.coverImage.large;
+
+              const characterRows = [];
+              for (const edge of (media.characters?.edges || [])) {
+                const node = edge?.node;
+                if (!node?.name?.full) continue;
+                const voiceActors = Array.isArray(edge.voiceActors) ? edge.voiceActors : [];
+                const actor = voiceActors[0];
+                if (!actor?.name?.full) continue;
+                characterRows.push({
+                  external_id: Number.isInteger(Number(actor.id)) ? Number(actor.id) : null,
+                  name_first: actor.name.full,
+                  name_last: '',
+                  name_native: actor.name.native || null,
+                  image: actor.image?.large || null,
+                  description: null,
+                  role: `声優｜${node.name.full}`,
+                });
+              }
+              const mergedStaff = [...(payload._staff || []), ...characterRows];
+              const seen = new Set();
+              payload._staff = mergedStaff.filter(person => {
+                const key = person.external_id ? `id:${person.external_id}` : `name:${normalizeTitle(`${person.name_first} ${person.name_last}`)}:${person.role || ''}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              }).slice(0, 1200);
+            }
+
+            // Prefer an actual official-site Open Graph image when possible.
+            if (payload.official_url && /^https?:\/\//i.test(payload.official_url)) {
+              try {
+                const html = await fetchText(payload.official_url, 2);
+                const officialImage = extractMeta(html, 'og:image');
+                const officialTitle = extractMeta(html, 'og:title');
+                if (officialImage && /^https?:\/\//i.test(officialImage)) payload.cover_image = officialImage;
+                if (officialTitle && !payload.title_native && /[\u3040-\u30ff\u3400-\u9fff]/.test(officialTitle)) {
+                  payload.title_native = officialTitle.split('|')[0].trim();
+                  payload.title_japanese = payload.title_native;
+                  payload.title = payload.title_native;
+                }
+              } catch (error) {
+                console.warn(`Official site enrichment failed for "${payload.title}": ${error.message}`);
+              }
+            }
+
+            return payload;
           }
 
           function buildAnimePayload(reportRow, detail) {
@@ -711,6 +917,9 @@ jobs:
             const detailXml = await fetchText(`${ANN_DETAIL_URL}${reportRow.source_id}`);
             const detailParsed = parser.parse(detailXml);
             const result = buildAnimePayload(reportRow, detailParsed);
+            if (result.allowed) {
+              await enrichPayloadWithExternalSources(result.payload);
+            }
             const candidateId = await ensureCandidate(
               reportRow,
               result.allowed ? 'accepted' : 'rejected',
@@ -768,6 +977,9 @@ jobs:
                   vintage: row.start_date || '',
                 };
                 const result = buildAnimePayload(reportRow, detailParsed);
+                if (result.allowed) {
+                  await enrichPayloadWithExternalSources(result.payload);
+                }
                 if (!result.allowed) {
                   console.log(`UPDATE-SKIP ANN ${annId}: ${result.reasons.join(', ')}`);
                   continue;
