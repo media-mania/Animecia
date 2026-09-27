@@ -1377,6 +1377,18 @@
                 アニメ一覧
             </a>
 
+            <a href="season.html">
+                今期アニメ
+            </a>
+
+            <a href="ranking.html">
+                ランキング
+            </a>
+
+            <a href="compare.html">
+                作品比較
+            </a>
+
             <a href="terms.html">
                 利用規約
             </a>
@@ -2464,6 +2476,19 @@
         return (
             anime?.title_japanese ||
             anime?.title_native ||
+
+            (
+                Array.isArray(anime?._japanese_aliases)
+                    ? anime._japanese_aliases[0]
+                    : ""
+            ) ||
+
+            (
+                /[ぁ-んァ-ン一-龯]/.test(String(anime?.title || ""))
+                    ? anime.title
+                    : ""
+            ) ||
+
             anime?.title_user_preferred ||
             anime?.title_romaji ||
             anime?.title_english ||
@@ -3249,6 +3274,50 @@
 
             await loadGenres();
 
+            currentAnime._japanese_aliases = [];
+
+            try {
+                const aliasResult = await supabaseClient
+                    .from("anime_aliases")
+                    .select("title,language")
+                    .eq("anime_id", Number(currentAnimeId));
+
+                if (aliasResult.error) throw aliasResult.error;
+
+                currentAnime._japanese_aliases =
+                    (aliasResult.data || [])
+                        .filter(row =>
+                            String(row.language || "").toLowerCase() === "japanese" ||
+                            /[ぁ-んァ-ン一-龯]/.test(String(row.title || ""))
+                        )
+                        .map(row => String(row.title || "").trim())
+                        .filter(Boolean);
+            } catch (error) {
+                console.error("日本語タイトル補完取得エラー:", error);
+            }
+
+            if (!currentAnime.cover_image) {
+                try {
+                    const sourceResult = await supabaseClient
+                        .from("anime_sources")
+                        .select("image_url,last_synced_at")
+                        .eq("anime_id", Number(currentAnimeId))
+                        .not("image_url", "is", null)
+                        .order("last_synced_at", { ascending: false, nullsFirst: false });
+
+                    if (sourceResult.error) throw sourceResult.error;
+
+                    const sourceImage = (sourceResult.data || []).find(row =>
+                        /^https?:\\/\\//i.test(String(row.image_url || ""))
+                    );
+
+                    if (sourceImage) {
+                        currentAnime.cover_image = sourceImage.image_url;
+                    }
+                } catch (error) {
+                    console.error("画像補完取得エラー:", error);
+                }
+            }
 
             updateSEO(
                 currentAnime
@@ -3573,9 +3642,14 @@
                         title
                     )}のキービジュアル"
                     loading="eager"
+                    data-fallback="${escapeHTML(safeURL(anime.banner_image))}"
                     onerror="
-                        this.style.display='none';
-                        this.nextElementSibling.style.display='flex';
+                        if (this.dataset.fallback && this.src !== this.dataset.fallback) {
+                            this.src = this.dataset.fallback;
+                        } else {
+                            this.style.display='none';
+                            this.nextElementSibling.style.display='flex';
+                        }
                     "
                 >
 
