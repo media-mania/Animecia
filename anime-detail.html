@@ -2180,6 +2180,24 @@
                     <div id="external-links-list" class="item-list"></div>
                 </section>
 
+                <section
+                    id="aliases-section"
+                    class="content-section"
+                    style="display:none;"
+                >
+                    <h2>別名・表記</h2>
+                    <div id="aliases-list" class="item-list"></div>
+                </section>
+
+                <section
+                    id="sources-section"
+                    class="content-section"
+                    style="display:none;"
+                >
+                    <h2>データソース</h2>
+                    <div id="sources-list" class="item-list"></div>
+                </section>
+
 
 
                 <a
@@ -2382,6 +2400,7 @@
         return (
             anime?.title_japanese ||
             anime?.title_native ||
+            anime?.title_user_preferred ||
             anime?.title_romaji ||
             anime?.title_english ||
             anime?.english_title ||
@@ -2404,6 +2423,8 @@
             anime?.english_title,
 
             anime?.title_romaji,
+
+            anime?.title_user_preferred,
 
             anime?.title_native,
 
@@ -3112,6 +3133,7 @@
                         recommended_end_at,
                         external_id,
                         title_romaji,
+                        title_user_preferred,
                         title_english,
                         title_native,
                         title_japanese,
@@ -3187,6 +3209,12 @@
                 loadStreamingLinks(),
 
                 loadExternalLinks(),
+
+                loadAliases(),
+
+                loadSources(),
+
+                loadEngagementSummary(),
 
                 loadRelatedAnime(),
 
@@ -3601,6 +3629,15 @@
             anime.title_english ||
             anime.english_title ||
             "—";
+
+        const romajiTitleElement =
+            document.getElementById("info-romaji-title");
+
+        if (romajiTitleElement) {
+            romajiTitleElement.textContent =
+                anime.title_romaji ||
+                "—";
+        }
 
 
         document
@@ -5434,6 +5471,89 @@
             }
         } catch (error) {
             console.error("声優取得エラー:", error);
+        }
+    }
+
+    async function loadAliases() {
+        const section = document.getElementById("aliases-section");
+        const list = document.getElementById("aliases-list");
+        try {
+            const { data, error } = await supabaseClient
+                .from("anime_aliases")
+                .select("title,language,title_type,source")
+                .eq("anime_id", Number(currentAnimeId))
+                .order("title", { ascending: true });
+            if (error) throw error;
+            const rows = Array.isArray(data) ? data : [];
+            const seen = new Set();
+            const unique = rows.filter(row => {
+                const key = String(row.title || "").trim().toLowerCase();
+                if (!key || seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+            if (!unique.length) { section.style.display = "none"; return; }
+            list.innerHTML = unique.map(row => {
+                const meta = [row.language, row.title_type, row.source].filter(Boolean).join(" / ");
+                return '<div class="item-card"><strong>' + escapeHTML(row.title) + '</strong>' +
+                    (meta ? '<br><small>' + escapeHTML(meta) + '</small>' : '') +
+                    '</div>';
+            }).join("");
+            section.style.display = "block";
+        } catch (error) {
+            console.error("別名取得エラー:", error);
+            section.style.display = "none";
+        }
+    }
+
+    async function loadSources() {
+        const section = document.getElementById("sources-section");
+        const list = document.getElementById("sources-list");
+        try {
+            const { data, error } = await supabaseClient
+                .from("anime_sources")
+                .select("source,source_id,source_url,image_url,last_synced_at")
+                .eq("anime_id", Number(currentAnimeId))
+                .order("source", { ascending: true });
+            if (error) throw error;
+            const rows = Array.isArray(data) ? data : [];
+            if (!rows.length) { section.style.display = "none"; return; }
+            list.innerHTML = rows.map(row => {
+                const url = safeURL(row.source_url);
+                return '<div class="item-card"><strong>' + escapeHTML(row.source) + '</strong>' +
+                    (row.source_id ? '<br><small>ID: ' + escapeHTML(String(row.source_id)) + '</small>' : '') +
+                    (url ? '<br><a href="' + escapeHTML(url) + '" target="_blank" rel="noopener noreferrer nofollow">データ元を開く</a>' : '') +
+                    '</div>';
+            }).join("");
+            section.style.display = "block";
+        } catch (error) {
+            console.error("データソース取得エラー:", error);
+            section.style.display = "none";
+        }
+    }
+
+    async function loadEngagementSummary() {
+        try {
+            const { data, error } = await supabaseClient
+                .from("anime_engagement_summary")
+                .select("favorite_count,review_count,average_rating,rating_count")
+                .eq("anime_id", Number(currentAnimeId))
+                .maybeSingle();
+            if (error) throw error;
+            const summary = data || {};
+            const rating = summary.average_rating;
+            const heroScore = document.getElementById("hero-score");
+            if (heroScore) {
+                heroScore.textContent = rating !== null && rating !== undefined
+                    ? "★ " + formatScore(rating)
+                    : "—";
+            }
+            const favoriteCount = document.getElementById("hero-favourites");
+            if (favoriteCount && Number.isFinite(Number(summary.favorite_count))) {
+                favoriteCount.textContent = formatNumber(summary.favorite_count);
+            }
+        } catch (error) {
+            console.error("Animecia集計取得エラー:", error);
         }
     }
 
