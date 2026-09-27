@@ -35,7 +35,8 @@ jobs:
       ANILIST_API_URL: https://graphql.anilist.co
       # Process enough report rows to keep the catalog fresh without pulling the entire ANN DB each run.
       ANN_PAGE_SIZE: '100'
-      ANN_MAX_PAGES: '10'
+      ANN_FRESH_PAGES: '2'
+      ANN_HISTORICAL_PAGES: '10'
 
     steps:
       - name: Checkout
@@ -63,7 +64,8 @@ jobs:
           const ANN_PAGE_URL = process.env.ANN_PAGE_URL;
           const ANN_EXTERNAL_ID_BASE = Number(process.env.ANN_EXTERNAL_ID_BASE || '2000000000');
           const ANN_PAGE_SIZE = Number(process.env.ANN_PAGE_SIZE || '100');
-          const ANN_MAX_PAGES = Number(process.env.ANN_MAX_PAGES || '10');
+          const ANN_FRESH_PAGES = Number(process.env.ANN_FRESH_PAGES || '2');
+          const ANN_HISTORICAL_PAGES = Number(process.env.ANN_HISTORICAL_PAGES || '10');
 
           if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
             throw new Error('SUPABASE_URL / SUPABASE_SECRET_KEY が設定されていません。');
@@ -598,6 +600,32 @@ jobs:
             return score;
           }
 
+          async function fetchAniListMediaByIds(ids) {
+            const cleanIds = [...new Set((ids || []).map(Number).filter(Number.isInteger))];
+            if (!cleanIds.length) return [];
+            const query = `
+              query ($ids: [Int]) {
+                Page(page: 1, perPage: 50) {
+                  media(id_in: $ids, type: ANIME, isAdult: false) {
+                    id
+                    title { romaji english native userPreferred }
+                    coverImage { extraLarge large medium }
+                    bannerImage
+                    siteUrl
+                    externalLinks { url site type }
+                  }
+                }
+              }
+            `;
+            const response = await fetchJson(process.env.ANILIST_API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query, variables: { ids: cleanIds } }),
+            });
+            if (response.errors?.length) throw new Error(response.errors.map(e => e.message).join('; '));
+            return response?.data?.Page?.media || [];
+          }
+
           async function fetchAniListMedia(search) {
             const query = `
               query ($search: String!) {
@@ -645,10 +673,22 @@ jobs:
 
           async function enrichPayloadWithExternalSources(payload) {
             let media = null;
-            try {
-              media = await fetchAniListMedia(payload.title);
-            } catch (error) {
-              console.warn(`AniList lookup failed for "${payload.title}": ${error.message}`);
+            const searchCandidates = [...new Set([
+              payload.title,
+              payload.title_japanese,
+              payload.title_native,
+              payload.title_romaji,
+              payload.title_english,
+              payload.english_title,
+            ].filter(Boolean).map(value => String(value).trim()).filter(Boolean))];
+
+            for (const search of searchCandidates) {
+              try {
+                media = await fetchAniListMedia(search);
+                if (media) break;
+              } catch (error) {
+                console.warn(`AniList lookup failed for "${search}": ${error.message}`);
+              }
             }
 
             if (media) {
@@ -725,8 +765,9 @@ jobs:
                   source: 'AniList',
                 }));
 
-              if (!payload.cover_image && media.coverImage?.extraLarge) payload.cover_image = media.coverImage.extraLarge;
-              else if (!payload.cover_image && media.coverImage?.large) payload.cover_image = media.coverImage.large;
+              if (media.coverImage?.extraLarge) payload.cover_image = media.coverImage.extraLarge;
+              else if (media.coverImage?.large) payload.cover_image = media.coverImage.large;
+              else if (media.coverImage?.medium) payload.cover_image = media.coverImage.medium;
 
               payload._aliases = [...(payload._aliases || []), ...aliasRows]
                 .filter((row, index, arr) => arr.findIndex(x => normalizeTitle(x.title) === normalizeTitle(row.title)) === index);
@@ -1268,6 +1309,11 @@ jobs:
           }
 
           async function processOne(reportRow) {
+            const existing = await getExistingAnimeByExternalId(ANN_EXTERNAL_ID_BASE + reportRow.source_id);
+            if (existing) {
+              return { status: 'exists', animeId: existing.id };
+            }
+
             const detailXml = await fetchText(`${ANN_DETAIL_URL}${reportRow.source_id}`);
             const detailParsed = parser.parse(detailXml);
             const result = buildAnimePayload(reportRow, detailParsed);
@@ -1309,11 +1355,13 @@ jobs:
           async function syncExistingAnnAnime() {
             const { data: animeRows, error } = await supabase
               .from('anime')
-              .select('id,external_id,title,start_date,end_date,episodes,status,official_url')
+              .select('id,external_id,title,title_japanese,title_native,cover_image,start_date,end_date,episodes,status,official_url')
               .eq('source', 'Anime News Network Encyclopedia')
+              .or('cover_image.is.null,cover_image.eq.,title_japanese.is.null,title_japanese.eq.,title_native.is.null,title_native.eq.')
               .gte('external_id', ANN_EXTERNAL_ID_BASE)
               .lt('external_id', ANN_EXTERNAL_ID_BASE + 2000000000)
-              .order('id', { ascending: true });
+              .order('id', { ascending: true })
+              .limit(500);
 
             if (error) throw error;
             if (!animeRows?.length) {
@@ -1444,47 +1492,99 @@ jobs:
             return { scanned: Math.min(animeRows.length, 2000), updated, errors };
           }
 
+          async function getAutomationOffset() {
+            const { data, error } = await supabase
+              .from('anime_automation_state')
+              .select('value')
+              .eq('key', 'ann_scan_offset')
+              .maybeSingle();
+            if (error) throw error;
+            return Number(data?.value || 0);
+          }
+
+          async function setAutomationOffset(value) {
+            const { error } = await supabase
+              .from('anime_automation_state')
+              .upsert({
+                key: 'ann_scan_offset',
+                value: Math.max(0, Number(value) || 0),
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'key' });
+            if (error) throw error;
+          }
+
           async function main() {
+            const historicalOffset = await getAutomationOffset();
+            const offsets = new Set();
+
+            for (let page = 0; page < ANN_FRESH_PAGES; page++) {
+              offsets.add(page * ANN_PAGE_SIZE);
+            }
+
+            for (let page = 0; page < ANN_HISTORICAL_PAGES; page++) {
+              offsets.add(historicalOffset + page * ANN_PAGE_SIZE);
+            }
+
+            const sortedOffsets = [...offsets].sort((a, b) => a - b);
             let allRows = [];
-            for (let page = 0; page < ANN_MAX_PAGES; page++) {
-              const offset = page * ANN_PAGE_SIZE;
+            let historicalFetchedRows = 0;
+            let historicalComplete = false;
+
+            for (const offset of sortedOffsets) {
               const url = `${ANN_REPORT_URL}&nskip=${offset}&nlist=${ANN_PAGE_SIZE}`;
-              console.log(`Fetching ANN report page ${page + 1}/${ANN_MAX_PAGES}...`);
+              console.log(`Fetching ANN report offset=${offset}...`);
               const xml = await fetchText(url);
               const rows = reportRows(xml);
               allRows.push(...rows);
-              if (rows.length < ANN_PAGE_SIZE) break;
-              await sleep(1200);
+
+              if (offset >= historicalOffset) {
+                historicalFetchedRows += rows.length;
+                if (rows.length < ANN_PAGE_SIZE) historicalComplete = true;
+              }
+
+              if (rows.length < ANN_PAGE_SIZE && offset < historicalOffset) break;
+              await sleep(500);
             }
 
             const map = new Map();
             for (const row of allRows) map.set(row.source_id, row);
             const rows = [...map.values()];
 
-            console.log(`ANN candidates discovered: ${rows.length}`);
+            console.log(`ANN candidates discovered: ${rows.length}; historicalOffset=${historicalOffset}`);
 
             let imported = 0;
             let rejected = 0;
+            let skipped = 0;
             let errors = 0;
+            let advancedHistorical = historicalOffset;
 
             for (const row of rows) {
               try {
                 const result = await processOne(row);
                 if (result.status === 'imported') imported++;
+                else if (result.status === 'exists') skipped++;
                 else rejected++;
               } catch (error) {
                 errors++;
                 console.error(`ERROR ANN ${row.source_id} ${row.title}:`, error?.stack || error);
-                // The next scheduled run will retry failed items automatically.
               }
-              await sleep(700);
+              await sleep(500);
+            }
+
+            if (historicalFetchedRows > 0 && !historicalComplete && errors === 0) {
+              advancedHistorical = historicalOffset + historicalFetchedRows;
+              await setAutomationOffset(advancedHistorical);
+            }
+
+            if (historicalComplete && historicalFetchedRows > 0) {
+              advancedHistorical = historicalOffset + historicalFetchedRows;
+              await setAutomationOffset(advancedHistorical);
             }
 
             const sync = await syncExistingAnnAnime();
-            console.log(`SUMMARY discovered=${rows.length} imported=${imported} rejected=${rejected} errors=${errors} existing_scanned=${sync.scanned} existing_updated=${sync.updated} sync_errors=${sync.errors}`);
+            console.log(`SUMMARY discovered=${rows.length} imported=${imported} skipped_existing=${skipped} rejected=${rejected} errors=${errors} next_historical_offset=${advancedHistorical} existing_scanned=${sync.scanned} existing_updated=${sync.updated} sync_errors=${sync.errors}`);
+
             if (errors > 0 || sync.errors > 0) {
-              // Keep the workflow visibly failed when a record could not be processed,
-              // but do not require a human decision. The next scheduled execution retries it.
               process.exitCode = 1;
             }
           }
