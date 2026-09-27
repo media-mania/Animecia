@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       max_records:
-        description: "Import at most this many anime records. 0 = 50"
+        description: "Number of ANN anime records to test"
         required: false
         default: "10"
 
@@ -12,11 +12,6 @@ on:
         description: "Number of ANN records to skip"
         required: false
         default: "0"
-
-      dry_run:
-        description: "Test only without writing to Supabase"
-        required: false
-        default: "true"
 
 permissions:
   contents: read
@@ -26,51 +21,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  import:
+  test-ann:
     runs-on: ubuntu-latest
 
     env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-
       MAX_RECORDS: ${{ inputs.max_records || '10' }}
       OFFSET: ${{ inputs.offset || '0' }}
-      DRY_RUN: ${{ inputs.dry_run || 'true' }}
 
     steps:
-      - name: Check configuration
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [ -z "${SUPABASE_URL:-}" ]; then
-            echo "::error::SUPABASE_URL is not configured."
-            exit 1
-          fi
-
-          if [ -z "${SUPABASE_SECRET_KEY:-}" ]; then
-            echo "::error::SUPABASE_SECRET_KEY is not configured."
-            exit 1
-          fi
-
-          echo "Configuration check passed."
-
-      - name: Import ANN anime metadata
+      - name: Test ANN anime import
         shell: bash
         run: |
           python3 <<'PY'
-          import datetime
-          import json
+
           import os
           import re
-          import time
-          import urllib.error
           import urllib.parse
           import urllib.request
           import xml.etree.ElementTree as ET
-
-          SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-          SUPABASE_SECRET_KEY = os.environ["SUPABASE_SECRET_KEY"]
 
           MAX_RECORDS = int(
               os.environ.get("MAX_RECORDS", "10")
@@ -80,981 +48,216 @@ jobs:
               os.environ.get("OFFSET", "0")
           )
 
-          DRY_RUN = (
-              os.environ.get("DRY_RUN", "true").lower()
-              == "true"
-          )
+          if MAX_RECORDS <= 0:
+              MAX_RECORDS = 10
 
-          if MAX_RECORDS == 0:
+          if MAX_RECORDS > 50:
               MAX_RECORDS = 50
 
-          REPORT_URL = (
+          if OFFSET < 0:
+              OFFSET = 0
+
+          URL = (
               "https://www.animenewsnetwork.com/"
-              "encyclopedia/reports.xml"
-          )
-
-          DETAIL_URL = (
-              "https://cdn.animenewsnetwork.com/"
-              "encyclopedia/api.xml"
-          )
-
-          USER_AGENT = (
-              "Animecia/1.0 "
-              "(https://github.com/media-mania/Animecia)"
-          )
-
-          TIMEOUT = 120
-
-          ALLOWED_TYPES = {
-              "TV",
-              "MOVIE",
-              "OVA",
-              "OAV",
-              "ONA",
-              "SPECIAL",
-              "OMNIBUS",
-          }
-
-          JAPANESE_RE = re.compile(
-              r"[\u3040-\u30ff\u3400-\u9fff]"
-          )
-
-
-          def clean_text(value):
-              if value is None:
-                  return None
-
-              value = re.sub(
-                  r"\s+",
-                  " ",
-                  str(value)
-              ).strip()
-
-              return value or None
-
-
-          def safe_int(value):
-              try:
-                  return int(value)
-              except (TypeError, ValueError):
-                  return None
-
-
-          def http_get(url):
-              request = urllib.request.Request(
-                  url,
-                  headers={
-                      "User-Agent": USER_AGENT,
-                      "Accept": "*/*",
-                  },
-                  method="GET",
-              )
-
-              with urllib.request.urlopen(
-                  request,
-                  timeout=TIMEOUT
-              ) as response:
-
-                  return response.read()
-
-
-          def parse_xml(body):
-              try:
-                  return ET.fromstring(body)
-              except ET.ParseError as exc:
-                  preview = body[:500].decode(
-                      "utf-8",
-                      errors="replace"
-                  )
-
-                  raise RuntimeError(
-                      "Invalid XML response: "
-                      + preview
-                  ) from exc
-
-
-          def fetch_candidates():
-              params = {
+              "encyclopedia/reports.xml?"
+              + urllib.parse.urlencode({
                   "id": "155",
                   "type": "anime",
                   "nskip": str(OFFSET),
                   "nlist": str(MAX_RECORDS),
-              }
+              })
+          )
 
-              url = (
-                  REPORT_URL
-                  + "?"
-                  + urllib.parse.urlencode(params)
+          print("========================================")
+          print("Animecia ANN Test")
+          print("========================================")
+          print("URL:")
+          print(URL)
+          print()
+
+          request = urllib.request.Request(
+              URL,
+              headers={
+                  "User-Agent":
+                      "Animecia/1.0 "
+                      "(https://github.com/media-mania/Animecia)",
+                  "Accept":
+                      "application/xml,text/xml,*/*",
+              },
+              method="GET",
+          )
+
+          with urllib.request.urlopen(
+              request,
+              timeout=60
+          ) as response:
+
+              body = response.read()
+
+          print(
+              "HTTP response bytes:",
+              len(body)
+          )
+
+          if not body:
+              raise RuntimeError(
+                  "ANN returned an empty response."
               )
 
-              print("ANN report URL:")
-              print(url)
+          try:
+              root = ET.fromstring(body)
 
-              body = http_get(url)
-              root = parse_xml(body)
+          except ET.ParseError as exc:
 
-              candidates = []
-              seen = set()
-
-              for element in root.iter():
-
-                  ann_id = safe_int(
-                      element.get("id")
-                  )
-
-                  if ann_id is None:
-                      continue
-
-                  name = clean_text(
-                      element.get("name")
-                  )
-
-                  if not name:
-                      continue
-
-                  if ann_id in seen:
-                      continue
-
-                  seen.add(ann_id)
-
-                  candidates.append({
-                      "id": ann_id,
-                      "name": name,
-                  })
-
-                  if len(candidates) >= MAX_RECORDS:
-                      break
-
-              return candidates
-
-
-          def fetch_details(ids):
-              if not ids:
-                  return {}
-
-              if len(ids) > 50:
-                  raise RuntimeError(
-                      "ANN detail requests are limited to 50 IDs."
-                  )
-
-              id_value = "/".join(
-                  str(value)
-                  for value in ids
+              preview = body[:1000].decode(
+                  "utf-8",
+                  errors="replace"
               )
 
-              params = {
-                  "anime": id_value
-              }
-
-              url = (
-                  DETAIL_URL
-                  + "?"
-                  + urllib.parse.urlencode(params)
+              print()
+              print(
+                  "ANN response preview:"
               )
+              print(preview)
 
-              body = http_get(url)
-              root = parse_xml(body)
+              raise RuntimeError(
+                  "ANN returned invalid XML."
+              ) from exc
 
-              result = {}
+          print(
+              "Root element:",
+              root.tag
+          )
 
-              for element in root.iter():
+          candidates = []
 
-                  if element.tag != "anime":
-                      continue
+          # ANN report responses may use different
+          # element names. We inspect all elements
+          # carrying a numeric id and a title-like value.
+          for element in root.iter():
 
-                  ann_id = safe_int(
-                      element.get("id")
-                  )
+              ann_id = element.get("id")
 
-                  if ann_id is None:
-                      continue
+              if not ann_id:
+                  continue
 
-                  result[ann_id] = element
-
-              return result
-
-
-          def get_info(anime):
-              result = []
-
-              for element in anime:
-
-                  if element.tag != "info":
-                      continue
-
-                  info_type = clean_text(
-                      element.get("type")
-                  )
-
-                  text = clean_text(
-                      " ".join(
-                          element.itertext()
-                      )
-                  )
-
-                  result.append({
-                      "type": info_type,
-                      "text": text,
-                      "href": clean_text(
-                          element.get("href")
-                      ),
-                      "lang": clean_text(
-                          element.get("lang")
-                      ),
-                  })
-
-              return result
-
-
-          def find_info(infos, names):
-              wanted = {
-                  name.lower()
-                  for name in names
-              }
-
-              for info in infos:
-
-                  info_type = (
-                      info["type"]
-                      or ""
-                  ).lower()
-
-                  if info_type in wanted:
-                      return info
-
-              return None
-
-
-          def find_info_contains(infos, words):
-              words = [
-                  word.lower()
-                  for word in words
-              ]
-
-              for info in infos:
-
-                  info_type = (
-                      info["type"]
-                      or ""
-                  ).lower()
-
-                  if any(
-                      word in info_type
-                      for word in words
-                  ):
-                      return info
-
-              return None
-
-
-          def extract_japanese_title(infos):
-              for info in infos:
-
-                  info_type = (
-                      info["type"]
-                      or ""
-                  ).lower()
-
-                  lang = (
-                      info["lang"]
-                      or ""
-                  ).lower()
-
-                  text = info["text"]
-
-                  if not text:
-                      continue
-
-                  if (
-                      "alternative title" in info_type
-                      and lang in {
-                          "ja",
-                          "japanese",
-                          "jpn",
-                      }
-                  ):
-                      return text
-
-              for info in infos:
-
-                  info_type = (
-                      info["type"]
-                      or ""
-                  ).lower()
-
-                  text = info["text"]
-
-                  if (
-                      text
-                      and "alternative title" in info_type
-                      and JAPANESE_RE.search(text)
-                  ):
-                      return text
-
-              return None
-
-
-          def parse_vintage(text):
-              if not text:
-                  return None, None
-
-              dates = re.findall(
-                  r"\d{4}-\d{2}-\d{2}",
-                  text
-              )
-
-              if not dates:
-                  return None, None
-
-              start_date = dates[0]
-              end_date = (
-                  dates[1]
-                  if len(dates) >= 2
-                  else None
-              )
-
-              return start_date, end_date
-
-
-          def season_from_date(date_text):
-              if not date_text:
-                  return None
-
-              try:
-                  month = int(
-                      date_text[5:7]
-                  )
-              except (
-                  TypeError,
-                  ValueError
-              ):
-                  return None
-
-              if month in {1, 2, 3}:
-                  return "WINTER"
-
-              if month in {4, 5, 6}:
-                  return "SPRING"
-
-              if month in {7, 8, 9}:
-                  return "SUMMER"
-
-              return "FALL"
-
-
-          def status_from_dates(
-              start_date,
-              end_date
-          ):
-              today = datetime.date.today()
-
-              try:
-                  start = (
-                      datetime.date.fromisoformat(
-                          start_date
-                      )
-                      if start_date
-                      else None
-                  )
-
-                  end = (
-                      datetime.date.fromisoformat(
-                          end_date
-                      )
-                      if end_date
-                      else None
-                  )
-
-              except ValueError:
-                  return "UNKNOWN"
-
-              if start and start > today:
-                  return "UPCOMING"
-
-              if end and end <= today:
-                  return "FINISHED"
-
-              if start and start <= today:
-                  return "ONGOING"
-
-              return "UNKNOWN"
-
-
-          def extract_number(text):
-              if not text:
-                  return None
-
-              match = re.search(
+              if not re.fullmatch(
                   r"\d+",
-                  text
-              )
+                  str(ann_id)
+              ):
+                  continue
 
-              if not match:
-                  return None
-
-              value = int(
-                  match.group(0)
-              )
-
-              return value if value >= 0 else None
-
-
-          def extract_duration(text):
-              if not text:
-                  return None
-
-              text_lower = text.lower()
-
-              hour_match = re.search(
-                  r"(\d+)\s*hour",
-                  text_lower
-              )
-
-              if hour_match:
-                  return int(
-                      hour_match.group(1)
-                  ) * 60
-
-              minute_match = re.search(
-                  r"(\d+)\s*min",
-                  text_lower
-              )
-
-              if minute_match:
-                  value = int(
-                      minute_match.group(1)
-                  )
-
-                  if 1 <= value <= 300:
-                      return value
-
-              return None
-
-
-          def map_genres(text):
-              if not text:
-                  return None
-
-              values = []
-
-              for item in text.split(","):
-
-                  item = clean_text(item)
-
-                  if item and item not in values:
-                      values.append(item)
-
-              return (
-                  ", ".join(values)
-                  if values
-                  else None
-              )
-
-
-          def map_format(ann_type):
-              value = (
-                  ann_type
-                  or ""
-              ).upper().strip()
-
-              if value == "TV":
-                  return "TV"
-
-              if value == "MOVIE":
-                  return "MOVIE"
-
-              if value in {
-                  "OVA",
-                  "OAV",
-              }:
-                  return "OVA"
-
-              if value == "ONA":
-                  return "ONA"
-
-              if value in {
-                  "SPECIAL",
-                  "OMNIBUS",
-              }:
-                  return "SPECIAL"
-
-              return None
-
-
-          def build_record(anime):
-              ann_id = safe_int(
-                  anime.get("id")
-              )
-
-              if ann_id is None:
-                  return None
-
-              ann_type = clean_text(
-                  anime.get("type")
-              )
-
-              if not ann_type:
-                  return None
-
-              if ann_type.upper() not in ALLOWED_TYPES:
-                  return None
-
-              anime_format = map_format(
-                  ann_type
-              )
-
-              if anime_format is None:
-                  return None
-
-              title = clean_text(
-                  anime.get("name")
+              title = (
+                  element.get("name")
+                  or element.get("title")
               )
 
               if not title:
-                  return None
-
-              infos = get_info(
-                  anime
-              )
-
-              japanese_title = (
-                  extract_japanese_title(
-                      infos
-                  )
-              )
-
-              genre_info = find_info(
-                  infos,
-                  {"genres"}
-              )
-
-              genre = map_genres(
-                  genre_info["text"]
-                  if genre_info
-                  else None
-              )
-
-              episode_info = find_info_contains(
-                  infos,
-                  {
-                      "number of episodes"
-                  }
-              )
-
-              episodes = extract_number(
-                  episode_info["text"]
-                  if episode_info
-                  else None
-              )
-
-              vintage_info = find_info(
-                  infos,
-                  {"vintage"}
-              )
-
-              start_date, end_date = (
-                  parse_vintage(
-                      vintage_info["text"]
-                      if vintage_info
-                      else None
-                  )
-              )
-
-              duration_info = find_info_contains(
-                  infos,
-                  {
-                      "running time",
-                      "duration"
-                  }
-              )
-
-              duration = extract_duration(
-                  duration_info["text"]
-                  if duration_info
-                  else None
-              )
-
-              status = status_from_dates(
-                  start_date,
-                  end_date
-              )
-
-              season = season_from_date(
-                  start_date
-              )
-
-              season_year = None
-
-              if start_date:
-                  try:
-                      season_year = int(
-                          start_date[:4]
-                      )
-                  except (
-                      TypeError,
-                      ValueError
-                  ):
-                      pass
-
-              official_url = None
-
-              for info in infos:
-
-                  info_type = (
-                      info["type"]
-                      or ""
-                  ).lower()
-
-                  if (
-                      "official website"
-                      not in info_type
-                  ):
-                      continue
-
-                  href = info["href"]
-
-                  if href and href.startswith(
-                      "http"
-                  ):
-                      official_url = href
-                      break
-
-              # ========================================
-              # IMPORTANT
-              # ========================================
-              # 外部評価は絶対に取り込まない
-              # ========================================
-
-              record = {
-                  "external_id":
-                      2_000_000_000 + ann_id,
-
-                  "title":
-                      title,
-
-                  "title_romaji":
-                      None,
-
-                  "title_english":
-                      None,
-
-                  "title_native":
-                      japanese_title,
-
-                  "title_japanese":
-                      japanese_title,
-
-                  "cover_image":
-                      None,
-
-                  "banner_image":
-                      None,
-
-                  "start_date":
-                      start_date,
-
-                  "end_date":
-                      end_date,
-
-                  "episodes":
-                      episodes,
-
-                  "duration":
-                      duration,
-
-                  "status":
-                      status,
-
-                  "format":
-                      anime_format,
-
-                  "season":
-                      season,
-
-                  "season_year":
-                      season_year,
-
-                  "source":
-                      "Anime News Network Encyclopedia",
-
-                  "average_score":
-                      None,
-
-                  "site_url":
-                      (
-                          "https://www.animenewsnetwork.com/"
-                          "encyclopedia/anime.php?id="
-                          f"{ann_id}"
-                      ),
-
-                  "official_url":
-                      official_url,
-
-                  "genre":
-                      genre,
-
-                  "description":
-                      None,
-
-                  "review":
-                      None,
-
-                  "recommended":
-                      False,
-
-                  "recommended_start_at":
-                      None,
-
-                  "recommended_end_at":
-                      None,
-              }
-
-              return record
-
-
-          def supabase_upsert(records):
-              if not records:
-                  return
-
-              url = (
-                  f"{SUPABASE_URL}/rest/v1/anime"
-                  "?on_conflict=external_id"
-              )
-
-              payload = json.dumps(
-                  records,
-                  ensure_ascii=False
-              ).encode("utf-8")
-
-              request = urllib.request.Request(
-                  url,
-                  data=payload,
-                  method="POST",
-                  headers={
-                      "apikey":
-                          SUPABASE_SECRET_KEY,
-
-                      "Authorization":
-                          (
-                              "Bearer "
-                              + SUPABASE_SECRET_KEY
-                          ),
-
-                      "Content-Type":
-                          "application/json",
-
-                      "Accept":
-                          "application/json",
-
-                      "Prefer":
-                          (
-                              "resolution=merge-duplicates,"
-                              "return=minimal"
-                          ),
-                  }
-              )
-
-              try:
-
-                  with urllib.request.urlopen(
-                      request,
-                      timeout=TIMEOUT
-                  ) as response:
-
-                      if response.status not in {
-                          200,
-                          201,
-                          204,
-                      }:
-                          body = (
-                              response.read()
-                              .decode(
-                                  "utf-8",
-                                  errors="replace"
-                              )
-                          )
-
-                          raise RuntimeError(
-                              "Supabase returned "
-                              f"HTTP {response.status}: "
-                              f"{body[:2000]}"
-                          )
-
-              except urllib.error.HTTPError as exc:
-
-                  body = (
-                      exc.read()
-                      .decode(
-                          "utf-8",
-                          errors="replace"
-                      )
+                  # Try text content.
+                  text = " ".join(
+                      part.strip()
+                      for part in element.itertext()
+                      if part and part.strip()
                   )
 
-                  raise RuntimeError(
-                      "Supabase returned "
-                      f"HTTP {exc.code}: "
-                      f"{body[:2000]}"
-                  ) from exc
+                  text = re.sub(
+                      r"\s+",
+                      " ",
+                      text
+                  ).strip()
 
+                  if text:
+                      title = text
 
-          # ============================================
-          # Main
-          # ============================================
+              if not title:
+                  continue
 
-          print("========================================")
-          print("Animecia Anime Import")
-          print("Source: Anime News Network Encyclopedia")
-          print("Offset:", OFFSET)
-          print("Max records:", MAX_RECORDS)
-          print("Dry run:", DRY_RUN)
-          print("========================================")
+              candidates.append({
+                  "id": int(ann_id),
+                  "title": title,
+                  "tag": element.tag,
+              })
 
-          candidates = fetch_candidates()
+          # Remove duplicate IDs.
+          unique = []
+
+          seen = set()
+
+          for item in candidates:
+
+              if item["id"] in seen:
+                  continue
+
+              seen.add(item["id"])
+
+              unique.append(item)
+
+          candidates = unique[:MAX_RECORDS]
 
           print(
-              "Report candidates:",
+              "Candidates found:",
               len(candidates)
           )
 
+          print()
+
           if not candidates:
-              raise RuntimeError(
-                  "No anime candidates were returned."
-              )
-
-          ids = [
-              candidate["id"]
-              for candidate in candidates
-          ]
-
-          details = fetch_details(
-              ids
-          )
-
-          print(
-              "Detail records:",
-              len(details)
-          )
-
-          records = []
-          rejected = []
-
-          for candidate in candidates:
-
-              ann_id = candidate["id"]
-
-              anime = details.get(
-                  ann_id
-              )
-
-              if anime is None:
-
-                  rejected.append({
-                      "id": ann_id,
-                      "reason": "detail not found"
-                  })
-
-                  continue
-
-              record = build_record(
-                  anime
-              )
-
-              if record is None:
-
-                  rejected.append({
-                      "id": ann_id,
-                      "reason": (
-                          "unsupported type "
-                          "or missing title"
-                      )
-                  })
-
-                  continue
-
-              records.append(
-                  record
-              )
-
-          print(
-              "Accepted:",
-              len(records)
-          )
-
-          print(
-              "Rejected:",
-              len(rejected)
-          )
-
-          for record in records:
 
               print(
-                  "----------------------------------------"
+                  "No candidates were extracted."
               )
-
-              print(
-                  "Title:",
-                  record["title"]
-              )
-
-              print(
-                  "Format:",
-                  record["format"]
-              )
-
-              print(
-                  "Episodes:",
-                  record["episodes"]
-              )
-
-              print(
-                  "Start:",
-                  record["start_date"]
-              )
-
-              print(
-                  "End:",
-                  record["end_date"]
-              )
-
-              print(
-                  "Score:",
-                  record["average_score"]
-              )
-
-              print(
-                  "Source:",
-                  record["source"]
-              )
-
-          if DRY_RUN:
 
               print()
-              print("========================================")
-              print("DRY RUN COMPLETED")
-              print("No Supabase data was changed.")
-              print("========================================")
+              print(
+                  "First XML elements:"
+              )
 
-              raise SystemExit(0)
+              count = 0
 
-          if records:
-              supabase_upsert(
-                  records
+              for element in root.iter():
+
+                  print(
+                      "TAG:",
+                      element.tag,
+                      "ATTR:",
+                      dict(element.attrib)
+                  )
+
+                  count += 1
+
+                  if count >= 30:
+                      break
+
+              raise RuntimeError(
+                  "ANN response was received, "
+                  "but no anime candidates "
+                  "could be extracted."
+              )
+
+          print(
+              "========================================"
+          )
+          print(
+              "Candidates"
+          )
+          print(
+              "========================================"
+          )
+
+          for index, item in enumerate(
+              candidates,
+              start=1
+          ):
+
+              print(
+                  f"{index}. "
+                  f"{item['title']} "
+                  f"(ANN ID: {item['id']})"
               )
 
           print()
-          print("========================================")
-          print("IMPORT COMPLETED")
           print(
-              "Written records:",
-              len(records)
+              "ANN test completed successfully."
           )
-          print(
-              "Rejected records:",
-              len(rejected)
-          )
-          print(
-              "All imported scores are NULL."
-          )
-          print("========================================")
 
           PY
