@@ -340,6 +340,60 @@
         }
 
 
+        .compare-toolbar {
+            display:flex;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:10px;
+            margin-bottom:18px;
+            padding:12px 14px;
+            background:#fff;
+            border:1px solid #e7e7e7;
+            border-radius:10px;
+            color:#555;
+            font-size:13px;
+        }
+
+        .compare-open,
+        .compare-clear,
+        .anime-compare-button {
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-height:36px;
+            padding:7px 12px;
+            border:1px solid #d9d9d9;
+            border-radius:8px;
+            background:#f5f5f5;
+            color:#222;
+            font-size:12px;
+            font-weight:700;
+            text-decoration:none;
+        }
+
+        .compare-open {
+            margin-left:auto;
+            background:#111;
+            color:#fff;
+            border-color:#111;
+        }
+
+        .compare-clear,
+        .anime-compare-button {
+            cursor:pointer;
+        }
+
+        .anime-compare-button {
+            width:100%;
+            margin-top:12px;
+        }
+
+        .anime-compare-button.selected {
+            background:#111;
+            border-color:#111;
+            color:#fff;
+        }
+
         .result-header {
 
             display: flex;
@@ -1300,6 +1354,12 @@
         <section
             aria-label="アニメ作品一覧"
         >
+
+            <div id="compare-toolbar" class="compare-toolbar" style="display:none;">
+                <span><strong id="compare-count">0</strong>作品を比較に選択中</span>
+                <a id="compare-open" class="compare-open" href="compare.html">比較する</a>
+                <button id="compare-clear" class="compare-clear" type="button">クリア</button>
+            </div>
 
             <div class="result-header">
 
@@ -3790,6 +3850,9 @@
             totalPages
         );
 
+        bindCompareButtons();
+        updateCompareUI();
+
     }
 
 
@@ -4215,6 +4278,14 @@
 
                     </div>
 
+
+                    <button
+                        type="button"
+                        class="anime-compare-button"
+                        data-compare-id="${anime.id}"
+                    >
+                        比較に追加
+                    </button>
 
                     <a
                         class="detail-link"
@@ -4776,6 +4847,70 @@
     /* =========================================
        Start
     ========================================= */
+
+    function getCompareIds() {
+        try {
+            const raw = localStorage.getItem("animecia_compare");
+            if (!raw) return [];
+            const ids = JSON.parse(raw);
+            if (!Array.isArray(ids)) return [];
+            return [...new Set(ids.map(Number).filter(Number.isInteger))].slice(0,5);
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function updateCompareUI() {
+        const ids = getCompareIds();
+        const toolbar = document.getElementById("compare-toolbar");
+        const count = document.getElementById("compare-count");
+        const open = document.getElementById("compare-open");
+        if (!toolbar) return;
+        toolbar.style.display = ids.length ? "flex" : "none";
+        if (count) count.textContent = String(ids.length);
+        if (open) open.href = ids.length ? "compare.html?ids=" + ids.join(",") : "compare.html";
+        document.querySelectorAll(".anime-compare-button").forEach(button => {
+            const id = Number(button.dataset.compareId);
+            const selected = ids.includes(id);
+            button.classList.toggle("selected", selected);
+            button.textContent = selected ? "比較から外す" : "比較に追加";
+        });
+    }
+
+    function setCompareIds(ids) {
+        const clean = [...new Set(ids.map(Number).filter(Number.isInteger))].slice(0,5);
+        localStorage.setItem("animecia_compare", JSON.stringify(clean));
+        updateCompareUI();
+    }
+
+    function bindCompareButtons() {
+        document.querySelectorAll(".anime-compare-button").forEach(button => {
+            button.onclick = event => {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = Number(button.dataset.compareId);
+                let ids = getCompareIds();
+                if (ids.includes(id)) {
+                    ids = ids.filter(value => value !== id);
+                } else {
+                    if (ids.length >= 5) {
+                        alert("比較できる作品は5作品まで選択できます。");
+                        return;
+                    }
+                    ids.push(id);
+                }
+                setCompareIds(ids);
+            };
+        });
+    }
+
+    document.getElementById("compare-clear")?.addEventListener(
+        "click",
+        () => setCompareIds([])
+    );
+
+    bindCompareButtons();
+    updateCompareUI();
 
     loadAnime();
 
