@@ -101,6 +101,15 @@ const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?
 
 let currentUser=null,currentTab="favorites";
 
+function isVerifiedUser(user){
+  return Boolean(
+    user &&
+    user.is_anonymous !== true &&
+    user.email &&
+    user.email_confirmed_at
+  );
+}
+
 function imageMarkup(url,alt=""){
   return '<img class="thumb" data-anime-image src="'+esc(url||"")+'" alt="'+esc(alt)+'" loading="lazy">';
 }
