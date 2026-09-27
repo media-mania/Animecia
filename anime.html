@@ -2583,7 +2583,7 @@
                     data,
                     error
                 } = await supabaseClient
-                    .from("anime")
+                    .from("anime").eq("anime_verification_status","verified")
                     .select(selectColumns)
                     .order(
                         "popularity",
