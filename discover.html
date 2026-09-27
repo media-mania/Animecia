@@ -1,16 +1,89 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>作品を発見 | Animecia</title><meta name="description" content="Animeciaでジャンル、制作会社、年代、形式からアニメを発見。">
-<link rel="stylesheet" href="site-theme.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>作品を発見 | Animecia</title>
+<meta name="description" content="ジャンル、年代、形式、評価、放送状況などからAnimeciaのアニメを探せます。">
+<link rel="stylesheet" href="site-theme.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-main{max-width:1180px;margin:auto;padding:34px 20px 70px}.hero{margin-bottom:20px}.hero h1{font-size:34px;margin:0 0 7px}.hero p{color:#777}.controls,.panel{background:#fff;border:1px solid #e5e7eb;border-radius:15px;padding:20px}.controls{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:12px;font-weight:800;color:#666}.field input,.field select{padding:11px;border:1px solid #d8dbe2;border-radius:9px;background:#fff}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:15px}.card{overflow:hidden;border:1px solid #e6e7eb;border-radius:13px;background:#fff}.cover{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#eee}.pad{padding:13px}.title{font-weight:900;line-height:1.45}.sub{font-size:12px;color:#777;margin-top:4px}.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#666}.pill{background:#f1f2f4;border-radius:999px;padding:4px 7px;font-weight:800}.empty,.loading,.error{text-align:center;padding:35px;color:#777}.error{color:#a33}@media(max-width:850px){.controls{grid-template-columns:1fr 1fr}nav{display:none}}@media(max-width:520px){.controls{grid-template-columns:1fr}main{padding:25px 13px}}
-</style></head><body><header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav><a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a><a href="season.html">今期</a><a href="discover.html">作品発見</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a></nav></div></header>
-<main><section class="hero"><h1>作品を発見</h1><p>ジャンル・形式・放送年・キーワードを組み合わせて、次に見る作品を探せます。</p></section>
-<section class="controls"><div class="field"><label>キーワード</label><input id="q" placeholder="作品名・説明"></div><div class="field"><label>形式</label><select id="format"><option value="">すべて</option><option>TV</option><option>Movie</option><option>OVA</option><option>ONA</option><option>Special</option></select></div><div class="field"><label>放送年</label><select id="year"><option value="">すべて</option></select></div><div class="field"><label>並び順</label><select id="sort"><option value="rating">評価順</option><option value="new">新着順</option><option value="title">タイトル順</option></select></div></section>
-<section class="panel"><div id="grid" class="grid"><div class="loading">読み込み中…</div></div></section></main>
+main{max-width:1240px;margin:auto;padding:34px 20px 80px}
+.hero{padding:38px;border-radius:22px;background:linear-gradient(135deg,#111216,#292b31);color:#fff;margin-bottom:18px;box-shadow:0 18px 45px rgba(0,0,0,.14)}
+.hero-kicker{font-size:11px;letter-spacing:.18em;color:#fb7185;font-weight:900}.hero h1{font-size:clamp(34px,5vw,52px);margin:12px 0 10px;letter-spacing:-.05em}.hero p{margin:0;color:#d1d5db;line-height:1.8;max-width:760px}
+.panel{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:22px;margin-bottom:16px;box-shadow:0 8px 28px rgba(17,18,20,.045)}
+.panel-head{display:flex;align-items:end;justify-content:space-between;gap:15px;margin-bottom:17px}.panel h2{margin:0;font-size:20px}.panel-head p{margin:4px 0 0;color:#737780;font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{border:1px solid #dfe2e7;background:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}.chip:hover{border-color:#aeb3bb}.chip.active{background:#111216;color:#fff;border-color:#111216}
+.filters{display:grid;grid-template-columns:2fr repeat(5,1fr);gap:10px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:11px;font-weight:900;color:#666}.field input,.field select{height:44px;border:1px solid #d9dce2;border-radius:10px;padding:0 12px;background:#fff}
+.filter-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px}.active-summary{font-size:12px;color:#666}.reset{border:0;background:#f1f2f4;border-radius:9px;padding:9px 13px;font-weight:800;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px}.card{overflow:hidden;border:1px solid #e4e6ea;border-radius:15px;background:#fff;text-decoration:none;color:inherit;transition:.18s}.card:hover{transform:translateY(-3px);box-shadow:0 14px 28px rgba(17,18,20,.1)}.cover{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#eceef1}.pad{padding:13px}.title{font-weight:900;line-height:1.45}.sub{font-size:11px;color:#777;margin-top:4px}.meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px;font-size:11px;color:#666}.pill{background:#f3f4f6;border-radius:999px;padding:4px 7px;font-weight:800}.loading,.empty,.error{text-align:center;padding:35px;color:#737780}.error{color:#b42318}.count{font-size:13px;color:#777}.count b{color:#111;font-size:18px}
+@media(max-width:1050px){.filters{grid-template-columns:repeat(3,1fr)}.filters .wide{grid-column:1/-1}}
+@media(max-width:700px){main{padding:24px 13px 55px}.hero{padding:28px 22px}.filters{grid-template-columns:1fr 1fr}.panel{padding:17px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:430px){.filters{grid-template-columns:1fr}.filters .wide{grid-column:auto}.grid{gap:9px}.pad{padding:10px}}
+</style>
+</head>
+<body>
+<header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav>
+<a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a><a href="season.html">今期</a><a href="discover.html">作品発見</a><a href="genres.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a>
+</nav></div></header>
+<main>
+<section class="hero"><div class="hero-kicker">DISCOVER YOUR NEXT ANIME</div><h1>次に観る作品を、探す。</h1><p>ジャンルだけでなく、形式・年代・放送状況・評価・キーワードを組み合わせて、あなたが観たい作品まで絞り込めます。</p></section>
+
+<section class="panel">
+<div class="panel-head"><div><h2>ジャンルから探す</h2><p>複数選択できます。選択したジャンルをすべて含む作品に絞り込みます。</p></div><a href="genres.html" class="section-link">ジャンル一覧 →</a></div>
+<div id="genre-chips" class="chips"><span class="loading">ジャンルを読み込み中…</span></div>
+</section>
+
+<section class="panel">
+<div class="panel-head"><div><h2>詳細検索</h2><p>条件を組み合わせて作品を探します。</p></div><span id="count" class="count"></span></div>
+<div class="filters">
+<div class="field wide"><label>作品名・キーワード</label><input id="q" placeholder="タイトルを入力"></div>
+<div class="field"><label>形式</label><select id="format"><option value="">すべて</option><option value="TV">TV</option><option value="Movie">映画</option><option value="OVA">OVA</option><option value="ONA">ONA</option><option value="Special">Special</option></select></div>
+<div class="field"><label>放送年</label><select id="year"><option value="">すべて</option></select></div>
+<div class="field"><label>放送状況</label><select id="status"><option value="">すべて</option><option value="FINISHED">放送終了</option><option value="RELEASING">放送中</option><option value="NOT_YET_RELEASED">放送前</option></select></div>
+<div class="field"><label>最低評価</label><select id="rating"><option value="">指定なし</option><option value="8">8.0以上</option><option value="7">7.0以上</option><option value="6">6.0以上</option></select></div>
+<div class="field"><label>並び順</label><select id="sort"><option value="rating">評価が高い順</option><option value="popular">お気に入り順</option><option value="new">新しい順</option><option value="title">タイトル順</option></select></div>
+</div>
+<div class="filter-actions"><span id="active-summary" class="active-summary">条件なし</span><button id="reset" class="reset">条件をリセット</button></div>
+</section>
+
+<section class="panel"><div id="grid" class="grid"><div class="loading">作品を読み込み中…</div></div></section>
+</main>
 <script>
-const U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",s=window.supabase.createClient(U,K);const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));const title=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.title||"タイトル未設定";let rows=[];
-async function load(){const {data,error}=await s.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes").order("start_date",{ascending:false,nullsFirst:false}).limit(2000);if(error){document.getElementById("grid").innerHTML='<div class="error">作品を取得できませんでした。</div>';return}const ids=(data||[]).map(a=>a.id),em=new Map();for(let i=0;i<ids.length;i+=500){const {data:e}=await s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}rows=(data||[]).map(a=>({...a,e:em.get(Number(a.id))||{}}));const ys=[...new Set(rows.map(a=>Number(a.season_year)).filter(Number.isInteger))].sort((a,b)=>b-a);document.getElementById("year").innerHTML='<option value="">すべて</option>'+ys.map(y=>'<option>'+y+'</option>').join("");render()}
-function render(){let r=[...rows],q=document.getElementById("q").value.trim().toLowerCase(),f=document.getElementById("format").value,y=document.getElementById("year").value,sort=document.getElementById("sort").value;if(q)r=r.filter(a=>(title(a)+" "+(a.title||"")).toLowerCase().includes(q));if(f)r=r.filter(a=>a.format===f);if(y)r=r.filter(a=>String(a.season_year)===y);r.sort((a,b)=>sort==="title"?title(a).localeCompare(title(b),"ja"):sort==="new"?String(b.start_date||"").localeCompare(String(a.start_date||"")):Number(b.e.average_rating??-1)-Number(a.e.average_rating??-1));const g=document.getElementById("grid");g.innerHTML=r.map(a=>'<a class="card" href="anime-detail.html?id='+a.id+'">'+(a.cover_image?'<img class="cover" src="'+esc(a.cover_image)+'" alt="'+esc(title(a))+'" loading="lazy">':'<div class="cover" style="display:grid;place-items:center">画像なし</div>')+'<div class="pad"><div class="title">'+esc(title(a))+'</div><div class="sub">'+esc(a.status||"")+(a.episodes!=null?" · "+a.episodes+"話":"")+'</div><div class="meta"><span class="pill">★ '+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(2):"—")+'</span><span>♥ '+(a.e.favorite_count||0)+'</span><span>レビュー '+(a.e.review_count||0)+'</span></div></div></a>').join("")||'<div class="empty">条件に一致する作品がありません。</div>'}
-["q","format","year","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));load();
+const U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",s=window.supabase.createClient(U,K);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const title=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.title||"タイトル未設定";
+let rows=[],genreMap=new Map(),selectedGenres=new Set();
+async function load(){
+ const [ar,gr,ag]=await Promise.all([
+  s.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes").order("start_date",{ascending:false,nullsFirst:false}).limit(2500),
+  s.from("genres").select("id,name").order("name"),
+  s.from("anime_genres").select("anime_id,genre_id").limit(10000)
+ ]);
+ if(ar.error){document.getElementById("grid").innerHTML='<div class="error">作品を取得できませんでした。</div>';return}
+ (gr.data||[]).forEach(g=>genreMap.set(Number(g.id),g.name));
+ const genreIds=new Map();(ag.data||[]).forEach(x=>{const id=Number(x.anime_id);if(!genreIds.has(id))genreIds.set(id,[]);genreIds.get(id).push(Number(x.genre_id))});
+ const ids=(ar.data||[]).map(a=>a.id),em=new Map();
+ for(let i=0;i<ids.length;i+=500){const {data:e}=await s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count,rating_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}
+ rows=(ar.data||[]).map(a=>({...a,e:em.get(Number(a.id))||{},g:genreIds.get(Number(a.id))||[]}));
+ const years=[...new Set(rows.map(a=>Number(a.season_year)).filter(Number.isInteger))].sort((a,b)=>b-a);
+ document.getElementById("year").innerHTML='<option value="">すべて</option>'+years.map(y=>'<option>'+y+'</option>').join("");
+ renderGenres(gr.data||[]);render();
+}
+function renderGenres(gs){
+ document.getElementById("genre-chips").innerHTML=gs.map(g=>'<button class="chip" data-id="'+g.id+'">'+esc(g.name)+'</button>').join("")||'<span class="empty">ジャンルがありません。</span>';
+ document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.id);selectedGenres.has(id)?selectedGenres.delete(id):selectedGenres.add(id);b.classList.toggle("active",selectedGenres.has(id));render()});
+}
+function render(){
+ let r=[...rows],q=document.getElementById("q").value.trim().toLowerCase(),f=document.getElementById("format").value,y=document.getElementById("year").value,st=document.getElementById("status").value,min=document.getElementById("rating").value,sort=document.getElementById("sort").value;
+ if(q)r=r.filter(a=>(title(a)+" "+(a.title||"")).toLowerCase().includes(q));
+ if(f)r=r.filter(a=>a.format===f);if(y)r=r.filter(a=>String(a.season_year)===y);if(st)r=r.filter(a=>a.status===st);if(min)r=r.filter(a=>Number(a.e.average_rating||0)>=Number(min));
+ if(selectedGenres.size)r=r.filter(a=>[...selectedGenres].every(g=>a.g.includes(g)));
+ r.sort((a,b)=>sort==="title"?title(a).localeCompare(title(b),"ja"):sort==="new"?String(b.start_date||"").localeCompare(String(a.start_date||"")):sort==="popular"?Number(b.e.favorite_count||0)-Number(a.e.favorite_count||0):Number(b.e.average_rating||0)-Number(a.e.average_rating||0));
+ document.getElementById("count").innerHTML='<b>'+r.length+'</b> 作品';
+ const summary=[];if(q)summary.push("キーワード");if(selectedGenres.size)summary.push(selectedGenres.size+"ジャンル");if(f)summary.push(f);if(y)summary.push(y+"年");if(st)summary.push("放送状況");if(min)summary.push("評価"+min+"以上");document.getElementById("active-summary").textContent=summary.length?summary.join(" / "):"条件なし";
+ document.getElementById("grid").innerHTML=r.slice(0,300).map(a=>'<a class="card" href="anime-detail.html?id='+a.id+'">'+(a.cover_image?'<img class="cover" src="'+esc(a.cover_image)+'" alt="'+esc(title(a))+'" loading="lazy">':'<div class="cover" style="display:grid;place-items:center">画像なし</div>')+'<div class="pad"><div class="title">'+esc(title(a))+'</div><div class="sub">'+esc(a.status||"")+(a.episodes!=null?" · "+a.episodes+"話":"")+'</div><div class="meta"><span class="pill">★ '+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(1):"—")+'</span><span>♥ '+(a.e.favorite_count||0)+'</span><span>レビュー '+(a.e.review_count||0)+'</span></div></div></a>').join("")||'<div class="empty">条件に一致する作品がありません。</div>';
+}
+["q","format","year","status","rating","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));
+document.getElementById("reset").onclick=()=>{document.getElementById("q").value="";["format","year","status","rating","sort"].forEach((id,i)=>document.getElementById(id).value=i===4?"rating":"");selectedGenres.clear();document.querySelectorAll(".chip.active").forEach(x=>x.classList.remove("active"));render()};
+load();
 </script></body></html>
