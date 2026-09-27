@@ -2480,6 +2480,7 @@
                         description,
                         english_title,
                         title_romaji,
+                        title_user_preferred,
                         title_english,
                         title_native,
                         title_japanese,
@@ -2531,6 +2532,35 @@
                     ? data
 
                     : [];
+
+            try {
+                const animeIds = animeData.map(anime => anime.id).filter(Number.isInteger);
+                if (animeIds.length) {
+                    const {
+                        data: engagementRows,
+                        error: engagementError
+                    } = await supabaseClient
+                        .from("anime_engagement_summary")
+                        .select("anime_id,favorite_count,review_count,average_rating,rating_count")
+                        .in("anime_id", animeIds);
+
+                    if (engagementError) throw engagementError;
+
+                    const engagementMap = new Map(
+                        (engagementRows || []).map(row => [Number(row.anime_id), row])
+                    );
+
+                    animeData = animeData.map(anime => ({
+                        ...anime,
+                        _animecia_rating: engagementMap.get(Number(anime.id))?.average_rating ?? null,
+                        _animecia_favorite_count: engagementMap.get(Number(anime.id))?.favorite_count ?? 0,
+                        _animecia_review_count: engagementMap.get(Number(anime.id))?.review_count ?? 0,
+                        _animecia_rating_count: engagementMap.get(Number(anime.id))?.rating_count ?? 0
+                    }));
+                }
+            } catch (engagementError) {
+                console.error("Animecia集計取得エラー:", engagementError);
+            }
 
 
             /*
@@ -3219,15 +3249,13 @@
                         return (
 
                             Number(
-                                b.average_score ||
-                                0
+                                b._animecia_rating ?? b.average_score ?? 0
                             )
 
                             -
 
                             Number(
-                                a.average_score ||
-                                0
+                                a._animecia_rating ?? a.average_score ?? 0
                             )
 
                         );
@@ -3709,6 +3737,7 @@
 
         const score =
             formatScore(
+                anime._animecia_rating ??
                 anime.average_score
             );
 
