@@ -5432,9 +5432,7 @@ footer{margin-top:80px!important;background:#111216!important}
                 .resetPasswordForEmail(
                     email,
                     {
-                        redirectTo:
-                            window.location.origin +
-                            window.location.pathname
+                        redirectTo: new URL("index.html", window.location.origin + window.location.pathname).href
                     }
                 );
 
@@ -5461,13 +5459,7 @@ footer{margin-top:80px!important;background:#111216!important}
 
     async function resendConfirmation() {
 
-        const email =
-            $("auth-resend")
-                .dataset
-                .email ||
-            $("auth-email")
-                .value
-                .trim();
+        const email = ($("auth-resend").dataset.email || $("auth-email").value.trim()).toLowerCase();
 
         const message =
             $("auth-message");
