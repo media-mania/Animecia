@@ -19,7 +19,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 .thumb{width:62px;height:82px;object-fit:cover;border-radius:7px;background:#e5e7eb;flex:none}
 .grow{flex:1;min-width:0}.title{font-weight:800;line-height:1.5}.sub{color:#737373;font-size:13px;margin-top:4px}.meta{display:flex;gap:8px;flex-wrap:wrap;color:#737373;font-size:12px;margin-top:8px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f0f0f2;color:#333;font-size:12px;font-weight:700}
 .empty,.loading,.error{padding:34px 12px;text-align:center;color:#737373}.error{color:#b42318}
-.avatar{width:68px;height:68px;border-radius:50%;object-fit:cover;background:#e5e7eb;border:1px solid #e5e5e7}
+.avatar{width:68px;height:68px;border-radius:50%;object-fit:cover;background:#e5e7eb;border:1px solid #e5e5e7}.avatar-picker{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.avatar-picker input[type=file]{max-width:100%}.avatar-help{font-size:12px;color:#737373}
 .profile-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
 .message{min-height:22px;margin-top:12px;font-size:13px;color:#737373}
 @media(max-width:800px){.stats{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}.hero h1{font-size:27px}nav{display:none}}
@@ -60,6 +60,11 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 <section class="panel">
 <h2>プロフィール</h2>
 <div class="profile-head"><img id="avatar-preview" class="avatar" alt="プロフィール画像"><div class="sub">プロフィールは公開プロフィールページにも表示されます。</div></div>
+<div class="avatar-picker">
+<label class="btn secondary" for="avatar-file">ライブラリから選択</label>
+<input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+<span class="avatar-help">JPG / PNG / WebP / GIF・2MBまで</span>
+</div>
 <div class="profile-grid">
 <div>
 <div class="field"><label for="username">ユーザー名</label><input id="username" maxlength="30" autocomplete="username"></div>
@@ -367,6 +372,22 @@ document.querySelectorAll(".tab").forEach(button=>{
 });
 
 document.getElementById("avatar_url").addEventListener("input",e=>updateAvatarPreview(e.target.value.trim()));
+document.getElementById("avatar-file").addEventListener("change",async e=>{
+  const file=e.target.files?.[0];
+  const msg=document.getElementById("profile-msg");
+  if(!file)return;
+  if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type)){msg.textContent="対応していない画像形式です。";e.target.value="";return;}
+  if(file.size>2*1024*1024){msg.textContent="画像は2MB以下にしてください。";e.target.value="";return;}
+  msg.textContent="画像をアップロードしています…";
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+  const path=currentUser.id+"/"+crypto.randomUUID()+"."+ext;
+  const {error}=await supabaseClient.storage.from("profile-avatars").upload(path,file,{contentType:file.type,upsert:false});
+  if(error){console.error("Avatar upload error:",error);msg.textContent="画像のアップロードに失敗しました。";return;}
+  const {data}=supabaseClient.storage.from("profile-avatars").getPublicUrl(path);
+  document.getElementById("avatar_url").value=data.publicUrl;
+  updateAvatarPreview(data.publicUrl);
+  msg.textContent="画像を選択しました。プロフィールを保存すると反映されます。";
+});
 document.getElementById("save-profile").addEventListener("click",saveProfile);
 
 (async()=>{
