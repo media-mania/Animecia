@@ -1314,7 +1314,7 @@
                         </option>
 
                         <option value="popularity">
-                            人気順
+                            お気に入り順
                         </option>
 
                         <option value="newest">
@@ -3790,14 +3790,14 @@
                         return (
 
                             Number(
-                                b.popularity ||
+                                b._animecia_favorite_count ||
                                 0
                             )
 
                             -
 
                             Number(
-                                a.popularity ||
+                                a._animecia_favorite_count ||
                                 0
                             )
 
@@ -4435,7 +4435,7 @@
 
                                 ${escapeHTML(
                                     formatNumber(
-                                        anime.popularity
+                                        anime._animecia_favorite_count
                                     )
                                 )}
 
