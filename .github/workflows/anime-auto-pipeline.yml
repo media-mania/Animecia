@@ -255,9 +255,9 @@ jobs:
               return int(rows[0]["value"]) if rows else 0
 
           def save_offset(value):
-              sb("/rest/v1/anime_automation_state", "POST",
-                 {"key":"ann_scan_offset","value":int(value),"updated_at":dt.datetime.now(dt.timezone.utc).isoformat()},
-                 {"on_conflict":"key"})
+              sb("/rest/v1/anime_automation_state", "PATCH",
+                 {"value":int(value),"updated_at":dt.datetime.now(dt.timezone.utc).isoformat()},
+                 {"key":"eq.ann_scan_offset"})
 
           def log_start():
               rows = sb("/rest/v1/anime_automation_runs", "POST", {
