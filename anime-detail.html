@@ -5947,37 +5947,15 @@
                 data,
                 error
             } =
-                await supabaseClient
-
-                    .from("reviews")
-
-                    .select(`
-                        id,
-                        user_id,
-                        anime_id,
-                        title,
-                        content,
-                        rating,
-                        spoiler,
-                        likes_count,
-                        created_at,
-                        updated_at
-                    `)
-
-                    .eq(
-                        "anime_id",
-                        Number(
-                            currentAnimeId
-                        )
-                    )
-
-                    .order(
-                        "created_at",
-                        {
-                            ascending:
-                                false
-                        }
-                    );
+                await supabaseClient.rpc(
+                    "get_anime_reviews",
+                    {
+                        p_anime_id: Number(currentAnimeId),
+                        p_limit: 50,
+                        p_offset: 0,
+                        p_sort: "newest"
+                    }
+                );
 
 
             if (error) {
