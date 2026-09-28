@@ -105,8 +105,7 @@ function isVerifiedUser(user){
   return Boolean(
     user &&
     user.is_anonymous !== true &&
-    user.email &&
-    user.email_confirmed_at
+    user.email
   );
 }
 
