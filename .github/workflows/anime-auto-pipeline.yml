@@ -252,10 +252,46 @@ jobs:
             return candidate || parsed;
           }
 
+          const GENRE_JA = {
+            Action: 'アクション',
+            Adventure: '冒険',
+            Comedy: 'コメディ',
+            Drama: 'ドラマ',
+            Ecchi: 'お色気',
+            Fantasy: 'ファンタジー',
+            Horror: 'ホラー',
+            'Mahou Shoujo': '魔法少女',
+            Mecha: 'メカ',
+            Music: '音楽',
+            Mystery: 'ミステリー',
+            Psychological: '心理',
+            Romance: '恋愛',
+            'Sci-Fi': 'SF',
+            'Slice of Life': '日常',
+            Sports: 'スポーツ',
+            Supernatural: '超自然',
+            Thriller: 'スリラー',
+            School: '学園',
+            Historical: '歴史',
+            Military: 'ミリタリー',
+            Space: '宇宙',
+            Isekai: '異世界',
+            Game: 'ゲーム',
+            Suspense: 'サスペンス',
+            'Girls Love': '恋愛',
+            'Boys Love': '恋愛',
+          };
+
+          function normalizeGenreName(name) {
+            const clean = String(name || '').trim();
+            if (!clean) return null;
+            return GENRE_JA[clean] || clean;
+          }
+
           function collectGenres(anime) {
             const names = new Set();
             for (const node of nodesByKey(anime, 'genre')) {
-              const value = text(node);
+              const value = normalizeGenreName(text(node));
               if (value) names.add(value);
             }
             return [...names].slice(0, 30);
@@ -1362,12 +1398,11 @@ jobs:
           async function syncExistingAnnAnime() {
             const { data: animeRows, error } = await supabase
               .from('anime')
-              .select('id,external_id,title,title_japanese,title_native,cover_image,start_date,end_date,episodes,status,official_url')
+              .select('id,external_id,title,title_japanese,title_native,cover_image,start_date,end_date,episodes,status,official_url,updated_at')
               .eq('source', 'Anime News Network Encyclopedia')
-              .or('cover_image.is.null,cover_image.eq.,title_japanese.is.null,title_japanese.eq.,title_native.is.null,title_native.eq.')
               .gte('external_id', ANN_EXTERNAL_ID_BASE)
               .lt('external_id', ANN_EXTERNAL_ID_BASE + 2000000000)
-              .order('id', { ascending: true })
+              .order('updated_at', { ascending: true, nullsFirst: true })
               .limit(500);
 
             if (animeRows === null) throw new Error('既存ANN作品の取得に失敗しました。');
