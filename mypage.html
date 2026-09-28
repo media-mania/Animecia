@@ -19,7 +19,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 .thumb{width:62px;height:82px;object-fit:cover;border-radius:7px;background:#e5e7eb;flex:none}
 .grow{flex:1;min-width:0}.title{font-weight:800;line-height:1.5}.sub{color:#737373;font-size:13px;margin-top:4px}.meta{display:flex;gap:8px;flex-wrap:wrap;color:#737373;font-size:12px;margin-top:8px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f0f0f2;color:#333;font-size:12px;font-weight:700}
 .empty,.loading,.error{padding:34px 12px;text-align:center;color:#737373}.error{color:#b42318}
-.avatar{width:68px;height:68px;border-radius:50%;object-fit:cover;background:#e5e7eb;border:1px solid #e5e5e7}.avatar-picker{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.avatar-picker input[type=file]{max-width:100%}.avatar-help{font-size:12px;color:#737373}
+.avatar{width:68px;height:68px;border-radius:50%;object-fit:cover;background:#e5e7eb;border:1px solid #e5e5e7}.avatar-picker{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.avatar-picker input[type=file]{max-width:100%}.avatar-help{font-size:12px;color:#737373}.username-input{display:flex;align-items:center;border:1px solid #d9d9dd;border-radius:9px;background:#fff;overflow:hidden}.username-input>span{padding-left:12px;font-weight:700;color:#737373}.username-input input{border:0!important;border-radius:0!important;flex:1;min-width:0}
 .profile-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
 .message{min-height:22px;margin-top:12px;font-size:13px;color:#737373}
 @media(max-width:800px){.stats{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}.hero h1{font-size:27px}nav{display:none}}
@@ -67,7 +67,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 </div>
 <div class="profile-grid">
 <div>
-<div class="field"><label for="username">ユーザー名</label><input id="username" maxlength="30" autocomplete="username"></div>
+<div class="field"><label for="username">ユーザー名</label><div class="username-input"><span>@</span><input id="username" maxlength="30" autocomplete="username" placeholder="username"></div><div class="avatar-help">Xと同じように「@」から始まります。</div></div>
 <div class="field"><label for="display_name">表示名</label><input id="display_name" maxlength="50"></div>
 <div class="field"><label for="avatar_url">アバターURL</label><input id="avatar_url" type="url" inputmode="url"></div>
 </div>
@@ -179,7 +179,10 @@ async function loadProfile(){
   const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,bio").eq("id",currentUser.id).maybeSingle();
   if(error){console.error("Profile error:",error);return;}
   if(!data)return;
-  for(const key of ["username","display_name","avatar_url","bio"])document.getElementById(key).value=data[key]||"";
+  for(const key of ["username","display_name","avatar_url","bio"]){
+    const value=data[key]||"";
+    document.getElementById(key).value=key==="username" ? String(value).replace(/^@/,"") : value;
+  }
   updateAvatarPreview(data.avatar_url||"");
 }
 
@@ -193,7 +196,8 @@ function updateAvatarPreview(url){
 async function saveProfile(){
   const msg=document.getElementById("profile-msg");
   const button=document.getElementById("save-profile");
-  const username=document.getElementById("username").value.trim();
+  const usernameRaw=document.getElementById("username").value.trim();
+  const username=usernameRaw.replace(/^@+/,"");
 
   if(!currentUser){
     msg.textContent="ログインしてください。";
@@ -201,13 +205,13 @@ async function saveProfile(){
   }
 
   if(username && !/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){
-    msg.textContent="ユーザー名は2〜30文字で入力してください。";
+    msg.textContent="ユーザー名は@を除いて2〜30文字で入力してください。";
     return;
   }
 
   const payload={
     id:currentUser.id,
-    username:username||null,
+    username:username ? "@"+username : null,
     display_name:document.getElementById("display_name").value.trim()||null,
     avatar_url:document.getElementById("avatar_url").value.trim()||null,
     bio:document.getElementById("bio").value.trim()||null,
