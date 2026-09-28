@@ -22,7 +22,7 @@ concurrency:
 jobs:
   import-and-enrich:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -35,8 +35,8 @@ jobs:
       ANILIST_API_URL: https://graphql.anilist.co
       # Process enough report rows to keep the catalog fresh without pulling the entire ANN DB each run.
       ANN_PAGE_SIZE: '100'
-      ANN_FRESH_PAGES: '10'
-      ANN_HISTORICAL_PAGES: '10'
+      ANN_FRESH_PAGES: '15'
+      ANN_HISTORICAL_PAGES: '15'
 
     steps:
       - name: Checkout
