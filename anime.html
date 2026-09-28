@@ -3997,3 +3997,189 @@
 
         }
     );
+
+
+    seasonFilter.addEventListener(
+        "change",
+        () => {
+
+            applyFilters(
+                true
+            );
+
+        }
+    );
+
+
+    statusFilter.addEventListener(
+        "change",
+        () => {
+
+            applyFilters(
+                true
+            );
+
+        }
+    );
+
+
+    formatFilter.addEventListener(
+        "change",
+        () => {
+
+            applyFilters(
+                true
+            );
+
+        }
+    );
+
+
+    genreFilter.addEventListener(
+        "change",
+        () => {
+
+            applyFilters(
+                true
+            );
+
+        }
+    );
+
+
+    studioFilter.addEventListener(
+        "change",
+        () => {
+
+            applyFilters(
+                true
+            );
+
+        }
+    );
+
+
+    sortFilter.addEventListener(
+        "change",
+        () => {
+
+            applyFilters(
+                true
+            );
+
+        }
+    );
+
+
+    resetButton.addEventListener(
+        "click",
+        resetFilters
+    );
+
+
+    window.addEventListener(
+        "popstate",
+        () => {
+
+            loadURLParameters();
+
+            applyFilters(
+                false
+            );
+
+        }
+    );
+
+
+    /* =========================================
+       Start
+    ========================================= */
+
+    function getCompareIds() {
+        try {
+            const raw = localStorage.getItem("animecia_compare");
+            if (!raw) return [];
+            const ids = JSON.parse(raw);
+            if (!Array.isArray(ids)) return [];
+            return [...new Set(ids.map(Number).filter(Number.isInteger))].slice(0,5);
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function updateCompareUI() {
+        const ids = getCompareIds();
+        const toolbar = document.getElementById("compare-toolbar");
+        const count = document.getElementById("compare-count");
+        const open = document.getElementById("compare-open");
+        if (!toolbar) return;
+        toolbar.style.display = ids.length ? "flex" : "none";
+        if (count) count.textContent = String(ids.length);
+        if (open) open.href = ids.length ? "compare.html?ids=" + ids.join(",") : "compare.html";
+        document.querySelectorAll(".anime-compare-button").forEach(button => {
+            const id = Number(button.dataset.compareId);
+            const selected = ids.includes(id);
+            button.classList.toggle("selected", selected);
+            button.textContent = selected ? "比較から外す" : "比較に追加";
+        });
+    }
+
+    function setCompareIds(ids) {
+        const clean = [...new Set(ids.map(Number).filter(Number.isInteger))].slice(0,5);
+        localStorage.setItem("animecia_compare", JSON.stringify(clean));
+        updateCompareUI();
+    }
+
+    function bindCompareButtons() {
+        document.querySelectorAll(".anime-compare-button").forEach(button => {
+            button.onclick = event => {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = Number(button.dataset.compareId);
+                let ids = getCompareIds();
+                if (ids.includes(id)) {
+                    ids = ids.filter(value => value !== id);
+                } else {
+                    if (ids.length >= 5) {
+                        alert("比較できる作品は5作品まで選択できます。");
+                        return;
+                    }
+                    ids.push(id);
+                }
+                setCompareIds(ids);
+            };
+        });
+    }
+
+    document.getElementById("compare-clear")?.addEventListener(
+        "click",
+        () => setCompareIds([])
+    );
+
+    bindCompareButtons();
+    updateCompareUI();
+
+    loadAnime();
+
+</script>
+
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "アニメ一覧 | Animecia",
+    "description": "Animeciaのアニメ一覧。作品名、ジャンル、放送年、シーズン、放送状況、評価、人気度などからアニメを検索できます。",
+    "url": "https://media-mania.github.io/Animecia/anime.html",
+    "isPartOf": {
+        "@type": "WebSite",
+        "name": "Animecia",
+        "url": "https://media-mania.github.io/Animecia/"
+    }
+}
+</script>
+
+
+</body>
+
+</html>
