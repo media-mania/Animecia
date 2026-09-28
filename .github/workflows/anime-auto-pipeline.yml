@@ -676,6 +676,15 @@ jobs:
                   media(search: $search, type: ANIME, isAdult: false, sort: SEARCH_MATCH) {
                     id
                     title { romaji english native userPreferred }
+                    description(asHtml: false)
+                    genres
+                    studios(isMain: true) {
+                      nodes {
+                        id
+                        name
+                        siteUrl
+                      }
+                    }
                     coverImage { large extraLarge }
                     bannerImage
                     siteUrl
@@ -753,6 +762,34 @@ jobs:
               if (userPreferred) payload.title_user_preferred = userPreferred;
               if (english) payload.title_english = english;
               if (romaji) payload.title_romaji = romaji;
+
+              if (Array.isArray(media.genres) && media.genres.length) {
+                const aniListGenres = media.genres.map(normalizeGenreName).filter(Boolean);
+                payload._genres = [...new Set([...(payload._genres || []), ...aniListGenres])];
+                payload.genre = payload._genres.join(', ');
+              }
+
+              if (Array.isArray(media.studios?.nodes) && media.studios.nodes.length) {
+                payload._companies = media.studios.nodes
+                  .filter(studio => studio?.name)
+                  .map(studio => ({
+                    external_id: Number.isInteger(Number(studio.id)) ? Number(studio.id) : null,
+                    name: String(studio.name).trim(),
+                    site_url: studio.siteUrl || null,
+                    type: 'studio',
+                  }));
+              }
+
+              if (media.description) {
+                const plainDescription = String(media.description)
+                  .replace(/<br\s*\/?>(\n)?/gi, '\n')
+                  .replace(/<[^>]+>/g, '')
+                  .replace(/\*\*/g, '')
+                  .trim();
+                if (plainDescription && /[\u3040-\u30ff\u3400-\u9fff]/.test(plainDescription)) {
+                  payload.description = plainDescription;
+                }
+              }
 
               const aliasRows = [];
               for (const value of [native, userPreferred, english, romaji, payload.title, payload.english_title]) {
@@ -867,7 +904,16 @@ jobs:
                 const html = await fetchText(payload.official_url, 2);
                 const officialImage = extractMeta(html, 'og:image');
                 const officialTitle = extractMeta(html, 'og:title');
+                const officialDescription =
+                  extractMeta(html, 'og:description') ||
+                  extractMeta(html, 'description');
                 if (officialImage && /^https?:\/\//i.test(officialImage)) payload.cover_image = officialImage;
+                if (officialDescription && /[\u3040-\u30ff\u3400-\u9fff]/.test(officialDescription)) {
+                  payload.description = officialDescription
+                    .replace(/<[^>]+>/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                }
                 if (officialTitle && !payload.title_native && /[\u3040-\u30ff\u3400-\u9fff]/.test(officialTitle)) {
                   payload.title_native = officialTitle.split('|')[0].trim();
                   payload.title_japanese = payload.title_native;
@@ -968,6 +1014,7 @@ jobs:
                   image_url: null,
                 }],
                 _genres: collectGenres(anime),
+                genre: collectGenres(anime).join(', ') || 'その他',
                 _companies: collectCompanies(anime).filter(isStudioCompany),
                 _staff: collectStaff(anime),
                 _characters: collectCharacters(anime),
