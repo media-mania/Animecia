@@ -249,7 +249,7 @@ a{transition:color .16s ease,background .16s ease,transform .16s ease,box-shadow
 }
 .filter-title{
   font-size:14px!important;
-  display:flex;
+  display:none!important;
   align-items:center;
   gap:8px;
   margin:0 0 12px!important;
@@ -914,6 +914,9 @@ input:focus,select:focus,textarea:focus,
   align-items:center;
   justify-content:center;
   padding:18px!important;
+}
+.auth-modal.is-open{
+  display:flex!important;
 }
 .auth-modal-backdrop{
   position:absolute!important;
