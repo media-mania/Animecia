@@ -5664,8 +5664,21 @@
                 .eq("anime_id", Number(currentAnimeId))
                 .order("site", { ascending: true });
             if (error) throw error;
-            if (!data?.length) { section.style.display = "none"; return; }
-            list.innerHTML = data.map(link => {
+
+            let dataRows = Array.isArray(data) ? data : [];
+            if (!dataRows.length && Array.isArray(currentAnime?.streaming_links)) {
+                dataRows = currentAnime.streaming_links.map(link => ({
+                    site: link?.site || "配信サービス",
+                    url: link?.url || "",
+                    title: "作品ページを開く",
+                    episode_number: null,
+                    thumbnail: null,
+                    language: "ja"
+                }));
+            }
+
+            if (!dataRows.length) { section.style.display = "none"; return; }
+            list.innerHTML = dataRows.map(link => {
                 const url = safeURL(link.url);
                 if (!url) return "";
                 return `
@@ -5762,7 +5775,24 @@
                 .eq("anime_id", Number(currentAnimeId))
                 .order("title", { ascending: true });
             if (error) throw error;
-            const rows = Array.isArray(data) ? data : [];
+
+            const rows = Array.isArray(data) ? data.slice() : [];
+            const fallbackAliases = Array.isArray(currentAnime?.search_aliases)
+                ? currentAnime.search_aliases.map(title => ({
+                    title,
+                    language: /[ぁ-んァ-ヶ一-龯々〆ー]/.test(String(title)) ? "Japanese" : "other",
+                    title_type: "synonym",
+                    source: "AniList"
+                }))
+                : [];
+
+            fallbackAliases.forEach(alias => {
+                const exists = rows.some(row =>
+                    String(row.title || "").trim().toLowerCase() ===
+                    String(alias.title || "").trim().toLowerCase()
+                );
+                if (!exists) rows.push(alias);
+            });
             const seen = new Set();
             const unique = rows.filter(row => {
                 const key = String(row.title || "").trim().toLowerCase();
