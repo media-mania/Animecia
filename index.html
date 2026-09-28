@@ -5330,7 +5330,7 @@ footer{margin-top:80px!important;background:#111216!important}
 
                 if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
                     authMode = "login";
-                    updateAuthModeUI();
+                    openAuth("login");
                     $("auth-resend").hidden = true;
                     message.textContent = "このメールアドレスはすでに登録されています。ログインしてください。";
                     return;
@@ -5393,7 +5393,7 @@ footer{margin-top:80px!important;background:#111216!important}
                 errorMessage = "メールアドレスが確認されていません。確認メールを再送できます。";
             } else if (/user already registered/i.test(raw)) {
                 authMode = "login";
-                updateAuthModeUI();
+                openAuth("login");
                 errorMessage = "このメールアドレスはすでに登録されています。ログインしてください。";
             } else if (/password.*(weak|8 characters|too short)/i.test(raw)) {
                 errorMessage = "パスワードは8文字以上で設定してください。";
@@ -5580,7 +5580,7 @@ footer{margin-top:80px!important;background:#111216!important}
             if (hashParams.get("type") === "recovery") {
                 authRecoveryMode = true;
                 authMode = "login";
-                updateAuthModeUI();
+                openAuth("login");
                 openAuth("login");
                 $("auth-message").textContent =
                     "新しいパスワードを入力してください。";
@@ -5613,7 +5613,7 @@ footer{margin-top:80px!important;background:#111216!important}
                     if (event === "PASSWORD_RECOVERY") {
                         authRecoveryMode = true;
                         authMode = "login";
-                        updateAuthModeUI();
+                        openAuth("login");
                         openAuth("login");
                         $("auth-message").textContent =
                             "新しいパスワードを入力してください。";
