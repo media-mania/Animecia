@@ -5377,9 +5377,21 @@ footer{margin-top:80px!important;background:#111216!important}
                 throw new Error("ログインユーザーを確認できませんでした。");
             }
 
-            await ensureProfile(data.user);
-            await updateAuthUI(data.user);
+            const { data: verifiedSession } = await supabaseClient.auth.getSession();
+            const sessionUser = verifiedSession?.session?.user || data.user;
+            if (!isVerifiedUser(sessionUser)) {
+                throw new Error("ログイン状態を確認できませんでした。もう一度お試しください。");
+            }
+
+            await ensureProfile(sessionUser);
+            await updateAuthUI(sessionUser);
             closeAuth();
+
+            /*
+             * 認証成功後はマイページへ移動して、ログイン状態を明確に確認できるようにする。
+             * Supabaseのセッションはブラウザ側に保持されるため、ページ遷移後も利用できる。
+             */
+            window.location.href = "mypage.html";
 
         } catch (error) {
             console.error("認証エラー:", error);
