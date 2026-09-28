@@ -40,11 +40,22 @@ const U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const title=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.title||"タイトル未設定";
 let rows=[],genres=[],selected=new Set(),userSignals=new Map();
+async function fetchAllRows(table, columns, orderColumn, batchSize=1000){
+ let all=[];
+ for(let from=0;;from+=batchSize){
+  const {data,error}=await s.from(table).select(columns).order(orderColumn,{ascending:true}).range(from,from+batchSize-1);
+  if(error) throw error;
+  if(!data||!data.length) break;
+  all.push(...data);
+  if(data.length<batchSize) break;
+ }
+ return all;
+}
 async function init(){
  const [ar,gr,ag,auth]=await Promise.all([
-  s.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes").limit(2500),
+  fetchAllRows("anime","id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes","id"),
   s.from("genres").select("id,name").order("name"),
-  s.from("anime_genres").select("anime_id,genre_id").limit(10000),
+  fetchAllRows("anime_genres","anime_id,genre_id","anime_id"),
   s.auth.getUser()
  ]);
  genres=gr.data||[];
@@ -81,5 +92,4 @@ document.getElementById("find").onclick=run;
 document.getElementById("clear").onclick=()=>{selected.clear();updateGenreSelected();document.querySelectorAll(".chip.active").forEach(x=>x.classList.remove("active"));["format","length","rating","status"].forEach(id=>document.getElementById(id).value=id==="rating"?"0":"");document.getElementById("results").innerHTML='<div class="empty">あなたの好みから作品を探します。</div>';document.getElementById("result-sub").textContent="条件を設定して「この条件で探す」を押してください。"};
 init();
 </script>
-<!-- multi-genre-data-fix -->
 </body></html>
