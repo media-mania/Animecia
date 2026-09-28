@@ -2,13 +2,13 @@ name: Animecia Bulk Anime Auto Import
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */3 * * *'
   workflow_dispatch:
     inputs:
       batch_size:
         description: "作品候補数（fresh + historical）"
         required: false
-        default: "200"
+        default: "300"
 
 permissions:
   contents: read
@@ -50,7 +50,7 @@ jobs:
           ANN_REPORT = os.environ["ANN_REPORT_URL"]
           ANN_DETAIL = os.environ["ANN_DETAIL_URL"]
           BASE = int(os.environ["ANN_EXTERNAL_ID_BASE"])
-          BATCH = max(20, min(300, int(os.environ.get("BATCH_SIZE", "200"))))
+          BATCH = max(20, min(300, int(os.environ.get("BATCH_SIZE", "300"))))
           HALF = max(10, BATCH // 2)
           UA = "Animecia-AutoImporter/2.0 (+https://github.com/media-mania/Animecia)"
           ALLOWED = {"TV", "MOVIE", "OVA", "OAV", "ONA", "SPECIAL", "OMNIBUS"}
