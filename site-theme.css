@@ -910,7 +910,7 @@ input:focus,select:focus,textarea:focus,
   position:fixed!important;
   inset:0!important;
   z-index:1000!important;
-  display:flex;
+  display:none!important;
   align-items:center;
   justify-content:center;
   padding:18px!important;
