@@ -35,7 +35,7 @@ jobs:
       ANILIST_API_URL: https://graphql.anilist.co
       # Process enough report rows to keep the catalog fresh without pulling the entire ANN DB each run.
       ANN_PAGE_SIZE: '100'
-      ANN_FRESH_PAGES: '2'
+      ANN_FRESH_PAGES: '6'
       ANN_HISTORICAL_PAGES: '10'
 
     steps:
