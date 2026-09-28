@@ -22,7 +22,7 @@ main{max-width:1240px;margin:auto;padding:34px 20px 80px}.hero{padding:40px;bord
 <div class="layout">
 <section class="panel">
 <h2>好みを設定</h2><p class="hint">全部選ばなくても大丈夫です。選んだ条件が多いほど結果を絞り込みます。</p>
-<div class="question"><label>好きなジャンル</label><div id="genres" class="chips"><span class="loading">読み込み中…</span></div></div>
+<div class="question"><label>好きなジャンル <span style="font-weight:700;color:#777">（複数選択可）</span></label><div id="genres" class="chips"><span class="loading">読み込み中…</span></div><div id="genre-selected" style="font-size:11px;color:#777;margin-top:8px">0件選択中</div></div>
 <div class="question"><label for="format">観たい形式</label><select id="format" class="select"><option value="">こだわらない</option><option value="TV">TVアニメ</option><option value="Movie">映画</option><option value="OVA">OVA</option><option value="ONA">ONA</option></select></div>
 <div class="question"><label for="length">話数</label><select id="length" class="select"><option value="">こだわらない</option><option value="short">短め（1〜13話）</option><option value="medium">標準（14〜26話）</option><option value="long">長め（27話以上）</option></select></div>
 <div class="question"><label for="rating">最低評価</label><select id="rating" class="select"><option value="0">こだわらない</option><option value="7">7.0以上</option><option value="7.5">7.5以上</option><option value="8">8.0以上</option></select></div>
@@ -56,7 +56,8 @@ async function init(){
  renderGenres();
  if(auth.data.user&&!auth.data.user.is_anonymous){const uid=auth.data.user.id;const [rt,st,fv]=await Promise.all([s.from("user_ratings").select("anime_id,rating").eq("user_id",uid),s.from("user_anime_status").select("anime_id,status").eq("user_id",uid),s.from("favorites").select("anime_id").eq("user_id",uid)]);(rt.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{rating:Number(x.rating)}));(st.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),status:x.status}));(fv.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),favorite:true}));}
 }
-function renderGenres(){document.getElementById("genres").innerHTML=genres.map(g=>'<button type="button" class="chip" data-id="'+g.id+'">'+esc(g.name)+'</button>').join("");document.querySelectorAll("#genres .chip").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.id);selected.has(id)?selected.delete(id):selected.add(id);b.classList.toggle("active",selected.has(id))})}
+function renderGenres(){document.getElementById("genres").innerHTML=genres.map(g=>'<button type="button" class="chip" data-id="'+g.id+'">'+esc(g.name)+'</button>').join("");document.querySelectorAll("#genres .chip").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.id);selected.has(id)?selected.delete(id):selected.add(id);b.classList.toggle("active",selected.has(id));updateGenreSelected()})}
+function updateGenreSelected(){const el=document.getElementById("genre-selected");if(el)el.textContent=selected.size+"件選択中";}
 function score(a,format,length,min,status){
  let score=0,reason=[];
  const match=a.g.filter(x=>selected.has(x)).length;
@@ -77,6 +78,6 @@ function run(){
  document.getElementById("results").innerHTML=r.map((a,i)=>'<a class="item" href="anime-detail.html?id='+a.id+'"><div class="rank">'+(i+1)+'</div>'+(a.cover_image?'<img class="thumb" src="'+esc(a.cover_image)+'" alt="'+esc(title(a))+'" loading="lazy">':'<div class="thumb"></div>')+'<div class="grow"><div class="title">'+esc(title(a))+'</div><div class="reason">'+esc(a.m.reason)+'</div><div class="meta"><span class="pill">★ '+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(1):"—")+'</span><span class="pill">'+esc(a.format||"")+'</span><span class="pill">'+(a.episodes?esc(a.episodes)+"話":"話数不明")+'</span></div></div><div class="match">MATCH '+Math.round(Math.min(99,a.m.score))+'%</div></a>').join("")||'<div class="empty">条件に合う作品が見つかりませんでした。条件を少し緩めてみてください。</div>';
 }
 document.getElementById("find").onclick=run;
-document.getElementById("clear").onclick=()=>{selected.clear();document.querySelectorAll(".chip.active").forEach(x=>x.classList.remove("active"));["format","length","rating","status"].forEach(id=>document.getElementById(id).value=id==="rating"?"0":"");document.getElementById("results").innerHTML='<div class="empty">あなたの好みから作品を探します。</div>';document.getElementById("result-sub").textContent="条件を設定して「この条件で探す」を押してください。"};
+document.getElementById("clear").onclick=()=>{selected.clear();updateGenreSelected();document.querySelectorAll(".chip.active").forEach(x=>x.classList.remove("active"));["format","length","rating","status"].forEach(id=>document.getElementById(id).value=id==="rating"?"0":"");document.getElementById("results").innerHTML='<div class="empty">あなたの好みから作品を探します。</div>';document.getElementById("result-sub").textContent="条件を設定して「この条件で探す」を押してください。"};
 init();
 </script></body></html>
