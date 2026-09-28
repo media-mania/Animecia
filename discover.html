@@ -72,7 +72,7 @@ async function fetchAllRows(table, columns, orderColumn, batchSize=1000){
 }
 async function load(){
  const [ar,gr,ag]=await Promise.all([
-  fetchAllRows("anime","id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes","id"),
+  fetchAllRows("anime","id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes,anime_verification_status","id"),
   s.from("genres").select("id,name").order("name"),
   fetchAllRows("anime_genres","anime_id,genre_id","anime_id")
  ]);
@@ -81,7 +81,7 @@ async function load(){
  const genreIds=new Map();(ag.data||[]).forEach(x=>{const id=Number(x.anime_id);if(!genreIds.has(id))genreIds.set(id,[]);genreIds.get(id).push(Number(x.genre_id))});
  const ids=(ar.data||[]).map(a=>a.id),em=new Map();
  for(let i=0;i<ids.length;i+=500){const {data:e}=await s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count,rating_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}
- rows=(ar.data||[]).map(a=>({...a,e:em.get(Number(a.id))||{},g:genreIds.get(Number(a.id))||[]}));
+ rows=(ar.data||[]).filter(a=>a.anime_verification_status==="verified").map(a=>({...a,e:em.get(Number(a.id))||{},g:genreIds.get(Number(a.id))||[]}));
  const years=[...new Set(rows.map(a=>Number(a.season_year)).filter(y=>Number.isInteger(y)&&y>=1900&&y<=new Date().getFullYear()+1))].sort((a,b)=>b-a);
  document.getElementById("year").innerHTML='<option value="">すべて</option>'+years.map(y=>'<option>'+y+'</option>').join("");
  const initialGenre=new URLSearchParams(location.search).get("genre");if(initialGenre){selectedGenres.add(Number(initialGenre));}renderGenres(gr.data||[]);render();
@@ -102,5 +102,5 @@ function render(){
 }
 ["q","format","year","status","rating","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));
 document.getElementById("reset").onclick=()=>{document.getElementById("q").value="";["format","year","status","rating","sort"].forEach((id,i)=>document.getElementById(id).value=i===4?"rating":"");selectedGenres.clear();document.querySelectorAll(".chip.active").forEach(x=>x.classList.remove("active"));render()};
-load();
+load().catch(err=>{console.error(err);document.getElementById("count").textContent="";document.getElementById("grid").innerHTML="<div class=\"error\">作品データの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>";});
 </script></body></html>
