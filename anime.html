@@ -1500,6 +1500,8 @@
     let currentPage =
         1;
 
+    let serverTotal = 0;
+
 
     /* =========================================
        Elements
@@ -2543,59 +2545,48 @@
 
     async function loadAnime() {
 
-        animeGrid.innerHTML = `
-            <div class="loading">
-                アニメ情報を読み込んでいます……
-            </div>
-        `;
-
-        resultCount.innerHTML = "<span>0</span> 作品";
+        animeGrid.innerHTML = '<div class="loading">アニメ情報を読み込んでいます……</div>';
         resultPage.textContent = "読み込み中…";
         pagination.innerHTML = "";
 
         try {
+            const { data, error } = await supabaseClient.rpc("search_anime_catalog", {
+                p_query: searchInput.value.trim() || null,
+                p_genre_id: genreFilter.value ? Number(genreFilter.value) : null,
+                p_studio_id: studioFilter.value ? Number(studioFilter.value) : null,
+                p_year: yearFilter.value ? Number(yearFilter.value) : null,
+                p_season: seasonFilter.value || null,
+                p_status: statusFilter.value || null,
+                p_format: formatFilter.value || null,
+                p_sort: sortFilter.value || "default",
+                p_limit: PAGE_SIZE,
+                p_offset: (currentPage - 1) * PAGE_SIZE
+            });
 
-            /*
-             * Supabase REST API の1回あたりの上限を避けるため、
-             * 1000件ずつ最後まで取得します。
-             */
-            const q=(searchInput?.value||"").trim();
-        const genreId=genreFilter?.value ? Number(genreFilter.value) : null;
-        const studioId=studioFilter?.value ? Number(studioFilter.value) : null;
-        const limit=50;
-        const offset=Math.max(0,(currentPage-1)*limit);
+            if (error) throw error;
 
-        const {data,error}=await supabaseClient.rpc("search_anime_catalog",{
-            p_query:q||null,
-            p_genre_id:genreId,
-            p_studio_id:studioId,
-            p_limit:limit,
-            p_offset:offset
-        });
-        if(error) throw error;
+            animeData = data || [];
+            filteredAnime = animeData;
+            serverTotal = Number(animeData[0]?.total_count || 0);
 
-        const allRows=data||[];
-        resultCount.innerHTML="<span>"+allRows.length+"</span> 作品";
-        resultPage.textContent=allRows.length ? (currentPage+"ページ") : "0作品";
-        if(!allRows.length){
-            animeGrid.innerHTML='<div class="empty-state"><h3>その条件のアニメはありません</h3><p>検索条件やジャンル・スタジオを変更してください。</p></div>';
-            pagination.innerHTML="";
-            return;
-        }
+            resultCount.innerHTML = `<span>${formatNumber(serverTotal)}</span> 作品`;
 
+            if (!serverTotal) {
+                resultPage.textContent = "該当作品なし";
+                animeGrid.innerHTML = '<div class="empty-state"><h2>その条件のアニメはありません</h2><p>検索条件やフィルターを変更してみてください。</p></div>';
+                return;
+            }
+
+            resultPage.textContent = `${currentPage} / ${Math.ceil(serverTotal / PAGE_SIZE)} ページ`;
+            animeGrid.innerHTML = animeData.map(createAnimeCard).join("");
+            renderPagination(Math.ceil(serverTotal / PAGE_SIZE));
+            bindCompareButtons();
+            updateCompareUI();
         } catch (error) {
-
-            console.error(
-                "Anime loading error:",
-                error
-            );
-
+            console.error("Anime loading error:", error);
             showLoadError(error);
-
         }
-
     }
-
 
     /* =========================================
        Anime genres
@@ -2981,369 +2972,10 @@
        Apply filters
     ========================================= */
 
-    function applyFilters(
-        resetPage = true
-    ) {
-
-        if (
-            resetPage
-        ) {
-
-            currentPage =
-                1;
-
-        }
-
-
-        const keyword =
-            searchInput.value
-                .trim()
-                .toLowerCase();
-
-
-        const year =
-            yearFilter.value;
-
-
-        const season =
-            seasonFilter.value;
-
-
-        const status =
-            statusFilter.value;
-
-
-        const format =
-            formatFilter.value;
-
-
-        const genre =
-            genreFilter.value;
-
-
-        const studio =
-            studioFilter.value;
-
-
-        const sort =
-            sortFilter.value;
-
-
-        filteredAnime =
-            animeData.filter(
-                anime => {
-
-
-                    /*
-                     * キーワード
-                     */
-
-                    if (
-                        keyword
-                    ) {
-
-                        const searchable =
-                            [
-
-                                anime.title,
-
-                                anime.english_title,
-
-                                anime.title_english,
-
-                                anime.title_romaji,
-
-                                anime.title_native,
-
-                                anime.title_japanese,
-
-                                anime.title_user_preferred,
-
-                                ...(anime._aliases || []),
-
-                                ...(Array.isArray(anime.search_aliases) ? anime.search_aliases : []),
-
-                                anime.description,
-
-                                anime.genre,
-
-                                anime.source,
-
-                                ...getAnimeGenres(
-                                    anime
-                                )
-                                .map(
-                                    item =>
-                                        item.name
-                                ),
-
-                                ...(anime._studios || [])
-                                    .map(studio => studio.name)
-
-                            ]
-
-                            .filter(Boolean)
-
-                            .join(" ")
-
-                            .toLowerCase();
-
-
-                        if (
-                            !searchable.includes(
-                                keyword
-                            )
-                        ) {
-
-                            return false;
-
-                        }
-
-                    }
-
-
-                    /*
-                     * 年
-                     */
-
-                    if (
-                        year &&
-                        getAnimeYear(
-                            anime
-                        ) !== year
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    /*
-                     * シーズン
-                     */
-
-                    if (
-                        season &&
-                        anime.season !==
-                        season
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    /*
-                     * ステータス
-                     */
-
-                    if (
-                        status &&
-                        anime.status !==
-                        status
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    /*
-                     * フォーマット
-                     */
-
-                    if (
-                        format &&
-                        anime.format !==
-                        format
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    /*
-                     * ジャンル
-                     */
-
-                    if (
-                        genre
-                    ) {
-
-                        const hasGenre =
-                            getAnimeGenres(
-                                anime
-                            )
-                            .some(
-                                item =>
-                                    String(
-                                        item.id
-                                    ) ===
-                                    String(
-                                        genre
-                                    )
-                            );
-
-
-                        if (
-                            !hasGenre
-                        ) {
-
-                            return false;
-
-                        }
-
-                    }
-
-
-                    if (
-                        studio
-                    ) {
-
-                        const hasStudio =
-                            (anime._studios || [])
-                                .some(
-                                    item =>
-                                        String(
-                                            item.id
-                                        ) ===
-                                        String(
-                                            studio
-                                        )
-                                );
-
-                        if (
-                            !hasStudio
-                        ) {
-
-                            return false;
-
-                        }
-
-                    }
-
-
-                    return true;
-
-                }
-            );
-
-
-        filteredAnime.sort(
-            (
-                a,
-                b
-            ) => {
-
-
-                switch (
-                    sort
-                ) {
-
-
-                    case "score":
-
-                        return (
-
-                            Number(
-                                b._animecia_rating ?? b.average_score ?? 0
-                            )
-
-                            -
-
-                            Number(
-                                a._animecia_rating ?? a.average_score ?? 0
-                            )
-
-                        );
-
-
-                    case "popularity":
-
-                        return (
-
-                            Number(
-                                b._animecia_favorite_count ||
-                                0
-                            )
-
-                            -
-
-                            Number(
-                                a._animecia_favorite_count ||
-                                0
-                            )
-
-                        );
-
-
-                    case "newest":
-
-                        return (
-
-                            getDateValue(
-                                b.start_date
-                            )
-
-                            -
-
-                            getDateValue(
-                                a.start_date
-                            )
-
-                        );
-
-
-                    case "title":
-
-                        return getMainTitle(
-                            a
-                        )
-                        .localeCompare(
-                            getMainTitle(
-                                b
-                            ),
-                            "ja"
-                        );
-
-
-                    case "default":
-
-                    default:
-
-                        /*
-                         * 初期表示は「評価」を使わず、
-                         * 公開日が新しい順→日本語タイトル順。
-                         * 評価はユーザー評価が蓄積された後だけ
-                         * 「評価順」で利用する。
-                         */
-                        {
-                            const dateDiff =
-                                getDateValue(b.start_date) -
-                                getDateValue(a.start_date);
-
-                            if (dateDiff !== 0) {
-                                return dateDiff;
-                            }
-
-                            return getMainTitle(a).localeCompare(
-                                getMainTitle(b),
-                                "ja"
-                            );
-                        }
-
-                }
-
-            }
-        );
-
-
+    function applyFilters(resetPage = true) {
+        if (resetPage) currentPage = 1;
         updateURL();
-
-
-        renderAnime();
-
+        loadAnime();
     }
 
 
@@ -4013,7 +3645,7 @@
                 updateURL();
 
 
-                renderAnime();
+                loadAnime();
 
 
                 window.scrollTo({
@@ -4122,7 +3754,7 @@
                         updateURL();
 
 
-                        renderAnime();
+                        loadAnime();
 
 
                         window.scrollTo({
@@ -4191,7 +3823,7 @@
                 updateURL();
 
 
-                renderAnime();
+                loadAnime();
 
 
                 window.scrollTo({
