@@ -2307,6 +2307,15 @@
 
         }
 
+        if (
+            studio
+        ) {
+
+            studioFilter.value =
+                studio;
+
+        }
+
 
         const validSorts = [
 
@@ -2464,6 +2473,17 @@
             params.set(
                 "genre",
                 genreFilter.value
+            );
+
+        }
+
+        if (
+            studioFilter.value
+        ) {
+
+            params.set(
+                "studio",
+                studioFilter.value
             );
 
         }
@@ -3607,7 +3627,10 @@
                                 .map(
                                     item =>
                                         item.name
-                                )
+                                ),
+
+                                ...(anime._studios || [])
+                                    .map(studio => studio.name)
 
                             ]
 
