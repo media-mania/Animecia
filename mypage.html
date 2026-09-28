@@ -191,11 +191,20 @@ function updateAvatarPreview(url){
 }
 
 async function saveProfile(){
+  const msg=document.getElementById("profile-msg");
+  const button=document.getElementById("save-profile");
   const username=document.getElementById("username").value.trim();
-  if(username && !/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){
-    document.getElementById("profile-msg").textContent="ユーザー名は2〜30文字で入力してください。";
+
+  if(!currentUser){
+    msg.textContent="ログインしてください。";
     return;
   }
+
+  if(username && !/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){
+    msg.textContent="ユーザー名は2〜30文字で入力してください。";
+    return;
+  }
+
   const payload={
     id:currentUser.id,
     username:username||null,
@@ -204,15 +213,58 @@ async function saveProfile(){
     bio:document.getElementById("bio").value.trim()||null,
     updated_at:new Date().toISOString()
   };
-  const {error}=await supabaseClient.from("profiles").upsert(payload);
-  const msg=document.getElementById("profile-msg");
-  if(error){
+
+  button.disabled=true;
+  const originalText=button.textContent;
+  button.textContent="保存中…";
+  msg.textContent="";
+
+  try{
+    // 既存プロフィールがある場合はUPDATE、ない場合だけINSERT。
+    const {data:existing,error:findError}=await supabaseClient
+      .from("profiles")
+      .select("id")
+      .eq("id",currentUser.id)
+      .maybeSingle();
+
+    if(findError)throw findError;
+
+    let error=null;
+
+    if(existing?.id){
+      const result=await supabaseClient
+        .from("profiles")
+        .update(payload)
+        .eq("id",currentUser.id)
+        .select("id")
+        .single();
+      error=result.error;
+    }else{
+      const result=await supabaseClient
+        .from("profiles")
+        .insert(payload)
+        .select("id")
+        .single();
+      error=result.error;
+    }
+
+    if(error){
+      console.error("Save profile error:",error);
+      if(error.code==="23505" && String(error.message||"").includes("profiles_username_key")){
+        throw new Error("そのユーザー名はすでに使用されています。");
+      }
+      throw error;
+    }
+
+    updateAvatarPreview(payload.avatar_url||"");
+    msg.textContent="プロフィールを保存しました。";
+  }catch(error){
     console.error("Save profile error:",error);
-    msg.textContent=error.message||"プロフィールの保存に失敗しました。";
-    return;
+    msg.textContent=error?.message||"プロフィールの保存に失敗しました。";
+  }finally{
+    button.disabled=false;
+    button.textContent=originalText;
   }
-  updateAvatarPreview(payload.avatar_url||"");
-  msg.textContent="プロフィールを保存しました。";
 }
 
 async function getAnime(ids){
