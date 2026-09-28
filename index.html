@@ -5008,11 +5008,16 @@ footer{margin-top:80px!important;background:#111216!important}
 
 
     function isVerifiedUser(user) {
+        /*
+         * メール確認の強制はSupabase Auth側で行う。
+         * signInWithPassword() が成功してsession/userが返ったユーザーは
+         * アプリ側で email_confirmed_at の存在を再判定して拒否しない。
+         * これにより、Supabase側の認証設定とフロント側の判定が食い違う問題を防ぐ。
+         */
         return Boolean(
             user &&
             user.is_anonymous !== true &&
-            user.email &&
-            user.email_confirmed_at
+            user.email
         );
     }
 
@@ -5351,7 +5356,7 @@ footer{margin-top:80px!important;background:#111216!important}
                 $("auth-password").value = "";
 
                 message.textContent =
-                    "登録しました。確認メールを送信しています。メール内のリンクを開いて確認を完了してからログインしてください。";
+                    "登録しました。確認メールが届いている場合はメール内のリンクを開いてください。確認後、この画面からログインできます。";
 
                 return;
             }
@@ -5364,16 +5369,12 @@ footer{margin-top:80px!important;background:#111216!important}
             if (error) throw error;
 
             /*
-             * Supabase側でメール確認が必要な設定でも、念のためフロント側でも確認する。
-             * 未確認ユーザーをアプリ内に残さない。
+             * メール確認が必須の場合はSupabase AuthがsignInWithPassword()自体を拒否する。
+             * そのため、ここでemail_confirmed_atを再判定して正常なログインを拒否しない。
              */
             if (!isVerifiedUser(data?.user)) {
                 await supabaseClient.auth.signOut();
-                $("auth-resend").hidden = false;
-                $("auth-resend").dataset.email = email;
-                message.textContent =
-                    "このメールアドレスはまだ確認されていません。確認メールのリンクを開いてからログインしてください。";
-                return;
+                throw new Error("ログインユーザーを確認できませんでした。");
             }
 
             await ensureProfile(data.user);
