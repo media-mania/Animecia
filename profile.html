@@ -47,6 +47,8 @@ async function load(){
  const {data:profile,error:profileError}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio,created_at").eq("id",id).maybeSingle();
  if(profileError||!profile){app.innerHTML='<div class="error">プロフィールを取得できませんでした。</div>';return}
  const {count:reviewCount}=await supabaseClient.from("reviews").select("id",{count:"exact",head:true}).eq("user_id",id);
+ const {data:followStatsData}=await supabaseClient.rpc("get_profile_follow_stats",{p_profile_id:id});
+ const followStats=followStatsData?.[0]||{followers_count:0,following_count:0,is_following:false};
  const {data:reviews}=await supabaseClient.from("reviews").select("id,anime_id,title,content,rating,spoiler,created_at,likes_count").eq("user_id",id).order("created_at",{ascending:false}).limit(50);
  const ids=[...new Set((reviews||[]).map(r=>r.anime_id))];
  const {data:anime}=ids.length?await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image").in("id",ids):{data:[]};
@@ -76,7 +78,7 @@ async function load(){
  app.innerHTML='<section class="profile">'+avatar+'<div><div class="name">'+esc(name)+'</div>'+
    (profile.username?'<div class="username">@'+esc(profile.username)+'</div>':'')+
    '<div class="bio">'+esc(profile.bio||"自己紹介はまだありません。")+'</div>'+
-   '<div class="stats"><div class="stat"><b>'+esc(reviewCount||0)+'</b>レビュー</div><div class="stat"><b>非公開</b>評価</div><div class="stat"><b>'+esc(new Date(profile.created_at).getFullYear())+'</b>登録年</div></div></div></section>'+
+   '<div class="stats"><div class="stat"><b>'+esc(reviewCount||0)+'</b>レビュー</div><div class="stat"><b>'+esc(followStats?.followers_count||0)+'</b>フォロワー</div><div class="stat"><b>'+esc(followStats?.following_count||0)+'</b>フォロー</div></div><div style="margin-top:16px"><button id="follow-button" type="button" style="border:0;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer;background:#5b5ce2;color:#fff;">'+(followStats?.is_following?"フォロー中":"フォロー")+'</button><span id="follow-message" class="muted" style="margin-left:10px"></span></div></div></section>'+
    '<section class="panel"><h2>レビュー</h2>'+(reviewHtml||'<div class="empty">公開されているレビューはありません。</div>')+'</section>';
 }
 load();
