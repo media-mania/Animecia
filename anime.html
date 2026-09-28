@@ -2888,6 +2888,44 @@
     }
 
 
+    async function createGenreOptions() {
+        try {
+            const { data, error } = await supabaseClient.rpc("get_catalog_genres");
+            if (error) throw error;
+
+            genreFilter.innerHTML = '<option value="">すべて</option>';
+
+            (data || []).forEach(genre => {
+                const option = document.createElement("option");
+                option.value = String(genre.id);
+                option.textContent = genre.name;
+                genreFilter.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Genre option loading error:", error);
+            genreFilter.innerHTML = '<option value="">すべて</option>';
+        }
+    }
+
+    async function createStudioOptions() {
+        try {
+            const { data, error } = await supabaseClient.rpc("get_catalog_studios");
+            if (error) throw error;
+
+            studioFilter.innerHTML = '<option value="">すべて</option>';
+
+            (data || []).forEach(studio => {
+                const option = document.createElement("option");
+                option.value = String(studio.id);
+                option.textContent = studio.name;
+                studioFilter.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Studio option loading error:", error);
+            studioFilter.innerHTML = '<option value="">すべて</option>';
+        }
+    }
+
     /* =========================================
        Apply filters
     ========================================= */
