@@ -80,4 +80,6 @@ function run(){
 document.getElementById("find").onclick=run;
 document.getElementById("clear").onclick=()=>{selected.clear();updateGenreSelected();document.querySelectorAll(".chip.active").forEach(x=>x.classList.remove("active"));["format","length","rating","status"].forEach(id=>document.getElementById(id).value=id==="rating"?"0":"");document.getElementById("results").innerHTML='<div class="empty">あなたの好みから作品を探します。</div>';document.getElementById("result-sub").textContent="条件を設定して「この条件で探す」を押してください。"};
 init();
-</script></body></html>
+</script>
+<!-- multi-genre-data-fix -->
+</body></html>
