@@ -2550,6 +2550,7 @@
                 title_english,
                 title_native,
                 title_japanese,
+                search_aliases,
                 cover_image,
                 banner_image,
                 start_date,
@@ -3591,6 +3592,8 @@
                                 anime.title_user_preferred,
 
                                 ...(anime._aliases || []),
+
+                                ...(Array.isArray(anime.search_aliases) ? anime.search_aliases : []),
 
                                 anime.description,
 
