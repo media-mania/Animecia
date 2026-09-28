@@ -1603,8 +1603,35 @@ jobs:
             if (error) throw error;
           }
 
+          async function startAutomationRun(historicalOffset) {
+            const { data, error } = await supabase
+              .from('anime_automation_runs')
+              .insert({
+                status: 'running',
+                historical_offset_before: historicalOffset,
+              })
+              .select('id')
+              .single();
+            if (error) throw error;
+            return data.id;
+          }
+
+          async function finishAutomationRun(id, values) {
+            if (!id) return;
+            const { error } = await supabase
+              .from('anime_automation_runs')
+              .update({
+                ...values,
+                finished_at: new Date().toISOString(),
+              })
+              .eq('id', id);
+            if (error) console.error('Failed to write automation run log:', error);
+          }
+
           async function main() {
             const historicalOffset = await getAutomationOffset();
+            const runId = await startAutomationRun(historicalOffset);
+            try {
             const offsets = new Set();
 
             for (let page = 0; page < ANN_FRESH_PAGES; page++) {
@@ -1674,8 +1701,31 @@ jobs:
             const sync = await syncExistingAnnAnime();
             console.log(`SUMMARY discovered=${rows.length} imported=${imported} skipped_existing=${skipped} rejected=${rejected} errors=${errors} next_historical_offset=${advancedHistorical} existing_scanned=${sync.scanned} existing_updated=${sync.updated} sync_errors=${sync.errors}`);
 
+            await finishAutomationRun(runId, {
+              status: errors > 0 || sync.errors > 0 ? 'failed' : 'success',
+              discovered: rows.length,
+              imported,
+              skipped_existing: skipped,
+              rejected,
+              errors,
+              historical_offset_after: advancedHistorical,
+              historical_rows: historicalFetchedRows,
+              existing_scanned: sync.scanned,
+              existing_updated: sync.updated,
+              sync_errors: sync.errors,
+              message: `ANN自動取得: discovered=${rows.length}, imported=${imported}, skipped=${skipped}, rejected=${rejected}, errors=${errors}`,
+            });
+
             if (errors > 0 || sync.errors > 0) {
               process.exitCode = 1;
+            }
+            } catch (error) {
+              await finishAutomationRun(runId, {
+                status: 'failed',
+                errors: 1,
+                message: String(error?.message || error),
+              });
+              throw error;
             }
           }
 
