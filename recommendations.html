@@ -60,10 +60,10 @@ async function init(){
  ]);
  genres=gr.data||[];
  const gm=new Map(genres.map(g=>[Number(g.id),g.name])), gids=new Map();
- (ag.data||[]).forEach(x=>{const id=Number(x.anime_id);if(!gids.has(id))gids.set(id,[]);gids.get(id).push(Number(x.genre_id))});
- const ids=(ar.data||[]).map(a=>a.id),em=new Map();
+ (ag||[]).forEach(x=>{const id=Number(x.anime_id);if(!gids.has(id))gids.set(id,[]);gids.get(id).push(Number(x.genre_id))});
+ const ids=(ar||[]).map(a=>a.id),em=new Map();
  for(let i=0;i<ids.length;i+=500){const {data:e}=await s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count,rating_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}
- rows=(ar.data||[]).filter(a=>a.anime_verification_status==="verified").map(a=>({...a,g:gids.get(Number(a.id))||[],gn:(gids.get(Number(a.id))||[]).map(x=>gm.get(x)).filter(Boolean),e:em.get(Number(a.id))||{}}));
+ rows=(ar||[]).filter(a=>a.anime_verification_status==="verified").map(a=>({...a,g:gids.get(Number(a.id))||[],gn:(gids.get(Number(a.id))||[]).map(x=>gm.get(x)).filter(Boolean),e:em.get(Number(a.id))||{}}));
  renderGenres();
  if(auth.data.user&&!auth.data.user.is_anonymous){const uid=auth.data.user.id;const [rt,st,fv]=await Promise.all([s.from("user_ratings").select("anime_id,rating").eq("user_id",uid),s.from("user_anime_status").select("anime_id,status").eq("user_id",uid),s.from("favorites").select("anime_id").eq("user_id",uid)]);(rt.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{rating:Number(x.rating)}));(st.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),status:x.status}));(fv.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),favorite:true}));}
 }
@@ -85,7 +85,7 @@ function score(a,format,length,min,status){
 function run(){
  const format=document.getElementById("format").value,length=document.getElementById("length").value,min=Number(document.getElementById("rating").value||0),status=document.getElementById("status").value;
  const hasConditions=selected.size>0||!!format||!!length||!!min||!!status;
- let r=rows.filter(a=>{if(format&&a.format!==format)return false;if(status&&a.status!==status)return false;const n=Number(a.episodes||0);if(length==="short"&&(!n||n>13))return false;if(length==="medium"&&(n<14||n>26))return false;if(length==="long"&&n<27)return false;if(min&&Number(a.e.average_rating||0)<min)return false;return true}).map(a=>({...a,m:score(a,format,length,min,status)})).filter(a=>!hasConditions||a.m.score>0).sort((a,b)=>b.m.score-a.m.score).slice(0,30);
+ let r=rows.filter(a=>{if(format&&a.format!==format)return false;if(status&&a.status!==status)return false;const n=Number(a.episodes||0);if(length==="short"&&(!n||n>13))return false;if(length==="medium"&&(n<14||n>26))return false;if(length==="long"&&n<27)return false;if(min&&Number(a.e.average_rating||0)<min)return false;return true}).map(a=>({...a,m:score(a,format,length,min,status)})).sort((a,b)=>b.m.score-a.m.score).slice(0,30);
  document.getElementById("result-sub").textContent=(selected.size?"選択ジャンル "+selected.size+"件 / ":"")+"作品データからおすすめ順に表示。"+(hasConditions?" 指定した条件も反映しています。":" 条件未指定のため、評価・人気などから選定しています。")+(userSignals.size?" あなたの視聴・評価履歴も反映中。":"");
  document.getElementById("results").innerHTML=r.map((a,i)=>'<a class="item" href="anime-detail.html?id='+a.id+'"><div class="rank">'+(i+1)+'</div>'+(a.cover_image?'<img class="thumb" src="'+esc(a.cover_image)+'" alt="'+esc(title(a))+'" loading="lazy">':'<div class="thumb"></div>')+'<div class="grow"><div class="title">'+esc(title(a))+'</div><div class="reason">'+esc(a.m.reason)+'</div><div class="meta"><span class="pill">★ '+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(1):"—")+'</span><span class="pill">'+esc(a.format||"")+'</span><span class="pill">'+(a.episodes?esc(a.episodes)+"話":"話数不明")+'</span></div></div><div class="match">MATCH '+Math.round(Math.min(99,a.m.score))+'%</div></a>').join("")||'<div class="empty">条件に合う作品が見つかりませんでした。条件を少し緩めてみてください。</div>';
 }
