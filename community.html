@@ -18,6 +18,7 @@ main{max-width:1180px;margin:auto;padding:34px 20px 70px}.hero{padding:30px;bord
 <a href="mypage.html">マイページ</a>
 </nav><div class="userbar"><a class="btn secondary" href="index.html#login">ログイン</a></div></div></header>
 <main><section class="hero"><h1>Animecia Community</h1><p>レビュー、評価、視聴記録から、次に見る作品との出会いを探します。</p></section>
+<section class="panel" style="margin-bottom:18px"><h2 style="margin-top:0">ユーザーを検索</h2><div style="display:flex;gap:8px"><input id="user-search" type="search" placeholder="@ユーザー名・表示名" style="flex:1;padding:11px;border:1px solid #ddd;border-radius:9px"><button id="user-search-btn" class="tab active" type="button">検索</button></div><div id="user-results" style="margin-top:14px"></div></section>
 <div class="tabs"><button class="tab active" data-mode="latest">最新レビュー</button><button class="tab" data-mode="popular">人気レビュー</button><button class="tab" data-mode="activity">ユーザー活動</button></div>
 <div class="layout"><section class="panel"><div id="list" class="list"><div class="loading">読み込み中…</div></div></section>
 <aside class="panel"><h2 style="margin-top:0">Animeciaを楽しむ</h2><p class="sub" style="font-size:13px;line-height:1.8">作品を評価して視聴状況を残すと、おすすめ精度が上がります。</p>
@@ -27,9 +28,24 @@ const U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const title=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.title||"作品";
 async function animeMap(ids){const m=new Map();for(let i=0;i<ids.length;i+=500){const {data}=await s.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image").in("id",ids.slice(i,i+500));(data||[]).forEach(a=>m.set(Number(a.id),a));}return m}
+async function searchUsers(){
+ const q=document.getElementById("user-search").value.trim();
+ const el=document.getElementById("user-results");
+ if(!q){el.innerHTML='<div class="sub">ユーザー名または表示名を入力してください。</div>';return}
+ el.innerHTML='<div class="loading">検索中…</div>';
+ const {data,error}=await s.rpc("search_profiles",{p_query:q,p_limit:30});
+ if(error){el.innerHTML='<div class="error">ユーザー検索に失敗しました。</div>';return}
+ const rows=data||[];
+ el.innerHTML=rows.map(p=>{
+   const name=p.display_name||p.username||"Animeciaユーザー";
+   const avatar=p.avatar_url?'<img src="'+esc(p.avatar_url)+'" style="width:46px;height:46px;border-radius:50%;object-fit:cover">':'<div style="width:46px;height:46px;border-radius:50%;background:#eee;display:grid;place-items:center;font-weight:800">'+esc(name.slice(0,1))+'</div>';
+   return '<a href="profile.html?id='+encodeURIComponent(p.id)+'" style="display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid #eee">'+avatar+'<span><b>'+esc(name)+'</b><br><span class="sub">'+esc(p.username||"")+" · "+esc(p.followers_count||0)+'フォロワー</span></span></a>';
+ }).join("")||'<div class="empty">一致するプロフィールがありません。</div>';
+}
 async function reviews(mode){const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';let q=s.from("reviews").select("id,user_id,anime_id,title,body,rating,is_spoiler,created_at").limit(60);q=mode==="popular"?q.order("created_at",{ascending:false}):q.order("created_at",{ascending:false});const {data,error}=await q;if(error){el.innerHTML='<div class="error">レビューを取得できませんでした。</div>';return}const rows=data||[],am=await animeMap([...new Set(rows.map(x=>Number(x.anime_id)))]);el.innerHTML=rows.map(r=>{const a=am.get(Number(r.anime_id));return '<article class="review"><div class="review-head"><div><div class="title">'+(a?'<a href="anime-detail.html?id='+a.id+'">'+esc(title(a))+'</a>':"作品")+'</div><div class="sub">'+esc(r.title||"レビュー")+' · '+new Date(r.created_at).toLocaleDateString("ja-JP")+'</div></div><div class="score">'+esc(r.rating??"—")+'/10</div></div><div class="body">'+(r.is_spoiler?'<span class="pill">ネタバレあり</span>':esc((r.body||"").slice(0,420)))+'</div><div class="meta"><span class="pill">'+(r.is_spoiler?"内容を表示するには作品ページへ":"レビュー")+'</span></div></article>'}).join("")||'<div class="empty">まだレビューがありません。</div>'}
 async function activity(){const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';const {data,error}=await s.from("user_activity").select("user_id,anime_id,activity_type,metadata,created_at").order("created_at",{ascending:false}).limit(80);if(error){el.innerHTML='<div class="error">活動履歴を取得できませんでした。</div>';return}const rows=data||[],am=await animeMap([...new Set(rows.map(x=>Number(x.anime_id)).filter(Number.isInteger))]);const labels={favorite:"お気に入り追加",unfavorite:"お気に入り解除",status_change:"視聴状況変更",rating:"評価",review:"レビュー投稿",review_like:"レビューにいいね",progress:"視聴進捗更新",follow:"作品をフォロー"};el.innerHTML=rows.map(x=>{const a=am.get(Number(x.anime_id));return '<div class="activity"><b>'+esc(labels[x.activity_type]||x.activity_type)+'</b> · '+(a?'<a href="anime-detail.html?id='+a.id+'">'+esc(title(a))+'</a>':"作品")+'<div class="sub">'+new Date(x.created_at).toLocaleString("ja-JP")+'</div></div>'}).join("")||'<div class="empty">活動はまだありません。</div>'}
 async function load(mode){mode==="activity"?activity():reviews(mode)}
+document.getElementById("user-search-btn").addEventListener("click",searchUsers);document.getElementById("user-search").addEventListener("keydown",e=>{if(e.key==="Enter")searchUsers();});
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");load(b.dataset.mode)});
 load("latest");
 </script></body></html>
