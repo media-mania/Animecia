@@ -79,7 +79,7 @@ async function load(){
    (profile.username?'<div class="username">@'+esc(profile.username)+'</div>':'')+
    '<div class="bio">'+esc(profile.bio||"自己紹介はまだありません。")+'</div>'+
    '<div class="stats"><div class="stat"><b>'+esc(reviewCount||0)+'</b>レビュー</div><div class="stat"><b>'+esc(followStats?.followers_count||0)+'</b>フォロワー</div><div class="stat"><b>'+esc(followStats?.following_count||0)+'</b>フォロー</div></div><div style="margin-top:16px"><button id="follow-button" type="button" style="border:0;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer;background:#5b5ce2;color:#fff;">'+(followStats?.is_following?"フォロー中":"フォロー")+'</button><span id="follow-message" class="muted" style="margin-left:10px"></span></div></div></section>'+
-   '<section class="panel"><h2>レビュー</h2>'+(reviewHtml||'<div class="empty">公開されているレビューはありません。</div>')+'</section>';
+   '<section class="panel"><h2>フォロー</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"><button id="show-followers" class="pill" type="button">フォロワー</button><button id="show-following" class="pill" type="button">フォロー中</button></div><div id="follow-list" class="empty">フォロー関係を確認できます。</div></section><section class="panel"><h2>レビュー</h2>'+(reviewHtml||'<div class="empty">公開されているレビューはありません。</div>')+'</section>';
 }
 load();
 </script>
