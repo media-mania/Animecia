@@ -1,60 +1,322 @@
-name: Animecia Auto Anime Pipeline
+name: Animecia Bulk Anime Auto Import
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "sitemap.xml"
-      - "sitemap-pages.xml"
-      - "sitemap-anime-*.xml"
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
+    inputs:
+      batch_size:
+        description: "作品候補数（fresh + historical）"
+        required: false
+        default: "200"
 
 permissions:
   contents: read
 
 concurrency:
   group: animecia-auto-pipeline
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  import-and-enrich:
+  bulk-import:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-
+    timeout-minutes: 55
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-      ANN_REPORT_URL: https://www.animenewsnetwork.com/encyclopedia/reports.xml?id=155&type=anime
-      ANN_DETAIL_URL: https://cdn.animenewsnetwork.com/encyclopedia/api.xml?anime=
-      ANN_PAGE_URL: https://www.animenewsnetwork.com/encyclopedia/anime.php?id=
-      # 2,000,000,000 + ANN ID is the dedicated ANN namespace used by Animecia.
+      BATCH_SIZE: ${{ inputs.batch_size || '200' }}
+      ANN_REPORT_URL: https://www.animenewsnetwork.com/encyclopedia/reports.xml
+      ANN_DETAIL_URL: https://cdn.animenewsnetwork.com/encyclopedia/api.xml
       ANN_EXTERNAL_ID_BASE: '2000000000'
-      ANILIST_API_URL: https://graphql.anilist.co
-      # Process enough report rows to keep the catalog fresh without pulling the entire ANN DB each run.
-      ANN_PAGE_SIZE: '100'
-      ANN_FRESH_PAGES: '50'
-      ANN_HISTORICAL_PAGES: '50'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-
-      - name: Install runtime dependencies
-        run: npm install --no-save --no-package-lock @supabase/supabase-js@2.117.2 fast-xml-parser@5.11.1
-
-      - name: Run automatic import, validation and enrichment
+      - name: Bulk import and validation
         shell: bash
         run: |
-          node <<'NODE'
-          const { createClient } = require('@supabase/supabase-js');
-          const { XMLParser } = require('fast-xml-parser');
+          set -euo pipefail
+          python3 <<'PY'
+          import datetime as dt
+          import json
+          import os
+          import re
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import xml.etree.ElementTree as ET
 
-          const SUPABASE_URL = process.env.SUPABASE_URL;
+          SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
+          SECRET = os.environ["SUPABASE_SECRET_KEY"]
+          ANN_REPORT = os.environ["ANN_REPORT_URL"]
+          ANN_DETAIL = os.environ["ANN_DETAIL_URL"]
+          BASE = int(os.environ["ANN_EXTERNAL_ID_BASE"])
+          BATCH = max(20, min(300, int(os.environ.get("BATCH_SIZE", "200"))))
+          HALF = max(10, BATCH // 2)
+          UA = "Animecia-AutoImporter/2.0 (+https://github.com/media-mania/Animecia)"
+          ALLOWED = {"TV", "MOVIE", "OVA", "OAV", "ONA", "SPECIAL", "OMNIBUS"}
+          TODAY = dt.date.today()
+
+          def http(url, method="GET", body=None, headers=None, timeout=120):
+              h = {"User-Agent": UA, "Accept": "application/xml,text/xml,application/json,*/*"}
+              if headers: h.update(headers)
+              data = None if body is None else json.dumps(body, ensure_ascii=False).encode()
+              req = urllib.request.Request(url, data=data, method=method, headers=h)
+              for attempt in range(4):
+                  try:
+                      with urllib.request.urlopen(req, timeout=timeout) as r:
+                          raw = r.read()
+                          return raw
+                  except urllib.error.HTTPError as e:
+                      if e.code in (429, 500, 502, 503, 504) and attempt < 3:
+                          time.sleep(2 ** attempt)
+                          continue
+                      raise
+
+          def sb(path, method="GET", body=None, params=None):
+              url = SUPABASE_URL + path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params, doseq=True)
+              headers = {
+                  "apikey": SECRET,
+                  "Authorization": "Bearer " + SECRET,
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                  "Prefer": "return=representation",
+              }
+              raw = http(url, method, body, headers, 120)
+              return json.loads(raw.decode("utf-8")) if raw else []
+
+          def clean(s):
+              if s is None: return None
+              s = re.sub(r"\\s+", " ", str(s)).strip()
+              return s or None
+
+          def parse_xml(raw):
+              return ET.fromstring(raw)
+
+          def report(offset, limit):
+              params = {"id":"155","type":"anime","nskip":str(offset),"nlist":str(limit)}
+              raw = http(ANN_REPORT + "?" + urllib.parse.urlencode(params))
+              root = parse_xml(raw)
+              out, seen = [], set()
+              for item in root.iter():
+                  if item.tag.lower() != "item": continue
+                  v = {}
+                  for child in item:
+                      key = child.tag.lower().strip()
+                      text = clean(" ".join(x.strip() for x in child.itertext() if x and x.strip()))
+                      v[key] = text
+                  aid = v.get("id")
+                  title = clean(v.get("name"))
+                  typ = (clean(v.get("type")) or "").upper()
+                  if not aid or not aid.isdigit() or int(aid) in seen: continue
+                  seen.add(int(aid))
+                  if not title or typ not in ALLOWED: continue
+                  out.append({"id":int(aid),"title":title,"type":typ})
+              return out
+
+          def info_list(anime):
+              result = []
+              for e in anime:
+                  if e.tag.lower() != "info": continue
+                  result.append({
+                      "type": (e.get("type") or "").strip().lower(),
+                      "lang": (e.get("lang") or "").strip().lower(),
+                      "href": clean(e.get("href")),
+                      "text": clean(" ".join(x.strip() for x in e.itertext() if x and x.strip()))
+                  })
+              return result
+
+          def find(infos, types=(), contains=()):
+              for x in infos:
+                  t = x["type"]
+                  if t in types or any(c in t for c in contains):
+                      return x
+              return None
+
+          def dates(text):
+              ds = re.findall(r"\\d{4}-\\d{2}-\\d{2}", text or "")
+              return (ds[0] if ds else None, ds[1] if len(ds) > 1 else None)
+
+          def season(start):
+              if not start: return None
+              m = int(start[5:7])
+              return "WINTER" if m<=3 else "SPRING" if m<=6 else "SUMMER" if m<=9 else "FALL"
+
+          def status(start, end):
+              if not start: return "UNKNOWN"
+              s = dt.date.fromisoformat(start)
+              if s > TODAY: return "UPCOMING"
+              if end:
+                  e = dt.date.fromisoformat(end)
+                  if e <= TODAY: return "FINISHED"
+              return "ONGOING"
+
+          def first_japanese(infos):
+              for x in infos:
+                  if "alternative title" in x["type"] and x["lang"] in {"ja","japanese","jpn"} and x["text"]:
+                      return x["text"]
+              for x in infos:
+                  if "alternative title" in x["type"] and x["text"] and re.search(r"[\\u3040-\\u30ff\\u3400-\\u9fff]", x["text"]):
+                      return x["text"]
+              return None
+
+          def genres(infos):
+              x = find(infos, types={"genres"})
+              if not x or not x["text"]: return []
+              vals = []
+              for v in x["text"].split(","):
+                  v = clean(v)
+                  if v and v not in vals: vals.append(v)
+              return vals
+
+          def studios(infos):
+              vals = []
+              for x in infos:
+                  if any(k in x["type"] for k in ("studio","animation studio")):
+                      if x["text"]:
+                          for v in re.split(r",|/|;|\\band\\b", x["text"]):
+                              v = clean(v)
+                              if v and v not in vals: vals.append(v)
+              return vals[:5]
+
+          def detail(ids):
+              if not ids: return {}
+              q = urllib.parse.urlencode({"anime":"/".join(map(str, ids))})
+              raw = http(ANN_DETAIL + "?" + q)
+              root = parse_xml(raw)
+              return {int(a.get("id")):a for a in root.iter() if a.tag.lower()=="anime" and (a.get("id") or "").isdigit()}
+
+          def build(candidates, details):
+              rows = []
+              for c in candidates:
+                  a = details.get(c["id"])
+                  if a is None: continue
+                  infos = info_list(a)
+                  title = clean(a.get("name")) or c["title"]
+                  typ = (a.get("type") or c["type"]).upper()
+                  if typ not in ALLOWED: continue
+                  fmt = "OVA" if typ in {"OVA","OAV"} else "SPECIAL" if typ in {"SPECIAL","OMNIBUS"} else typ
+                  jp = first_japanese(infos)
+                  vint = find(infos, types={"vintage"})
+                  start, end = dates(vint["text"] if vint else None)
+                  if start:
+                      d = dt.date.fromisoformat(start)
+                      if d > TODAY + dt.timedelta(days=1095): continue
+                  ep = find(infos, contains=("number of episodes","episodes"))
+                  dur = find(infos, contains=("running time","duration"))
+                  epm = re.search(r"\\d+", ep["text"] if ep else "")
+                  durm = re.search(r"\\d+", dur["text"] if dur else "")
+                  episodes = int(epm.group()) if epm else None
+                  duration = int(durm.group()) if durm else None
+                  if episodes is not None and not 1 <= episodes <= 10000: episodes = None
+                  if duration is not None and not 1 <= duration <= 300: duration = None
+                  official = None
+                  for x in infos:
+                      if "official website" in x["type"] and x["href"] and x["href"].startswith(("http://","https://")):
+                          official = x["href"]; break
+                  desc = None
+                  for x in infos:
+                      if any(k in x["type"] for k in ("plot summary","plot synopsis","synopsis")) and x["text"]:
+                          desc = x["text"]; break
+                  aliases = []
+                  for x in infos:
+                      if "alternative title" in x["type"] and x["text"] and x["text"] not in aliases:
+                          aliases.append(x["text"])
+                  rows.append({
+                      "title":title[:1000],
+                      "title_japanese":jp,
+                      "title_native":jp,
+                      "title_english":None,
+                      "title_romaji":None,
+                      "description":desc,
+                      "official_url":official,
+                      "external_id":BASE+c["id"],
+                      "start_date":start,
+                      "end_date":end,
+                      "episodes":episodes,
+                      "duration":duration,
+                      "status":status(start,end),
+                      "format":fmt,
+                      "season":season(start),
+                      "season_year":int(start[:4]) if start else None,
+                      "source":"Anime News Network Encyclopedia",
+                      "site_url":"https://www.animenewsnetwork.com/encyclopedia/anime.php?id="+str(c["id"]),
+                      "aliases":aliases[:30],
+                      "genres":genres(infos),
+                      "studios":studios(infos),
+                      "source_provider":"ann",
+                      "source_id":str(c["id"])
+                  })
+              return rows
+
+          def state_offset():
+              rows = sb("/rest/v1/anime_automation_state", params={"key":"eq.ann_scan_offset","select":"value"})
+              return int(rows[0]["value"]) if rows else 0
+
+          def save_offset(value):
+              sb("/rest/v1/anime_automation_state", "POST",
+                 {"key":"ann_scan_offset","value":int(value),"updated_at":dt.datetime.now(dt.timezone.utc).isoformat()},
+                 {"on_conflict":"key"})
+
+          def log_start():
+              rows = sb("/rest/v1/anime_automation_runs", "POST", {
+                  "status":"running","started_at":dt.datetime.now(dt.timezone.utc).isoformat(),
+                  "discovered":0,"imported":0,"skipped_existing":0,"rejected":0,"errors":0,
+                  "historical_offset_before":state_offset(),"historical_offset_after":state_offset()
+              })
+              return rows[0]["id"] if rows else None
+
+          def log_finish(run_id, stats):
+              if run_id is None: return
+              sb("/rest/v1/anime_automation_runs", "PATCH", stats,
+                 {"id":"eq."+str(run_id)})
+
+          run_id = log_start()
+          before = state_offset()
+          try:
+              fresh = report(0, HALF)
+              historical = report(before, HALF)
+              if historical:
+                  save_offset(before + len(historical))
+              else:
+                  save_offset(0)
+
+              allc = []
+              seen = set()
+              for c in fresh + historical:
+                  if c["id"] not in seen:
+                      seen.add(c["id"]); allc.append(c)
+
+              details = {}
+              for i in range(0, len(allc), 50):
+                  details.update(detail([c["id"] for c in allc[i:i+50]]))
+                  time.sleep(0.25)
+
+              rows = build(allc, details)
+              inserted = skipped = errors = 0
+              for i in range(0, len(rows), 100):
+                  payload = rows[i:i+100]
+                  raw = sb("/rest/v1/rpc/bulk_register_anime_batch", "POST", payload)
+                  result = raw if isinstance(raw, dict) else (raw[0] if raw else {})
+                  inserted += int(result.get("inserted",0))
+                  skipped += int(result.get("skipped",0))
+                  errors += int(result.get("errors",0))
+
+              stats = {
+                  "status":"success","finished_at":dt.datetime.now(dt.timezone.utc).isoformat(),
+                  "discovered":len(allc),"imported":inserted,"skipped_existing":skipped,
+                  "rejected":max(0,len(allc)-len(rows)),"errors":errors,
+                  "historical_offset_before":before,"historical_offset_after":state_offset(),
+                  "historical_rows":len(historical),"message":"Bulk ANN import completed."
+              }
+              log_finish(run_id, stats)
+              print(json.dumps(stats, ensure_ascii=False))
+          except Exception as exc:
+              log_finish(run_id, {
+                  "status":"failed","finished_at":dt.datetime.now(dt.timezone.utc).isoformat(),
+                  "errors":1,"historical_offset_before":before,"historical_offset_after":state_offset(),
+                  "message":str(exc)[:2000]
+              })
+              raise
+          PY
