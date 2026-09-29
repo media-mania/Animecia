@@ -1,147 +1,98 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>プロフィール | Animecia</title>
 <meta id="meta-description" name="description" content="Animeciaユーザーのプロフィール。">
-<link id="canonical" rel="canonical" href="https://media-mania.github.io/Animecia/profile.html">
-<meta property="og:type" content="profile">
-<meta property="og:site_name" content="Animecia">
-<meta id="og-title" property="og:title" content="プロフィール | Animecia">
-<meta id="og-description" property="og:description" content="Animeciaユーザーのプロフィール。">
-<meta id="og-url" property="og:url" content="https://media-mania.github.io/Animecia/profile.html">
-<meta id="og-image" property="og:image" content="">
+<link rel="stylesheet" href="site-theme.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#697487;--line:#e1e6ef;--accent:#5b5ce2}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
-a{color:inherit;text-decoration:none}.wrap{max-width:1080px;margin:auto;padding:0 18px}
-header{background:#fff;border-bottom:1px solid var(--line)}.head{height:66px;display:flex;align-items:center;gap:24px}.logo{font-size:24px;font-weight:900;color:var(--accent)}nav{display:flex;gap:18px;flex:1}nav a{font-weight:700;color:#536074}
-main{padding:34px 0 60px}.profile{display:grid;grid-template-columns:150px 1fr;gap:22px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:20px}.avatar{width:150px;height:150px;border-radius:50%;object-fit:cover;background:#e9edf5}.avatar.placeholder{display:grid;place-items:center;font-size:46px;color:#8892a4;font-weight:900}.name{font-size:30px;font-weight:900}.username{color:var(--muted);margin-top:4px}.bio{margin-top:14px;white-space:pre-wrap;line-height:1.7}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}.stat{padding:12px;background:#f7f8fb;border-radius:11px}.stat b{display:block;font-size:21px}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}.review{padding:15px 0;border-bottom:1px solid var(--line)}.review:last-child{border-bottom:0}.review-title{font-weight:900;font-size:18px}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;background:#eef0ff;color:var(--accent);border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800;margin-right:6px}.empty,.error{text-align:center;padding:30px;color:var(--muted)}
-@media(max-width:700px){.profile{grid-template-columns:1fr;text-align:center}.avatar{margin:auto}.stats{grid-template-columns:1fr 1fr}nav{display:none}.name{font-size:25px}}
+main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
+.profile-card,.panel{background:#fff;border:1px solid #e3e6ea;border-radius:16px;box-shadow:0 8px 26px rgba(17,24,39,.05)}
+.profile-card{overflow:hidden;margin-bottom:16px}.profile-cover{height:150px;background:linear-gradient(135deg,#11151d 0%,#252b36 55%,#d9002b 180%);position:relative}.profile-cover:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 82% 25%,rgba(255,255,255,.16),transparent 28%)}
+.profile-main{padding:0 22px 20px;position:relative}.profile-avatar-wrap{position:relative;margin-top:-42px;width:88px;height:88px}.profile-avatar{width:88px;height:88px;border-radius:50%;object-fit:cover;background:#e8eaed;border:4px solid #fff;display:block}.profile-avatar-fallback{display:grid;place-items:center;font-size:30px;font-weight:900;color:#555}
+.profile-actions{position:absolute;right:20px;top:16px;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.profile-name{margin:12px 0 1px;font-size:25px;font-weight:950;letter-spacing:-.04em}.profile-handle{font-size:13px;color:#70757d}.profile-bio{margin:14px 0 16px;color:#343940;line-height:1.65;white-space:pre-wrap}.profile-stats{display:flex;gap:20px;flex-wrap:wrap}.profile-stat{font-size:13px;color:#666;background:none;border:0;padding:0;cursor:pointer}.profile-stat strong{color:#17191d;font-size:16px;margin-right:3px}.profile-stat:hover strong{color:#d9002b}
+.panel{padding:20px}.tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid #e3e6ea;margin:-20px -20px 0;padding:0 8px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{flex:none;border:0;border-bottom:3px solid transparent;padding:15px 13px;background:transparent;color:#70757d;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}.tab:hover{background:#f7f8fa;color:#17191d}.tab.active{border-bottom-color:#d9002b;color:#17191d;background:#fff}
+.list{display:grid;gap:9px;margin-top:18px}.list-item{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #e7e9ec;border-radius:11px;background:#fff;text-decoration:none;color:inherit}.thumb{width:58px;height:78px;object-fit:cover;border-radius:7px;background:#e5e7eb;flex:none}.avatar-small{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#e5e7eb;flex:none}.grow{flex:1;min-width:0}.title{font-weight:850;line-height:1.5;color:#17191d}.sub,.meta{color:#737373;font-size:12px;margin-top:4px}.meta{display:flex;gap:7px;flex-wrap:wrap}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f0f1f3;color:#444;font-size:11px;font-weight:750}.review-item{padding:15px;border:1px solid #e7e9ec;border-radius:11px}.empty,.loading,.error{text-align:center;padding:34px 12px;color:#737373}.error{color:#b42318}
+@media(max-width:600px){main{padding:16px 10px 50px}.profile-cover{height:120px}.profile-main{padding:0 16px 17px}.profile-actions{position:static;margin-top:10px;justify-content:flex-start}.profile-name{font-size:22px}.panel{padding:16px}.tabs{margin:-16px -16px 0}.tab{padding:14px 11px;font-size:11px}}
 </style>
-<link rel="stylesheet" href="site-theme.css">
 </head>
 <body>
-<header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav class="main-nav" aria-label="メインナビゲーション">
-<a href="index.html">ホーム</a>
-<a href="discover.html">探す</a>
-<a href="ranking.html">ランキング</a>
-<a href="season.html">今期</a>
-<a href="recommendations.html">おすすめ</a>
-<a href="community.html">コミュニティ</a>
-<a href="user-search.html">ユーザー検索</a><a href="mypage.html">マイページ</a>
+<header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav>
+<a href="index.html">ホーム</a><a href="discover.html">探す</a><a href="ranking.html">ランキング</a><a href="season.html">今期</a><a href="recommendations.html">おすすめ</a><a href="community.html">コミュニティ</a><a href="user-search.html">ユーザー検索</a><a href="mypage.html">マイページ</a>
 </nav></div></header>
-<main><div class="wrap"><p style="margin:0 0 16px"><a href="user-search.html">← ユーザー検索</a></p><div id="app" class="empty">読み込み中…</div></div></main>
+<main><div id="app" class="loading">読み込み中…</div></main>
 <script>
 const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const profileId=new URLSearchParams(location.search).get("id");
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
-const id=new URLSearchParams(location.search).get("id");
-async function load(){
- const app=document.getElementById("app");
- if(!id){app.innerHTML='<div class="error">プロフィールIDが指定されていません。</div>';return}
- const {data:profile,error:profileError}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio,created_at").eq("id",id).maybeSingle();
- if(profileError||!profile){app.innerHTML='<div class="error">プロフィールを取得できませんでした。</div>';return}
- const {count:reviewCount}=await supabaseClient.from("reviews").select("id",{count:"exact",head:true}).eq("user_id",id);
- const {data:followStatsData}=await supabaseClient.rpc("get_profile_follow_stats",{p_profile_id:id});
- const followStats=followStatsData?.[0]||{followers_count:0,following_count:0,is_following:false};
- const {data:reviews}=await supabaseClient.from("reviews").select("id,anime_id,title,content,rating,spoiler,created_at,likes_count").eq("user_id",id).order("created_at",{ascending:false}).limit(50);
- const ids=[...new Set((reviews||[]).map(r=>r.anime_id))];
- const {data:anime}=ids.length?await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image").in("id",ids):{data:[]};
- const m=new Map((anime||[]).map(a=>[a.id,a]));
+const imageMarkup=(url,alt)=>url?'<img class="thumb" src="'+esc(url)+'" alt="'+esc(alt)+'" loading="lazy">':'<div class="thumb" style="display:grid;place-items:center;color:#888">画像なし</div>';
+const getAnime=async ids=>{const u=[...new Set((ids||[]).map(Number).filter(Number.isInteger))],m=new Map();for(let i=0;i<u.length;i+=500){const {data}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image").in("id",u.slice(i,i+500));(data||[]).forEach(a=>m.set(Number(a.id),a));}return m;};
+let profile=null,visibility={},currentUser=null,tabs=[];
+function renderHeader(followStats,isSelf){
  const name=profile.display_name||profile.username||"Animeciaユーザー";
- document.title=name+" | Animecia";
- document.getElementById("meta-description").content=name+"のAnimeciaプロフィール。";
- document.getElementById("og-title").content=name+" | Animecia";
- document.getElementById("og-description").content=profile.bio||"Animeciaユーザーのプロフィール。";
- document.getElementById("og-url").content=location.href;
- if(profile.avatar_url) document.getElementById("og-image").content=profile.avatar_url;
- const avatar=profile.avatar_url?'<img class="avatar" src="'+esc(profile.avatar_url)+'" alt="'+esc(name)+'">':'<div class="avatar placeholder">'+esc(name.slice(0,1))+'</div>';
- const reviewHtml=(reviews||[]).map(r=>{
-   const a=m.get(r.anime_id);
-   return '<article class="review">'+
-     '<div class="muted">'+new Date(r.created_at).toLocaleString("ja-JP")+'</div>'+
-     '<div style="margin-top:6px">'+(r.rating!=null?'<span class="pill">★ '+esc(r.rating)+'</span>':'')+
-     '<span class="pill">'+esc(r.spoiler?"ネタバレあり":"通常")+'</span></div>'+
-     '<div class="review-title" style="margin-top:8px">'+
-       (r.title?esc(r.title):"レビュー")+
-     '</div>'+
-     '<div class="muted" style="margin-top:5px">'+(a?'<a href="anime-detail.html?id='+a.id+'">'+esc(titleOf(a))+'</a>':"作品")+'</div>'+
-     '<p style="line-height:1.7;white-space:pre-wrap">'+esc(r.content).slice(0,600)+(r.content.length>600?"…":"")+'</p>'+
-     '<span class="muted">参考になった '+esc(r.likes_count||0)+'件</span>'+
-   '</article>';
- }).join("");
- app.innerHTML='<section class="profile">'+avatar+'<div><div class="name">'+esc(name)+'</div>'+
-   (profile.username?'<div class="username">@'+esc(profile.username)+'</div>':'')+
-   '<div class="bio">'+esc(profile.bio||"自己紹介はまだありません。")+'</div>'+
-   '<div class="stats"><div class="stat"><b>'+esc(reviewCount||0)+'</b>レビュー</div><div class="stat"><b>'+esc(followStats?.followers_count||0)+'</b>フォロワー</div><div class="stat"><b>'+esc(followStats?.following_count||0)+'</b>フォロー</div></div><div style="margin-top:16px"><button id="follow-button" type="button" style="border:0;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer;background:#5b5ce2;color:#fff;">'+(followStats?.is_following?"フォロー中":"フォロー")+'</button><span id="follow-message" class="muted" style="margin-left:10px"></span></div></div></section>'+
-   '<section class="panel"><h2>フォロー</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"><button id="show-followers" class="pill" type="button">フォロワー</button><button id="show-following" class="pill" type="button">フォロー中</button></div><div id="follow-list" class="empty">フォロー関係を確認できます。</div></section><section class="panel"><h2>レビュー</h2>'+(reviewHtml||'<div class="empty">公開されているレビューはありません。</div>')+'</section>';
+ const avatar=profile.avatar_url?'<img class="profile-avatar" src="'+esc(profile.avatar_url)+'" alt="'+esc(name)+'">':'<div class="profile-avatar profile-avatar-fallback">'+esc(name.slice(0,1))+'</div>';
+ const actions=isSelf?'<a class="btn" href="mypage.html">プロフィールを編集</a>':'<button id="follow-button" class="btn" type="button">'+(followStats.is_following?"フォロー中":"フォロー")+'</button><a class="btn secondary" href="messages.html?user='+encodeURIComponent(profileId)+'">メッセージ</a>';
+ const follows=visibility.user_follows!==false?'<div class="profile-stats"><button id="followers-link" class="profile-stat"><strong>'+esc(followStats.followers_count||0)+'</strong>フォロワー</button><button id="following-link" class="profile-stat"><strong>'+esc(followStats.following_count||0)+'</strong>フォロー中</button></div>':"";
+ return '<section class="profile-card"><div class="profile-cover"></div><div class="profile-main"><div class="profile-avatar-wrap">'+avatar+'</div><div class="profile-actions">'+actions+'</div><h1 class="profile-name">'+esc(name)+'</h1><div class="profile-handle">'+(profile.username?"@"+esc(String(profile.username).replace(/^@/,"")):"@ユーザー名未設定")+'</div><div class="profile-bio">'+esc(profile.bio||"自己紹介はまだありません。")+'</div>'+follows+'</div></section>';
 }
-async function getCurrentUser(){
- const {data}=await supabaseClient.auth.getUser();
- return data?.user||null;
+function makeTabs(){
+ const defs=[
+  ["favorites","お気に入り","show_favorites"],["follows","作品フォロー","show_anime_follows"],
+  ["watching","視聴中","show_watch_status"],["completed","視聴完了","show_watch_status"],["want_to_watch","視聴予定","show_watch_status"],
+  ["ratings","評価","show_ratings"],["reviews","レビュー","show_reviews"],["ranking","マイアニメランキング","show_ranking"],
+  ["user_following","フォロー","show_user_follows"],["user_followers","フォロワー","show_user_follows"]
+ ];
+ return defs.filter(x=>visibility[x[2]]!==false);
 }
-async function setupFollow(profileId){
- const button=document.getElementById("follow-button");
- const message=document.getElementById("follow-message");
- if(!button)return;
- const {data:{user},error:userError}=await supabaseClient.auth.getUser();
- if(userError || !user || !user.email_confirmed_at){
-   button.textContent="ログインしてフォロー";
-   button.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);
-   return;
+async function renderContent(){
+ const {data:followData}=await supabaseClient.rpc("get_profile_follow_stats",{p_profile_id:profileId});
+ const followStats=followData?.[0]||{followers_count:0,following_count:0,is_following:false};
+ const user=await supabaseClient.auth.getUser();currentUser=user.data?.user||null;
+ const isSelf=currentUser?.id===profileId;
+ document.getElementById("app").innerHTML=renderHeader(followStats,isSelf)+'<section class="panel"><div id="tabs" class="tabs">'+makeTabs().map((x,i)=>'<button class="tab'+(i===0?" active":"")+'" data-tab="'+x[0]+'" type="button">'+x[1]+'</button>').join("")+'</div><div id="list" class="list"></div></section>';
+ tabs=makeTabs().map(x=>x[0]);
+ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");loadTab(b.dataset.tab);}));
+ if(visibility.user_follows!==false){
+  document.getElementById("followers-link")?.addEventListener("click",()=>activateTab("user_followers"));
+  document.getElementById("following-link")?.addEventListener("click",()=>activateTab("user_following"));
  }
- if(user.id===profileId){button.remove();return;}
- button.onclick=async()=>{
-   button.disabled=true;
-   message.textContent="処理中…";
-   const {data,error}=await supabaseClient.rpc("toggle_user_follow",{p_following_id:profileId});
-   if(error){
-     console.error("follow toggle error",error);
-     message.textContent=error.code==="42501"?"ログインが必要です。":"フォロー処理に失敗しました。";
-     button.disabled=false;
-     return;
-   }
-   const result=data?.[0];
-   if(!result){
-     message.textContent="フォロー状態を取得できませんでした。";
-     button.disabled=false;
-     return;
-   }
-   button.textContent=result.is_following?"フォロー中":"フォロー";
-   message.textContent=result.is_following?"フォローしました。":"フォローを解除しました。";
-   const statNodes=document.querySelectorAll(".stat b");
-   if(statNodes[1])statNodes[1].textContent=String(result.followers_count||0);
-   const {data:statsData}=await supabaseClient.rpc("get_profile_follow_stats",{p_profile_id:profileId});
-   const stats=statsData?.[0];
-   if(stats){
-     if(statNodes[1])statNodes[1].textContent=String(stats.followers_count||0);
-     if(statNodes[2])statNodes[2].textContent=String(stats.following_count||0);
-     button.textContent=stats.is_following?"フォロー中":"フォロー";
-   }
-   button.disabled=false;
- };
+ await setupFollow(isSelf);
+ if(tabs.length)await loadTab(tabs[0]);else document.getElementById("list").innerHTML='<div class="empty">公開されている項目はありません。</div>';
 }
-async function loadFollowList(profileId,mode){
- const el=document.getElementById("follow-list");
- el.innerHTML='<div class="empty">読み込み中…</div>';
- const col=mode==="followers"?"follower_id":"following_id";
- let query=supabaseClient.from("user_follows").select("follower_id,following_id,created_at").order("created_at",{ascending:false}).limit(100);
- if(mode==="followers") query=query.eq("following_id",profileId); else query=query.eq("follower_id",profileId);
- const {data,error}=await query;
- if(error){el.innerHTML='<div class="error">フォロー一覧を取得できませんでした。</div>';return;}
- const rows=data||[]; const ids=rows.map(x=>mode==="followers"?x.follower_id:x.following_id);
- if(!ids.length){el.innerHTML='<div class="empty">'+(mode==="followers"?"フォロワーはいません。":"フォロー中のユーザーはいません。")+'</div>';return;}
- const {data:profiles}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio").in("id",ids);
- const map=new Map((profiles||[]).map(p=>[p.id,p]));
- el.innerHTML=ids.map(uid=>{const p=map.get(uid);if(!p)return"";const name=p.display_name||p.username||"Animeciaユーザー";return '<a href="profile.html?id='+encodeURIComponent(p.id)+'" class="list-item"><div class="grow"><div class="title">'+esc(name)+'</div><div class="sub">'+(p.username?'@'+esc(p.username):"")+'</div></div></a>';}).join("")||'<div class="empty">ユーザーはいません。</div>';
+function activateTab(name){if(!tabs.includes(name))return;const b=document.querySelector('.tab[data-tab="'+name+'"]');if(b)b.click();}
+async function setupFollow(isSelf){
+ const b=document.getElementById("follow-button");if(!b||isSelf)return;
+ const {data}=await supabaseClient.auth.getUser(),u=data?.user;
+ if(!u||!u.email_confirmed_at){b.textContent="ログインしてフォロー";b.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);return;}
+ b.onclick=async()=>{b.disabled=true;const {data,error}=await supabaseClient.rpc("toggle_user_follow",{p_following_id:profileId});if(error){b.disabled=false;return;}const r=data?.[0];b.textContent=r?.is_following?"フォロー中":"フォロー";const s=await supabaseClient.rpc("get_profile_follow_stats",{p_profile_id:profileId});const x=s.data?.[0];if(x){const f=document.querySelector("#followers-link strong");if(f)f.textContent=String(x.followers_count||0);}b.disabled=false;};
 }
-document.getElementById("show-followers")?.addEventListener("click",()=>loadFollowList(id,"followers")); document.getElementById("show-following")?.addEventListener("click",()=>loadFollowList(id,"following"));
-(async()=>{ await load(); await setupFollow(id); await loadFollowList(id,"followers"); })();
+function renderAnimeRows(rows,map,label){
+ const list=document.getElementById("list");list.innerHTML=(rows||[]).map(x=>{const a=map.get(Number(x.anime_id));if(!a)return"";return '<a class="list-item" href="anime-detail.html?id='+a.id+'">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="meta"><span class="pill">'+esc(label(x))+'</span></div></div></a>';}).join("")||'<div class="empty">公開されている作品はありません。</div>';
+}
+async function loadTab(tab){
+ const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';
+ try{
+  if(tab==="favorites"){const {data,error}=await supabaseClient.from("favorites").select("anime_id,created_at").eq("user_id",profileId).order("created_at",{ascending:false});if(error)throw error;renderAnimeRows(data,await getAnime((data||[]).map(x=>x.anime_id)),()=> "お気に入り");return;}
+  if(tab==="follows"){const {data,error}=await supabaseClient.from("user_anime_follows").select("anime_id,created_at").eq("user_id",profileId).order("created_at",{ascending:false});if(error)throw error;renderAnimeRows(data,await getAnime((data||[]).map(x=>x.anime_id),),()=> "作品フォロー");return;}
+  if(["watching","completed","want_to_watch"].includes(tab)){const {data,error}=await supabaseClient.from("user_anime_status").select("anime_id,status,progress,updated_at").eq("user_id",profileId).eq("status",tab).order("updated_at",{ascending:false});if(error)throw error;const labels={watching:"視聴中",completed:"視聴完了",want_to_watch:"視聴予定"};renderAnimeRows(data,await getAnime((data||[]).map(x=>x.anime_id)),x=>labels[x.status]+(x.progress!=null?" ・ "+x.progress+"話":""));return;}
+  if(tab==="ratings"){const {data,error}=await supabaseClient.from("user_ratings").select("anime_id,rating,updated_at").eq("user_id",profileId).order("updated_at",{ascending:false});if(error)throw error;renderAnimeRows(data,await getAnime((data||[]).map(x=>x.anime_id)),x=>"★ "+x.rating+"/10");return;}
+  if(tab==="ranking"){const {data,error}=await supabaseClient.from("user_anime_rankings").select("anime_id,rank").eq("user_id",profileId).order("rank",{ascending:true}).limit(20);if(error)throw error;const map=await getAnime((data||[]).map(x=>x.anime_id));el.innerHTML=(data||[]).map(x=>{const a=map.get(Number(x.anime_id));if(!a)return"";return '<a class="list-item" href="anime-detail.html?id='+a.id+'"><div class="pill" style="font-size:16px;min-width:42px;text-align:center">#'+esc(x.rank)+'</div>'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div></div></a>';}).join("")||'<div class="empty">ランキングはまだありません。</div>';return;}
+  if(tab==="reviews"){const {data,error}=await supabaseClient.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at,updated_at").eq("user_id",profileId).order("created_at",{ascending:false}).limit(100);if(error)throw error;const map=await getAnime((data||[]).map(x=>x.anime_id));el.innerHTML=(data||[]).map(x=>{const a=map.get(Number(x.anime_id));if(!a)return"";return '<article class="review-item"><a class="title" href="anime-detail.html?id='+a.id+'">'+esc(titleOf(a))+'</a><div class="sub">'+esc(x.title||"レビュー")+(x.rating!=null?" ・ ★ "+esc(x.rating)+"/10":"")+(x.spoiler?" ・ ネタバレあり":"")+'</div><div class="meta">'+(x.updated_at?new Date(x.updated_at).toLocaleDateString("ja-JP"):"")+(Number(x.likes_count||0)>0?" ・ いいね "+esc(x.likes_count):"")+'</div><div class="sub" style="margin-top:10px;white-space:pre-wrap;line-height:1.7">'+esc(x.content||"")+'</div></article>';}).join("")||'<div class="empty">公開されているレビューはありません。</div>';return;}
+  if(tab==="user_following"||tab==="user_followers"){const col=tab==="user_followers"?"following_id":"follower_id";const {data,error}=await supabaseClient.from("user_follows").select("follower_id,following_id,created_at").eq(col,profileId).order("created_at",{ascending:false}).limit(100);if(error)throw error;const ids=(data||[]).map(x=>tab==="user_followers"?x.follower_id:x.following_id);const {data:ps}=ids.length?await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio").in("id",ids):{data:[]};const pm=new Map((ps||[]).map(p=>[p.id,p]));el.innerHTML=ids.map(id=>{const p=pm.get(id);if(!p)return"";const n=p.display_name||p.username||"Animeciaユーザー";return '<a class="list-item" href="profile.html?id='+encodeURIComponent(id)+'">'+(p.avatar_url?'<img class="avatar-small" src="'+esc(p.avatar_url)+'" alt="">':'<div class="avatar-small" style="display:grid;place-items:center;font-weight:800;color:#888">'+esc(n.slice(0,1))+'</div>')+'<div class="grow"><div class="title">'+esc(n)+'</div><div class="sub">'+(p.username?"@"+esc(String(p.username).replace(/^@/,"")):"ユーザー名未設定")+'</div>'+(p.bio?'<div class="sub">'+esc(p.bio).slice(0,120)+'</div>':"")+'</div></a>';}).join("")||'<div class="empty">ユーザーはいません。</div>';return;}
+ }catch(e){console.error("profile tab error",e);el.innerHTML='<div class="error">この項目を取得できませんでした。</div>';}
+}
+async function start(){
+ const app=document.getElementById("app");
+ if(!profileId){app.innerHTML='<div class="error">プロフィールIDが指定されていません。</div>';return;}
+ const {data,error}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking").eq("id",profileId).maybeSingle();
+ if(error||!data){app.innerHTML='<div class="error">プロフィールを取得できませんでした。</div>';return;}
+ profile=data;visibility={favorites:data.show_favorites!==false,anime_follows:data.show_anime_follows!==false,watch_status:data.show_watch_status!==false,ratings:data.show_ratings!==false,reviews:data.show_reviews!==false,user_follows:data.show_user_follows!==false,ranking:data.show_ranking!==false};
+ const name=profile.display_name||profile.username||"Animeciaユーザー";document.title=name+" | Animecia";document.getElementById("meta-description").content=name+"のAnimeciaプロフィール。";await renderContent();
+}
+start();
 </script>
-</body>
-</html>
+</body></html>
