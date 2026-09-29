@@ -5,13 +5,13 @@ on:
     paths:
       - '.github/workflows/anime-episode-backfill.yml'
   schedule:
-    - cron: '20 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       batch_size:
         description: "1回に処理する作品数"
         required: false
-        default: "300"
+        default: "500"
 
 permissions:
   contents: read
@@ -39,7 +39,7 @@ jobs:
 
           SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
           SECRET = os.environ["SUPABASE_SECRET_KEY"]
-          BATCH = max(50, min(500, int(os.environ.get("BATCH_SIZE", "300"))))
+          BATCH = max(50, min(500, int(os.environ.get("BATCH_SIZE", "500"))))
           UA = "Animecia-EpisodeBackfill/1.0"
 
           def request(url, method="GET", body=None, headers=None, timeout=120):
