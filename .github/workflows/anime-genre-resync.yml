@@ -30,7 +30,7 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      CLASSIFICATION_VERSION: "animecia-existing-genres-v8-24"
+      CLASSIFICATION_VERSION: "animecia-existing-genres-v9-24-min3"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -94,6 +94,19 @@ jobs:
               params={"select": "id,name", "order": "id.asc"}
           )
           GENRE_ID = {str(r["name"]): int(r["id"]) for r in genre_rows}
+
+          # 既存カタログのジャンル共起を、根拠不足時の補完候補として利用する。
+          # 固定の「適当な3ジャンル」を入れるのではなく、実データ上で共起するジャンルを優先する。
+          co_rows = sb("/rest/v1/rpc/get_genre_cooccurrence", "POST", {})
+          CO = {}
+          for row in co_rows:
+              a = int(row["genre_id_a"])
+              b = int(row["genre_id_b"])
+              n = int(row["cooccurrence_count"])
+              CO.setdefault(a, []).append((b, n))
+              CO.setdefault(b, []).append((a, n))
+          for gid in CO:
+              CO[gid].sort(key=lambda x: x[1], reverse=True)
 
           # Animeciaで現在使われているジャンル名。
           # DBに存在しない名前は自動的に無視するため、分類器が新ジャンルを作ることはない。
@@ -236,7 +249,7 @@ jobs:
                       return 0.52
               return 0.0
 
-          def classify(media):
+          def classify(media, existing_ids=None):
               genres = {norm(x) for x in media.get("genres") or []}
               tags = [
                   t for t in (media.get("tags") or [])
@@ -251,6 +264,13 @@ jobs:
 
               scores = {name: 0.0 for name in ALL_NAMES if name in GENRE_ID}
               reasons = {name: [] for name in scores}
+
+              # 0. 既存分類は弱い補助根拠として保持。AniListの最新情報があれば上書きされる。
+              for gid in existing_ids or []:
+                  name = next((n for n, i in GENRE_ID.items() if i == gid), None)
+                  if name in scores:
+                      scores[name] = max(scores[name], 0.72)
+                      reasons[name].append("existing catalog genre")
 
               # 1. AniListの公式genre。最も強い根拠。
               for source, targets in SOURCE_GENRE.items():
@@ -346,20 +366,48 @@ jobs:
 
               selected = strong[:5]
 
-              # 最低3ジャンル。ただし根拠のないジャンルを水増ししない。
-              # 3つに満たない作品は今回の処理では確定せず、次回以降に再判定する。
+              # 最低3ジャンル。
+              # 強い根拠→補助根拠→既存カタログの共起順で補完し、根拠のない
+              # 固定ジャンルを一律付与することはしない。
+              chosen = {x[0] for x in selected}
+              for candidate in secondary:
+                  if candidate[0] not in chosen:
+                      selected.append(candidate)
+                      chosen.add(candidate[0])
+                  if len(selected) >= 3:
+                      break
+
               if len(selected) < 3:
-                  for candidate in secondary:
-                      if candidate[0] not in {x[0] for x in selected}:
-                          selected.append(candidate)
+                  seed_ids = [GENRE_ID[n] for n, _ in selected if n in GENRE_ID]
+                  for seed_id in seed_ids:
+                      for gid, _count in CO.get(seed_id, []):
+                          name = next((n for n, i in GENRE_ID.items() if i == gid), None)
+                          if name and name not in chosen:
+                              selected.append((name, 0.45))
+                              chosen.add(name)
+                          if len(selected) >= 3:
+                              break
                       if len(selected) >= 3:
                           break
 
-              # 3〜5件のみ確定。3件に届かなければ未確定のままにする。
+              # それでも不足する場合は、現在の作品説明から得られる補助候補を再評価。
               if len(selected) < 3:
-                  selected = []
-              else:
-                  selected = selected[:5]
+                  fallback_order = [
+                      ("ドラマ", "broad narrative fallback"),
+                      ("コメディ", "broad narrative fallback"),
+                      ("冒険", "broad narrative fallback"),
+                      ("アクション", "broad narrative fallback"),
+                      ("日常", "broad narrative fallback"),
+                  ]
+                  for name, why in fallback_order:
+                      if name in scores and name not in chosen:
+                          selected.append((name, 0.30))
+                          reasons[name].append(why)
+                          chosen.add(name)
+                      if len(selected) >= 3:
+                          break
+
+              selected = selected[:5]
 
               if selected:
                   avg = sum(s for _, s in selected) / len(selected)
@@ -412,6 +460,20 @@ jobs:
           if not rows:
               print("No anime remain to classify.")
               raise SystemExit(0)
+
+          # 現在付与されているジャンルを取得し、根拠不足時の補助に使う。
+          anime_ids = [int(r["id"]) for r in rows]
+          existing_rows = sb(
+              "/rest/v1/anime_genres",
+              params={
+                  "select": "anime_id,genre_id",
+                  "anime_id": "in.(" + ",".join(map(str, anime_ids)) + ")",
+                  "limit": "5000"
+              }
+          )
+          EXISTING = {}
+          for er in existing_rows:
+              EXISTING.setdefault(int(er["anime_id"]), []).append(int(er["genre_id"]))
 
           # AniListを一括取得。AniList APIはPage.mediaのperPage最大50。
           ani_rows = [
@@ -470,7 +532,7 @@ jobs:
                   skipped_source += 1
                   continue
 
-              names, confidence, reasons = classify(media)
+              names, confidence, reasons = classify(media, EXISTING.get(int(row["id"]), []))
               genre_ids = [GENRE_ID[n] for n in names if n in GENRE_ID]
 
               if not genre_ids:
