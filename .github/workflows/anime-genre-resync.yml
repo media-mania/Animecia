@@ -1,6 +1,9 @@
 name: Animecia Genre Resync
 
 on:
+  push:
+    paths:
+      - '.github/workflows/anime-genre-resync.yml'
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
