@@ -1,6 +1,10 @@
 name: Animecia AniList New Anime Discovery
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/anime-anilist-discovery.yml"
   schedule:
     - cron: '20 */3 * * *'
   workflow_dispatch:
@@ -25,6 +29,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       ANILIST_URL: https://graphql.anilist.co
+      SEASONS_AHEAD: ${{ inputs.seasons_ahead || '2' }}
     steps:
       - name: Discover upcoming and current anime
         shell: bash
@@ -99,9 +104,13 @@ jobs:
           }"""
 
           candidates={}
-          for off in (0,1,2):
+          try:
+              seasons_ahead = max(0, min(4, int(os.environ.get("SEASONS_AHEAD", "2"))))
+          except ValueError:
+              seasons_ahead = 2
+          for off in range(0, seasons_ahead + 1):
               year,season=season_at(off)
-              for page in range(1,4):
+              for page in range(1,11):
                   raw=http(ANI,"POST",{"query":query,"variables":{"season":season,"year":year,"page":page}})
                   media=((json.loads(raw.decode()).get("data") or {}).get("Page") or {}).get("media") or []
                   if not media: break
