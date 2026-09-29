@@ -195,6 +195,7 @@ async function loadProfile(){
  document.getElementById("profile-handle").textContent=username?"@"+username:"@ユーザー名未設定";
  document.getElementById("profile-bio").textContent=p.bio||"";
  setAvatar("profile-avatar-large","profile-avatar-fallback",p.avatar_url,displayName);
+ const cover=document.getElementById("profile-cover");if(cover)cover.style.backgroundImage=p.background_url?"url(\""+p.background_url.replace(/"/g,"%22")+"\")":"";
  setAvatar("avatar-preview","avatar-preview-fallback",p.avatar_url,displayName);
 }
 async function loadSocialStats(){
