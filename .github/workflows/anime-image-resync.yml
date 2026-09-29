@@ -45,7 +45,12 @@ jobs:
               with urllib.request.urlopen(req,timeout=30) as r:
                   return json.loads(r.read().decode())
 
-          def patch(anime_id,img):
+          def patch(anime_id,img,official_url):
+              url=f"{base}/rest/v1/anime?id=eq.{anime_id}"
+              body={"cover_image":img}
+              if official_url is not None:
+                  body["official_url"]=official_url
+              req=urllib.request.Request(url,data=json.dumps(body).encode(),method="PATCH",headers={
               url=f"{base}/rest/v1/anime?id=eq.{anime_id}"
               req=urllib.request.Request(url,data=json.dumps({"cover_image":img}).encode(),method="PATCH",headers={
                   "apikey":key,"Authorization":"Bearer "+key,
@@ -55,7 +60,7 @@ jobs:
                   r.read()
 
           qs=urllib.parse.urlencode({
-              "select":"id,source_id,cover_image",
+              "select":"id,title,source_id,cover_image,official_url",
               "source_provider":"eq.anilist",
               "anime_verification_status":"eq.verified",
               "order":"id.asc",
@@ -110,7 +115,7 @@ jobs:
                   if not image:
                       image=((media.get("coverImage") or {}).get("large"))
                   if image and str(image).startswith(("http://","https://")):
-                      patch(row["id"],image)
+                      patch(row["id"],image,official)
                       print("updated",row["id"],image)
                   time.sleep(.5)
               except Exception as e:
