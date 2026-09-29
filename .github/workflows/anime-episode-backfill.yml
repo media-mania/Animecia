@@ -112,7 +112,7 @@ jobs:
                           for e in a.iter():
                               if e.tag.lower() == "info" and "episode" in (e.get("type") or "").lower():
                                   text_value = " ".join(e.itertext())
-                                  m = re.search(r"\\d+", text_value)
+                                  m = re.search(r"\d+", text_value)
                                   if m:
                                       value = int(m.group())
                                       break
