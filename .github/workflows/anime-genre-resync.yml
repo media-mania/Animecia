@@ -30,7 +30,7 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      CLASSIFICATION_VERSION: "animecia-existing-genres-v6-26"
+      CLASSIFICATION_VERSION: "animecia-existing-genres-v7-25"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -99,7 +99,7 @@ jobs:
           # DBに存在しない名前は自動的に無視するため、分類器が新ジャンルを作ることはない。
           ALL_NAMES = [
               "SF","アイドル","アクション","コメディ","サスペンス","ショート","スポーツ","ドラマ",
-              "ファミリー","ファンタジー","ホラー","ミリタリー","メカ","ラブコメ","冒険","学園",
+              "ファミリー","ファンタジー","ホラー","ミリタリー","メカ","冒険","学園",
               "恋愛","戦争","戦記","推理","日常","歴史","異世界","青春","音楽","魔法少女"
           ]
 
@@ -310,14 +310,7 @@ jobs:
                           scores[name] = ts
                           reasons[name].append("description keyword")
 
-              # 5. 排他的・弱い根拠の抑制。
-              # 「恋愛+コメディ」の両方が強いときだけラブコメを付与。
-              if "ラブコメ" in scores:
-                  if scores.get("恋愛", 0) >= 0.90 and scores.get("コメディ", 0) >= 0.90:
-                      scores["ラブコメ"] = max(scores["ラブコメ"], 0.95)
-                      reasons["ラブコメ"].append("romance + comedy")
-                  else:
-                      scores["ラブコメ"] *= 0.72
+              # 5. ジャンル間の重複を正規化。
 
               # 6. 意味が近いジャンルの重複を正規化。
               # ジャンル体系は26種類。
@@ -327,7 +320,6 @@ jobs:
                   ["コメディ"],
                   ["スポーツ"],
                   ["メカ"],
-                  ["恋愛", "ラブコメ"],
                   ["ドラマ", "青春"],
                   ["ファミリー"],
                   ["ファンタジー"],
