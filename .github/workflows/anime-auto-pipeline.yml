@@ -292,6 +292,121 @@ jobs:
                   })
               return rows
 
+          RANKING_URL = "https://ranking.net/rankings/best-kamianimes"
+          ANILIST_URL = "https://graphql.anilist.co"
+
+          def ranking_titles(limit=100):
+              raw = http(RANKING_URL, headers={"Accept":"text/html,application/xhtml+xml"})
+              html = raw.decode("utf-8", errors="ignore")
+              pairs = re.findall(r'href=["\'](/items/[^"\']+)["\'][^>]*>(.*?)</a>', html, re.I|re.S)
+              out, seen = [], set()
+              for href, body in pairs:
+                  title = re.sub(r"<[^>]+>", " ", body)
+                  title = clean(title)
+                  if not title: continue
+                  title = re.sub(r"（アニメ）$|\\(アニメ\\)$", "", title).strip()
+                  if not title or len(title) > 150: continue
+                  if title in seen: continue
+                  seen.add(title)
+                  out.append(title)
+                  if len(out) >= limit: break
+              return out
+
+          def anilist_search(title):
+              query = """query ($search:String!) {
+                Page(page:1, perPage:3) {
+                  media(search:$search, type:ANIME, sort:SEARCH_MATCH) {
+                    id
+                    title { native romaji english userPreferred }
+                    startDate { year month day }
+                    endDate { year month day }
+                    episodes duration status format season seasonYear
+                    description(asHtml:false)
+                    genres
+                    synonyms
+                    coverImage { large }
+                    siteUrl
+                    externalLinks { url site language type }
+                  }
+                }
+              }"""
+              body = {"query":query,"variables":{"search":title}}
+              raw = http(ANILIST_URL, "POST", body, {"Accept":"application/json"})
+              data = json.loads(raw.decode("utf-8"))
+              medias = data.get("data",{}).get("Page",{}).get("media",[])
+              if not medias: return None
+              normalized = re.sub(r"[^0-9a-zA-Zぁ-んァ-ヶ一-龠]", "", title).lower()
+              def score(m):
+                  vals = [m.get("title",{}).get(k) or "" for k in ("native","userPreferred","romaji","english")]
+                  vals += m.get("synonyms") or []
+                  best = 0
+                  for v in vals:
+                      nv = re.sub(r"[^0-9a-zA-Zぁ-んァ-ヶ一-龠]", "", v).lower()
+                      if nv == normalized: best = max(best, 100)
+                      elif normalized and (normalized in nv or nv in normalized): best = max(best, 70)
+                  return best
+              medias.sort(key=score, reverse=True)
+              return medias[0] if score(medias[0]) >= 70 else None
+
+          def ranking_rows(limit=100):
+              rows = []
+              for title in ranking_titles(limit):
+                  m = anilist_search(title)
+                  if not m: continue
+                  native = (m.get("title") or {}).get("native")
+                  start_obj = m.get("startDate") or {}
+                  end_obj = m.get("endDate") or {}
+                  start = None
+                  end = None
+                  if start_obj.get("year") and start_obj.get("month") and start_obj.get("day"):
+                      start = f'{start_obj["year"]:04d}-{start_obj["month"]:02d}-{start_obj["day"]:02d}'
+                  if end_obj.get("year") and end_obj.get("month") and end_obj.get("day"):
+                      end = f'{end_obj["year"]:04d}-{end_obj["month"]:02d}-{end_obj["day"]:02d}'
+                  if start and dt.date.fromisoformat(start) < dt.date(1963,1,1): continue
+                  fmt = (m.get("format") or "").upper()
+                  if fmt not in {"TV","MOVIE","OVA","ONA","SPECIAL","MUSIC"}: continue
+                  if fmt == "MUSIC": continue
+                  official = None
+                  for link in m.get("externalLinks") or []:
+                      url = link.get("url") or ""
+                      lang = (link.get("language") or "").lower()
+                      typ = (link.get("type") or "").lower()
+                      if url.startswith(("http://","https://")) and (
+                          lang in {"japanese","ja"} or ".jp/" in url or ".jp" in url
+                      ) and ("official" in typ or typ in {"info","streaming"} or lang in {"japanese","ja"}):
+                          official = url
+                          break
+                  if not official: continue
+                  jp = native or (m.get("title") or {}).get("userPreferred") or title
+                  desc = clean(re.sub(r"<[^>]+>", " ", m.get("description") or ""))
+                  rows.append({
+                      "title": jp,
+                      "title_japanese": jp,
+                      "title_native": native,
+                      "title_romaji": (m.get("title") or {}).get("romaji"),
+                      "title_english": (m.get("title") or {}).get("english"),
+                      "description": desc,
+                      "official_url": official,
+                      "external_id": BASE + int(m["id"]),
+                      "start_date": start,
+                      "end_date": end,
+                      "episodes": m.get("episodes"),
+                      "duration": m.get("duration"),
+                      "status": m.get("status"),
+                      "format": "OVA" if fmt == "OVA" else fmt,
+                      "season": m.get("season"),
+                      "season_year": m.get("seasonYear"),
+                      "source": "AniList",
+                      "site_url": m.get("siteUrl"),
+                      "aliases": (m.get("synonyms") or [])[:30],
+                      "genres": m.get("genres") or [],
+                      "studios": [],
+                      "source_provider": "anilist",
+                      "source_id": str(m["id"]),
+                      "cover_image": ((m.get("coverImage") or {}).get("large"))
+                  })
+              return rows
+
           def state_offset():
               rows = sb("/rest/v1/anime_automation_state", params={"key":"eq.ann_scan_offset","select":"value"})
               return int(rows[0]["value"]) if rows else 0
@@ -336,6 +451,16 @@ jobs:
                   time.sleep(0.25)
 
               rows = build(allc, details)
+              # Ranking.netの上位作品を定期的に追加候補へ取り込む。
+              # 既存作品はbulk_register_anime_batch側で重複排除する。
+              ranking = ranking_rows(100)
+              rows.extend(ranking)
+              dedup = {}
+              for row in rows:
+                  key = (row.get("source_provider"), row.get("source_id"))
+                  if key[0] and key[1]:
+                      dedup[key] = row
+              rows = list(dedup.values())
               inserted = skipped = errors = 0
               for i in range(0, len(rows), 100):
                   payload = rows[i:i+100]
