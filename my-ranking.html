@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>マイアニメランキング | Animecia</title><meta name="description" content="自分だけのアニメランキングを作成できます。">
+<link rel="stylesheet" href="site-theme.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+main{max-width:1100px;margin:auto;padding:34px 18px 70px}.hero{margin-bottom:20px}.hero h1{margin:0 0 8px}.panel{padding:22px;border-radius:14px;margin-bottom:18px}.search{display:flex;gap:8px}.search input{flex:1}.results,.ranking{display:grid;gap:10px;margin-top:14px}.item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #e5e5e7;border-radius:12px;background:#fff}.thumb{width:52px;height:70px;object-fit:cover;border-radius:7px;background:#eee;flex:none}.grow{flex:1;min-width:0}.title{font-weight:800}.sub{color:#777;font-size:13px;margin-top:3px}.rank{width:42px;text-align:center;font-size:22px;font-weight:900}.actions{display:flex;gap:5px;flex-wrap:wrap}.actions button{min-width:38px}.empty{text-align:center;color:#777;padding:30px}.notice{color:#666;font-size:13px}.error{color:#b42318}.back{display:inline-block;margin-bottom:18px}
+</style></head><body>
+<header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav><a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a><a href="mypage.html">マイページ</a></nav></div></header>
+<main>
+<a class="back" href="mypage.html">← マイページへ戻る</a>
+<section class="hero"><h1>マイアニメランキング</h1><p>自分が好きな作品を、1位・2位・3位…の順番で自由に並べられます。</p></section>
+<section id="auth-warning" class="panel" style="display:none"><div class="empty">ランキングを作るにはログインが必要です。<br><a class="btn" href="login.html?redirect=my-ranking.html">ログインする</a></div></section>
+<div id="content" style="display:none">
+<section class="panel"><h2>作品を追加</h2><div class="search"><input id="query" placeholder="作品名を検索"><button id="search-btn" class="btn" type="button">検索</button></div><div id="results" class="results"></div></section>
+<section class="panel"><h2>あなたのランキング</h2><p class="notice">↑↓で順位を入れ替え、削除でランキングから外せます。</p><div id="ranking" class="ranking"></div></section>
+</div></main>
+<script>
+const URL="https://bhgdjuwlxvbaeraaivmh.supabase.co",KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
+let sb,user,rows=[];
+const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const title=a=>a.title_japanese||a.title_native||a.title_user_preferred||a.title_romaji||a.title_english||a.title||"タイトル未設定";
+const img=a=>a.cover_image?'<img class="thumb" src="'+esc(a.cover_image)+'" alt="" loading="lazy">':'<div class="thumb"></div>';
+async function load(){const {data,error}=await sb.from("user_anime_rankings").select("anime_id,rank").eq("user_id",user.id).order("rank",{ascending:true});if(error)throw error;const ids=(data||[]).map(x=>x.anime_id);let map=new Map();if(ids.length){const q=await sb.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image").in("id",ids);if(q.error)throw q.error;(q.data||[]).forEach(a=>map.set(a.id,a));}rows=(data||[]).map(x=>({...x,anime:map.get(x.anime_id)})).filter(x=>x.anime);render();}
+function render(){const el=document.getElementById("ranking");if(!rows.length){el.innerHTML='<div class="empty">まだランキングに作品がありません。上から作品を追加してください。</div>';return}el.innerHTML=rows.map((r,i)=>'<div class="item">'+img(r.anime)+'<div class="rank">'+(i+1)+'</div><div class="grow"><a class="title" href="anime-detail.html?id='+r.anime.id+'">'+esc(title(r.anime))+'</a></div><div class="actions"><button class="btn secondary" '+(i===0?'disabled':'')+' onclick="move('+i+',-1)">↑</button><button class="btn secondary" '+(i===rows.length-1?'disabled':'')+' onclick="move('+i+',1)">↓</button><button class="btn secondary" onclick="removeRank('+r.anime.id+')">削除</button></div></div>').join("");}
+async function add(id){const {error}=await sb.rpc("add_anime_to_my_ranking",{p_anime_id:id});if(error){alert("ランキングへの追加に失敗しました。");console.error(error);return}await load();}
+async function search(){const q=document.getElementById("query").value.trim(),el=document.getElementById("results");if(q.length<1){el.innerHTML="";return}el.innerHTML='<div class="empty">検索中…</div>';const {data,error}=await sb.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image").or("title.ilike.%"+q+"%,title_japanese.ilike.%"+q+"%,title_native.ilike.%"+q+"%,title_user_preferred.ilike.%"+q+"%").order("popularity",{ascending:false,nullsFirst:false}).limit(20);if(error){el.innerHTML='<div class="error">検索できませんでした。</div>';return}const have=new Set(rows.map(r=>r.anime_id));el.innerHTML=(data||[]).map(a=>'<div class="item">'+img(a)+'<div class="grow"><div class="title">'+esc(title(a))+'</div></div><button class="btn" '+(have.has(a.id)?'disabled':'')+' onclick="add('+a.id+')">'+(have.has(a.id)?'登録済み':'追加')+'</button></div>').join("")||'<div class="empty">作品が見つかりません。</div>';}
+async function reorder(){const ids=rows.map(r=>r.anime_id);for(let i=0;i<ids.length;i++){const {error}=await sb.from("user_anime_rankings").update({rank:i+1,updated_at:new Date().toISOString()}).eq("user_id",user.id).eq("anime_id",ids[i]);if(error)throw error;}}
+async function move(i,d){if(i+d<0||i+d>=rows.length)return;[rows[i],rows[i+d]]=[rows[i+d],rows[i]];try{await reorder();render()}catch(e){console.error(e);alert("順位の更新に失敗しました。");await load();}}
+async function removeRank(id){const {error}=await sb.from("user_anime_rankings").delete().eq("user_id",user.id).eq("anime_id",id);if(error){alert("削除に失敗しました。");return}const remaining=rows.filter(r=>r.anime_id!==id);rows=remaining;try{await reorder()}catch(e){console.error(e)}render();search();}
+async function start(){sb=window.supabase.createClient(URL,KEY);const {data}=await sb.auth.getSession();user=data?.session?.user;if(!user||!user.email_confirmed_at){document.getElementById("auth-warning").style.display="block";return}document.getElementById("content").style.display="block";try{await load()}catch(e){console.error(e);document.getElementById("ranking").innerHTML='<div class="error">ランキングを読み込めませんでした。</div>';}}
+document.getElementById("search-btn").onclick=search;document.getElementById("query").addEventListener("keydown",e=>{if(e.key==="Enter")search()});start();
+</script></body></html>
