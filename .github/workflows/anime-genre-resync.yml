@@ -30,7 +30,7 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      CLASSIFICATION_VERSION: "animecia-existing-genres-v3"
+      CLASSIFICATION_VERSION: "animecia-existing-genres-v4"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -334,10 +334,12 @@ jobs:
               }
               for name, words in text_rules.items():
                   if name in scores:
-                      ts = text_score(text, words)
+                      # タイトルは分類根拠に使わない。あらすじだけを補助根拠にする。
+                      description_text = norm(media.get("description") or "")
+                      ts = text_score(description_text, words)
                       if ts > scores[name]:
                           scores[name] = ts
-                          reasons[name].append("title/description keyword")
+                          reasons[name].append("description keyword")
 
               # 5. 排他的・弱い根拠の抑制。
               # 「恋愛+コメディ」の両方が強いときだけラブコメを付与。
@@ -379,22 +381,40 @@ jobs:
                           if name != winner[0] and score < 0.92:
                               scores[name] = min(scores[name], 0.70)
 
-              # 7. 信頼度閾値。
-              # 0.78以上を採用。複数ジャンルは各ジャンルが独立して閾値を満たした場合のみ。
-              selected = [
+              # 7. 作品名だけでジャンルを決めない。
+              # タイトル由来のキーワードは使用せず、AniListのgenre/tag、
+              # あらすじ(description)、format/durationだけを根拠にする。
+              # まず強い根拠(0.78+)を採用し、不足分は独立した補助根拠(0.55+)
+              # が存在するときだけ補う。
+              strong = [
                   (name, score) for name, score in scores.items()
                   if score >= 0.78
               ]
-              selected.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
+              strong.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
 
-              # 最大5ジャンル。主要ジャンルを落とさず、弱い補助ジャンルの過剰付与を防止。
-              selected = selected[:5]
+              secondary = [
+                  (name, score) for name, score in scores.items()
+                  if 0.55 <= score < 0.78
+              ]
+              secondary.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
 
-              top = selected[0][1] if selected else 0.0
-              if top < 0.78:
+              selected = strong[:5]
+
+              # 最低3ジャンル。ただし根拠のないジャンルを水増ししない。
+              # 3つに満たない作品は今回の処理では確定せず、次回以降に再判定する。
+              if len(selected) < 3:
+                  for candidate in secondary:
+                      if candidate[0] not in {x[0] for x in selected}:
+                          selected.append(candidate)
+                      if len(selected) >= 3:
+                          break
+
+              # 3〜5件のみ確定。3件に届かなければ未確定のままにする。
+              if len(selected) < 3:
                   selected = []
+              else:
+                  selected = selected[:5]
 
-              # confidenceは「採用ジャンルの平均」を基礎に、根拠数を少し加味する。
               if selected:
                   avg = sum(s for _, s in selected) / len(selected)
                   confidence = min(0.99, avg + min(0.05, 0.01 * len(selected)))
