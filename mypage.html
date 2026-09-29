@@ -452,15 +452,29 @@ document.getElementById("avatar-file").addEventListener("change",async e=>{
 });
 document.getElementById("save-profile").addEventListener("click",saveProfile);
 
-(async()=>{
-  currentUser=await authState();
-  if(!currentUser){
-    document.getElementById("auth-warning").style.display="block";
-    return;
+window.addEventListener("error",event=>{
+  console.error("Mypage error:",event.error||event.message);
+  const warning=document.getElementById("auth-warning");
+  if(warning){
+    warning.style.display="block";
+    warning.innerHTML='<div class="error">マイページの読み込み中にエラーが発生しました。ページを再読み込みしてください。</div>';
   }
-  document.getElementById("content").style.display="block";
-  await Promise.all([loadStats(),loadProfile()]);
-  await loadTab();
+});
+(async()=>{
+  try{
+    currentUser=await authState();
+    if(!currentUser){
+      document.getElementById("auth-warning").style.display="block";
+      return;
+    }
+    document.getElementById("content").style.display="block";
+    await Promise.all([loadStats(),loadProfile()]);
+    await loadTab();
+  }catch(error){
+    console.error("Mypage initialization error:",error);
+    document.getElementById("content").style.display="block";
+    document.getElementById("list").innerHTML='<div class="error">マイページの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>';
+  }
 })();
 </script>
 </body>
