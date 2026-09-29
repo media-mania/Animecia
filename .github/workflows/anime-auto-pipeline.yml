@@ -243,6 +243,7 @@ jobs:
                   start, end = dates(vint["text"] if vint else None)
                   if start:
                       d = dt.date.fromisoformat(start)
+                      if d < dt.date(1963, 1, 1): continue
                       if d > TODAY + dt.timedelta(days=1095): continue
                   ep = find(infos, contains=("number of episodes","episodes"))
                   dur = find(infos, contains=("running time","duration"))
