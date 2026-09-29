@@ -127,6 +127,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <label><input type="checkbox" id="show-reviews"> レビュー</label>
 <label><input type="checkbox" id="show-user_follows"> フォロー・フォロワー</label>
 <label><input type="checkbox" id="show-ranking"> マイアニメランキング</label>
+<label><input type="checkbox" id="show-posts"> 投稿</label>
 </div>
 <button id="save-visibility" class="btn" type="button" style="margin-top:14px">公開範囲を保存</button>
 </section></section>
@@ -179,7 +180,7 @@ function setAvatar(targetId,fallbackId,url,name){
  else{img.style.display="none";fallback.textContent=(name||"Animeciaユーザー").slice(0,1).toUpperCase();fallback.style.display="grid";}
 }
 async function loadProfile(){
- const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,background_url,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking").eq("id",currentUser.id).maybeSingle();
+ const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,background_url,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking,show_posts").eq("id",currentUser.id).maybeSingle();
  if(error){console.error(error);return;}
  const p=data||{};
  const username=String(p.username||"").replace(/^@/,"");
@@ -189,7 +190,7 @@ async function loadProfile(){
  document.getElementById("avatar_url").value=p.avatar_url||"";
  document.getElementById("profile-background-url").value=p.background_url||"";
  document.getElementById("bio").value=p.bio||"";
- const visibility={favorites:p.show_favorites!==false,anime_follows:p.show_anime_follows!==false,watch_status:p.show_watch_status!==false,ratings:p.show_ratings!==false,reviews:p.show_reviews!==false,user_follows:p.show_user_follows!==false,ranking:p.show_ranking!==false};
+ const visibility={favorites:p.show_favorites!==false,anime_follows:p.show_anime_follows!==false,watch_status:p.show_watch_status!==false,ratings:p.show_ratings!==false,reviews:p.show_reviews!==false,user_follows:p.show_user_follows!==false,ranking:p.show_ranking!==false,posts:p.show_posts!==false};
  Object.entries(visibility).forEach(([key,value])=>{const el=document.getElementById("show-"+key);if(el)el.checked=value;});
  document.getElementById("profile-display-name").textContent=displayName;
  document.getElementById("profile-handle").textContent=username?"@"+username:"@ユーザー名未設定";
@@ -249,7 +250,7 @@ async function uploadBackground(){
 async function saveProfile(){
  const msg=document.getElementById("profile-msg"),username=document.getElementById("username").value.trim().replace(/^@+/,"");
  if(username&&!/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){msg.textContent="ユーザー名は2〜30文字で入力してください。";return;}
- const payload={id:currentUser.id,background_url:document.getElementById("profile-background-url").value.trim()||null,username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,show_favorites:document.getElementById("show-favorites")?.checked!==false,show_anime_follows:document.getElementById("show-anime_follows")?.checked!==false,show_watch_status:document.getElementById("show-watch_status")?.checked!==false,show_ratings:document.getElementById("show-ratings")?.checked!==false,show_reviews:document.getElementById("show-reviews")?.checked!==false,show_user_follows:document.getElementById("show-user_follows")?.checked!==false,show_ranking:document.getElementById("show-ranking")?.checked!==false,updated_at:new Date().toISOString()};
+ const payload={id:currentUser.id,background_url:document.getElementById("profile-background-url").value.trim()||null,username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,show_favorites:document.getElementById("show-favorites")?.checked!==false,show_anime_follows:document.getElementById("show-anime_follows")?.checked!==false,show_watch_status:document.getElementById("show-watch_status")?.checked!==false,show_ratings:document.getElementById("show-ratings")?.checked!==false,show_reviews:document.getElementById("show-reviews")?.checked!==false,show_user_follows:document.getElementById("show-user_follows")?.checked!==false,show_ranking:document.getElementById("show-ranking")?.checked!==false,show_posts:document.getElementById("show-posts")?.checked!==false,updated_at:new Date().toISOString()};
  const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
  if(error){console.error(error);msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";return;}
  setAvatar("avatar-preview","avatar-preview-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");document.getElementById("profile-display-name").textContent=payload.display_name||payload.username||"Animeciaユーザー";document.getElementById("profile-handle").textContent=payload.username?"@"+payload.username.replace(/^@/,""):"@ユーザー名未設定";document.getElementById("profile-bio").textContent=payload.bio||"";
@@ -259,7 +260,7 @@ async function saveProfile(){
 
 async function saveVisibility(){
  const msg=document.getElementById("profile-msg");
- const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_ranking:document.getElementById("show-ranking").checked,updated_at:new Date().toISOString()};
+ const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_ranking:document.getElementById("show-ranking").checked,show_posts:document.getElementById("show-posts").checked,updated_at:new Date().toISOString()};
  const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
  if(error){console.error(error);msg.textContent="公開範囲を保存できませんでした。";return;}
  msg.textContent="公開範囲を保存しました。";
