@@ -463,18 +463,18 @@
         }
 
         .action-button {
-            min-height: 42px;
+            min-height: 44px;
 
-            padding: 9px 16px;
+            padding: 10px 17px;
 
             border:
-                1px solid #ddd;
+                1px solid #cfcfcf;
 
-            border-radius: 9px;
+            border-radius: 10px;
 
             background: #fff;
 
-            color: #222;
+            color: #1a1a1a;
 
             cursor: pointer;
 
@@ -486,20 +486,52 @@
 
             transition:
                 background .2s ease,
+                border-color .2s ease,
+                color .2s ease,
                 opacity .2s ease,
                 transform .2s ease;
+
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
         }
 
         .action-button:hover {
-            background: #f0f0f0;
+            background: #f5f5f5;
+            border-color: #aaa;
         }
 
-        .action-button.active {
-            background: #222;
+        .action-button:focus-visible {
+            outline: 3px solid rgba(0,0,0,.18);
+            outline-offset: 2px;
+        }
 
-            color: #fff;
-
+        /* お気に入りは主要アクションとして常に判別しやすくする */
+        #favorite-button {
+            min-width: 154px;
+            border-width: 2px;
             border-color: #222;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        #favorite-button:not(.active) {
+            background: #fff;
+            color: #222;
+        }
+
+        #favorite-button:not(.active):hover {
+            background: #f2f2f2;
+        }
+
+        #favorite-button.active {
+            background: #222;
+            color: #fff;
+            border-color: #222;
+            box-shadow: 0 2px 7px rgba(0,0,0,.16);
+        }
+
+        #favorite-button.active:hover {
+            background: #000;
+            border-color: #000;
         }
 
         .action-button:disabled {
@@ -1593,6 +1625,7 @@
                             type="button"
                             id="favorite-button"
                             class="action-button"
+                            aria-pressed="false"
                         >
                             お気に入り
                         </button>
@@ -4954,10 +4987,11 @@
             button.classList.remove(
                 "active"
             );
+            button.setAttribute("aria-pressed","false");
 
 
             button.textContent =
-                "☆ お気に入り";
+                "お気に入り";
 
 
             return;
@@ -5003,6 +5037,7 @@
                 button.classList.add(
                     "active"
                 );
+                button.setAttribute("aria-pressed","true");
 
 
                 button.textContent =
@@ -5013,10 +5048,11 @@
                 button.classList.remove(
                     "active"
                 );
+                button.setAttribute("aria-pressed","false");
 
 
                 button.textContent =
-                    "☆ お気に入り";
+                    "お気に入り";
             }
 
 
