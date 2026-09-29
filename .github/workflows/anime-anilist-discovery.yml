@@ -88,6 +88,8 @@ jobs:
                 title{native romaji english userPreferred}
                 format
                 status
+                season
+                seasonYear
                 startDate{year month day}
                 endDate{year month day}
                 episodes
