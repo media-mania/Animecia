@@ -6410,7 +6410,7 @@
 
                     const likeButton =
                         item.querySelector(
-                            ".review-like-button:not(.review-delete-button)"
+                            ".review-like-button[data-review-id]:not(.review-edit-button):not(.review-delete-button)"
                         );
 
 
@@ -6522,7 +6522,7 @@
         event.preventDefault();
 
 
-        if (!currentUser) {
+        if (!currentUser || !currentUser.email_confirmed_at) {
             return;
         }
 
@@ -6612,12 +6612,13 @@
                 Number.isNaN(
                     rating
                 ) ||
+                !Number.isInteger(rating) ||
                 rating < 1 ||
                 rating > 10
             ) {
 
                 message.textContent =
-                    "評価は1.0〜10.0の範囲で選択してください。";
+                    "評価は1〜10点の整数で選択してください。";
 
 
                 return;
@@ -6948,7 +6949,7 @@
 
             document
                 .querySelectorAll(
-                    ".review-like-button:not(.review-delete-button)"
+                    ".review-like-button[data-review-id]:not(.review-edit-button):not(.review-delete-button)"
                 )
                 .forEach(
                     button => {
