@@ -96,7 +96,7 @@ async function loadTab(tab){
 async function start(){
  const app=document.getElementById("app");
  if(!profileId){app.innerHTML='<div class="error">プロフィールIDが指定されていません。</div>';return;}
- const {data,error}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,background_url,bio,show_posts,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking").eq("id",profileId).maybeSingle();
+ const {data,error}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,background_url,avatar_position_x,avatar_position_y,avatar_zoom,background_position_x,background_position_y,background_zoom,bio,show_posts,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking").eq("id",profileId).maybeSingle();
  if(error||!data){app.innerHTML='<div class="error">プロフィールを取得できませんでした。</div>';return;}
  profile=data;visibility={favorites:data.show_favorites!==false,anime_follows:data.show_anime_follows!==false,watch_status:data.show_watch_status!==false,ratings:data.show_ratings!==false,reviews:data.show_reviews!==false,user_follows:data.show_user_follows!==false,ranking:data.show_ranking!==false,posts:data.show_posts!==false};
  const name=profile.display_name||profile.username||"Animeciaユーザー";document.title=name+" | Animecia";document.getElementById("meta-description").content=name+"のAnimeciaプロフィール。";await renderContent();
