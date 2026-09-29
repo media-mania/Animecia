@@ -1,6 +1,10 @@
 name: Animecia Bulk Anime Auto Import
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/anime-auto-pipeline.yml"
   schedule:
     - cron: '0 */3 * * *'
   workflow_dispatch:
