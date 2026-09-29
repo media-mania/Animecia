@@ -4707,7 +4707,7 @@
         const loginMessage = document.getElementById("follow-login-message");
         const area = document.getElementById("follow-area");
         const button = document.getElementById("follow-button");
-        if (!currentUser) {
+        if (!currentUser || !currentUser.email_confirmed_at) {
             loginMessage.style.display = "block";
             area.style.display = "none";
             return;
@@ -4733,7 +4733,7 @@
     }
 
     async function saveFollowPreferences() {
-        if (!currentUser) return;
+        if (!currentUser || !currentUser.email_confirmed_at) return;
         const button = document.getElementById("follow-button");
         const message = document.getElementById("follow-message");
         button.disabled = true;
@@ -4783,8 +4783,8 @@
     }
 
     async function toggleFollow() {
-        if (!currentUser) {
-            alert("フォロー機能を使うにはログインしてください。");
+        if (!currentUser || !currentUser.email_confirmed_at) {
+            alert("メールアドレスを確認したアカウントでログインするとフォローできます。");
             return;
         }
         const button = document.getElementById("follow-button");
