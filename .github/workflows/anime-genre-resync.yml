@@ -66,7 +66,7 @@ jobs:
           added=0
           for row in rows:
               try:
-                  media=request(os.environ["ANILIST_URL"],"POST,{"query":query,"variables":{"id":int(row["source_id"])}})
+                  media=request(os.environ["ANILIST_URL"],"POST",{"query":query,"variables":{"id":int(row["source_id"])}})
                   genres=((media.get("data") or {}).get("Media") or {}).get("genres") or []
                   existing=request(base+"/rest/v1/anime_genres?select=genre_id&anime_id=eq."+str(row["id"]))
                   existing_ids={x["genre_id"] for x in existing}
