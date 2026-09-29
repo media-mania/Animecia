@@ -67,7 +67,7 @@ function bindActions(){document.querySelectorAll("[data-act]").forEach(b=>b.oncl
  if(b.dataset.act==="send-reply"){const body=article.querySelector(".reply-box textarea").value.trim();if(!body)return;await sb.from("social_posts").insert({author_id:currentUser.id,body,reply_to_id:id});article.querySelector("textarea").value="";}
  if(b.dataset.act==="delete"){
    if(!confirm("この投稿を削除しますか？"))return;
-   const {error:deleteError}=await sb.from("social_posts").update({deleted_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",id).eq("author_id",currentUser.id);
+   const post=postsCache.get(id);const {error:deleteError}=await sb.from("social_posts").update({deleted_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",id).eq("author_id",currentUser.id);if(!deleteError&&post?.attachment_path)await sb.storage.from("community-media").remove([post.attachment_path]);
    if(deleteError){console.error("投稿削除エラー",deleteError);alert("投稿を削除できませんでした。");return}
  }
  await loadFeed();
