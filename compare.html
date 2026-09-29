@@ -51,8 +51,17 @@ async function load(){
  const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url").in("id",ids);
  if(error){app.innerHTML='<div class="error">作品情報を取得できませんでした。</div>';return}
  const rows=ids.map(id=>(data||[]).find(a=>a.id===id)).filter(Boolean);
- const {data:eng}=await supabaseClient.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").in("anime_id",rows.map(a=>a.id));
- const em=new Map((eng||[]).map(x=>[x.anime_id,x]));
+ const animeIds=rows.map(a=>a.id);
+ const [ratingsRes,favoritesRes,reviewsRes]=await Promise.all([
+   supabaseClient.from("user_ratings").select("anime_id,rating").in("anime_id",animeIds),
+   supabaseClient.from("favorites").select("anime_id").in("anime_id",animeIds),
+   supabaseClient.from("reviews").select("anime_id,rating").in("anime_id",animeIds)
+ ]);
+ const stats=new Map(animeIds.map(id=>[id,{ratings:[],favorites:0,reviews:0,reviewRatings:[]}])); 
+ (ratingsRes.data||[]).forEach(x=>stats.get(x.anime_id)?.ratings.push(Number(x.rating)));
+ (favoritesRes.data||[]).forEach(x=>{const s=stats.get(x.anime_id);if(s)s.favorites++;});
+ (reviewsRes.data||[]).forEach(x=>{const s=stats.get(x.anime_id);if(s){s.reviews++;if(x.rating!=null)s.reviewRatings.push(Number(x.rating));}});
+ const em=new Map(animeIds.map(id=>{const s=stats.get(id);const values=[...s.ratings,...s.reviewRatings];return [id,{average_rating:values.length?values.reduce((a,b)=>a+b,0)/values.length:null,rating_count:values.length,favorite_count:s.favorites,review_count:s.reviews}]}));
  const labels=[["作品名",a=>'<div class="title">'+esc(titleOf(a))+'</div>'],["画像",a=>imgOf(a)?'<img class="cover" src="'+esc(imgOf(a))+'" alt="'+esc(titleOf(a))+'">':'画像なし'],["Animecia評価",a=>{const x=em.get(a.id);return x?.average_rating!=null?'<span class="pill">★ '+esc(x.average_rating)+'</span><div class="muted">'+esc(x.rating_count||0)+'件の評価</div>':'—'}],["お気に入り",a=>esc(em.get(a.id)?.favorite_count||0)+'件'],["レビュー",a=>esc(em.get(a.id)?.review_count||0)+'件'],["形式",a=>esc(a.format||"—")],["放送状況",a=>esc(a.status||"—")],["放送開始",a=>esc(a.start_date||"—")],["放送終了",a=>esc(a.end_date||"—")],["話数",a=>a.episodes!=null?esc(a.episodes)+"話":"—"],["1話の長さ",a=>a.duration!=null?esc(a.duration)+"分":"—"],["シーズン",a=>a.season_year?(esc(a.season_year)+" "+esc(a.season||"")):"—"],["公式サイト",a=>a.official_url?'<a href="'+esc(a.official_url)+'" target="_blank" rel="noopener noreferrer">公式サイト</a>':"—"],["詳細",a=>'<a class="btn" href="anime-detail.html?id='+a.id+'">詳細を見る</a>']];
  let html='<div class="table-wrap"><table class="compare"><thead><tr><th class="label"></th>'+rows.map(a=>'<th>'+esc(titleOf(a))+'</th>').join("")+'</tr></thead><tbody>';
  for(const [label,render] of labels) html+='<tr><th class="label">'+label+'</th>'+rows.map(a=>'<td>'+render(a)+'</td>').join("")+'</tr>';
