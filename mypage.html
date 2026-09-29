@@ -376,6 +376,7 @@ async function start(){
    return;
   }
   currentUser=user;
+  const profileLink=document.getElementById("my-profile-link");if(profileLink)profileLink.href="profile.html?id="+encodeURIComponent(currentUser.id);
   document.getElementById("content").style.display="block";
   document.getElementById("auth-btn").textContent="ログアウト";
   document.getElementById("auth-btn").onclick=async()=>{await supabaseClient.auth.signOut();location.href="mypage.html";};
