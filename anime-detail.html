@@ -2896,7 +2896,7 @@
 
         const description =
             cleanText(
-                anime.description
+                anime.synopsis || anime.description
             )
                 .replace(/\s+/g, " ")
                 .trim()
@@ -3128,6 +3128,7 @@
                         title,
                         genre,
                         description,
+                        synopsis,
                         review,
                         official_url,
                         english_title,
@@ -3477,7 +3478,7 @@
                 "description"
             )
             .textContent =
-            anime.description ||
+            (anime.synopsis || anime.description) ||
             "あらすじは登録されていません。";
 
 
