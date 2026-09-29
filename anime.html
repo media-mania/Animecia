@@ -1017,7 +1017,7 @@
     </style>
 
 <link rel="stylesheet" href="site-theme.css">
-</head>
+<style>.user-anime-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.user-anime-actions button,.watch-select,.watch-progress{padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-weight:700}.user-anime-actions button.active{background:#222;color:#fff;border-color:#222}.watch-progress{width:80px}</style></head>
 
 
 <body>
@@ -2583,6 +2583,7 @@
 
             resultPage.textContent = `${currentPage} / ${Math.ceil(serverTotal / PAGE_SIZE)} ページ`;
             animeGrid.innerHTML = animeData.map(createAnimeCard).join("");
+            await initUserAnimeActions();
             renderPagination(Math.ceil(serverTotal / PAGE_SIZE));
             bindCompareButtons();
             updateCompareUI();
@@ -3514,6 +3515,14 @@
                     </div>
 
 
+                    <div class="user-anime-actions" data-user-actions="${anime.id}">
+                        <button type="button" class="favorite-toggle" data-anime-id="${anime.id}">☆ お気に入り</button>
+                        <select class="watch-select" data-anime-id="${anime.id}" aria-label="視聴状態">
+                            <option value="">視聴状態</option><option value="want_to_watch">見たい</option><option value="watching">視聴中</option><option value="completed">視聴済み</option><option value="paused">一時停止</option><option value="dropped">視聴中止</option>
+                        </select>
+                        <input class="watch-progress" data-anime-id="${anime.id}" type="number" min="0" placeholder="話数" aria-label="視聴話数">
+                    </div>
+
                     <button
                         type="button"
                         class="anime-compare-button"
@@ -3542,6 +3551,37 @@
 
     }
 
+
+    async function initUserAnimeActions(){
+        const {data:{user}}=await supabaseClient.auth.getUser();
+        if(!user || !user.email_confirmed_at) return;
+        const ids=animeData.map(a=>a.id).filter(Boolean);
+        if(!ids.length) return;
+        const [{data:favs},{data:watch}]=await Promise.all([
+            supabaseClient.from("favorites").select("anime_id").eq("user_id",user.id).in("anime_id",ids),
+            supabaseClient.from("watch_status").select("anime_id,status,progress").eq("user_id",user.id).in("anime_id",ids)
+        ]);
+        const favSet=new Set((favs||[]).map(x=>String(x.anime_id)));
+        const watchMap=new Map((watch||[]).map(x=>[String(x.anime_id),x]));
+        document.querySelectorAll(".user-anime-actions").forEach(box=>{
+            const id=String(box.dataset.userActions),fb=box.querySelector(".favorite-toggle"),sel=box.querySelector(".watch-select"),prog=box.querySelector(".watch-progress");
+            const w=watchMap.get(id);
+            if(favSet.has(id)){fb.classList.add("active");fb.textContent="★ お気に入り";}
+            if(w){sel.value=w.status;prog.value=w.progress??0;}
+            fb.onclick=async()=>{
+                fb.disabled=true;
+                const active=fb.classList.contains("active");
+                const res=active?await supabaseClient.from("favorites").delete().eq("user_id",user.id).eq("anime_id",Number(id)):await supabaseClient.from("favorites").upsert({user_id:user.id,anime_id:Number(id)},{onConflict:"user_id,anime_id"});
+                if(!res.error){fb.classList.toggle("active",!active);fb.textContent=!active?"★ お気に入り":"☆ お気に入り";}
+                fb.disabled=false;
+            };
+            const save=async()=>{
+                if(!sel.value)return;
+                await supabaseClient.from("watch_status").upsert({user_id:user.id,anime_id:Number(id),status:sel.value,progress:Math.max(0,Number(prog.value||0))},{onConflict:"user_id,anime_id"});
+            };
+            sel.onchange=save; prog.onchange=save;
+        });
+    }
 
     /* =========================================
        Pagination
