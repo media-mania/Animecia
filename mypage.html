@@ -174,13 +174,13 @@ async function loadStats(){
   try{
     const [fav,watch,rating]=await Promise.all([
       supabaseClient.from("favorites").select("anime_id",{count:"exact",head:true}).eq("user_id",currentUser.id),
-      supabaseClient.from("watch_status").select("status",{count:"exact",head:true}).eq("user_id",currentUser.id),
-      supabaseClient.from("user_ratings").select("rating",{count:"exact"}).eq("user_id",currentUser.id)
+      supabaseClient.from("watch_status").select("status").eq("user_id",currentUser.id),
+      supabaseClient.from("user_ratings").select("rating").eq("user_id",currentUser.id)
     ]);
     const errors=[fav.error,watch.error,rating.error].filter(Boolean);
     if(errors.length) console.error("Stats errors:",errors);
-    const watchingCount=watch.data?.filter(x=>x.status==="watching").length||0;
-    const completedCount=watch.data?.filter(x=>x.status==="completed").length||0;
+    const watchingCount=(watch.data||[]).filter(x=>x.status==="watching").length;
+    const completedCount=(watch.data||[]).filter(x=>x.status==="completed").length;
     const ratings=(rating.data||[]).map(x=>Number(x.rating)).filter(Number.isFinite);
     const average=ratings.length?(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1):"—";
     stats.innerHTML=[
