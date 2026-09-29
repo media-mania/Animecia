@@ -110,7 +110,9 @@ async function loadFollowList(profileId,mode){
  const el=document.getElementById("follow-list");
  el.innerHTML='<div class="empty">読み込み中…</div>';
  const col=mode==="followers"?"follower_id":"following_id";
- const {data,error}=await supabaseClient.from("user_follows").select("follower_id,following_id,created_at").eq("following_id",mode==="followers"?profileId:undefined).eq("follower_id",mode==="following"?profileId:undefined).order("created_at",{ascending:false}).limit(100);
+ let query=supabaseClient.from("user_follows").select("follower_id,following_id,created_at").order("created_at",{ascending:false}).limit(100);
+ if(mode==="followers") query=query.eq("following_id",profileId); else query=query.eq("follower_id",profileId);
+ const {data,error}=await query;
  if(error){el.innerHTML='<div class="error">フォロー一覧を取得できませんでした。</div>';return;}
  const rows=data||[]; const ids=rows.map(x=>mode==="followers"?x.follower_id:x.following_id);
  if(!ids.length){el.innerHTML='<div class="empty">'+(mode==="followers"?"フォロワーはいません。":"フォロー中のユーザーはいません。")+'</div>';return;}
