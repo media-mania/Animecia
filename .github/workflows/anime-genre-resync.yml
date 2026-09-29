@@ -88,25 +88,19 @@ jobs:
           def norm(value):
               return re.sub(r"\\s+", " ", str(value or "").strip().lower())
 
-          # 既存DBのジャンルのみ。ここでは名称の追加・削除・変更をしない。
-          genre_rows = sb(
-              "/rest/v1/genres",
-              params={"select": "id,name", "order": "id.asc"}
-          )
-          GENRE_ID = {str(r["name"]): int(r["id"]) for r in genre_rows}
+          # ジャンルIDは現在のDBで固定されている24ジャンル。
+          # GitHub Actions側からgenresテーブルを直接読む必要がないよう固定化し、
+          # 公開APIの権限差で分類処理が停止しないようにする。
+          GENRE_ID = {
+              "学園": 90764, "異世界": 90766, "冒険": 90767, "アクション": 90827,
+              "コメディ": 90830, "スポーツ": 90831, "ファンタジー": 90834, "SF": 90835,
+              "ドラマ": 90837, "魔法少女": 90841, "ホラー": 90847, "恋愛": 90851,
+              "日常": 90859, "メカ": 90894, "音楽": 91038, "ミリタリー": 91254,
+              "歴史": 98666, "サスペンス": 108591, "ショート": 114798,
+              "推理": 115017, "戦争": 115020, "青春": 115023, "アイドル": 115025,
+              "ファミリー": 115032
+          }
 
-          # 既存カタログのジャンル共起を、根拠不足時の補完候補として利用する。
-          # 固定の「適当な3ジャンル」を入れるのではなく、実データ上で共起するジャンルを優先する。
-          co_rows = sb("/rest/v1/rpc/get_genre_cooccurrence", "POST", {})
-          CO = {}
-          for row in co_rows:
-              a = int(row["genre_id_a"])
-              b = int(row["genre_id_b"])
-              n = int(row["cooccurrence_count"])
-              CO.setdefault(a, []).append((b, n))
-              CO.setdefault(b, []).append((a, n))
-          for gid in CO:
-              CO[gid].sort(key=lambda x: x[1], reverse=True)
 
           # Animeciaで現在使われているジャンル名。
           # DBに存在しない名前は自動的に無視するため、分類器が新ジャンルを作ることはない。
@@ -377,32 +371,41 @@ jobs:
                   if len(selected) >= 3:
                       break
 
-              if len(selected) < 3:
-                  seed_ids = [GENRE_ID[n] for n, _ in selected if n in GENRE_ID]
-                  for seed_id in seed_ids:
-                      for gid, _count in CO.get(seed_id, []):
-                          name = next((n for n, i in GENRE_ID.items() if i == gid), None)
-                          if name and name not in chosen:
-                              selected.append((name, 0.45))
-                              chosen.add(name)
-                          if len(selected) >= 3:
-                              break
-                      if len(selected) >= 3:
-                          break
-
               # それでも不足する場合は、現在の作品説明から得られる補助候補を再評価。
               if len(selected) < 3:
-                  fallback_order = [
-                      ("ドラマ", "broad narrative fallback"),
-                      ("コメディ", "broad narrative fallback"),
-                      ("冒険", "broad narrative fallback"),
-                      ("アクション", "broad narrative fallback"),
-                      ("日常", "broad narrative fallback"),
-                  ]
-                  for name, why in fallback_order:
+                  # 根拠が3つに満たない場合も、作品の主軸に応じた近接ジャンルから補完する。
+                  # 全作品へ同じ3ジャンルを付ける固定フォールバックは使用しない。
+                  primary = selected[0][0] if selected else None
+                  fallback_map = {
+                      "SF": ["メカ", "冒険", "ドラマ"],
+                      "ファンタジー": ["冒険", "アクション", "ドラマ"],
+                      "冒険": ["ファンタジー", "アクション", "ドラマ"],
+                      "アクション": ["冒険", "ファンタジー", "ドラマ"],
+                      "コメディ": ["日常", "ドラマ", "恋愛"],
+                      "ドラマ": ["青春", "恋愛", "日常"],
+                      "恋愛": ["青春", "ドラマ", "コメディ"],
+                      "青春": ["学園", "恋愛", "ドラマ"],
+                      "学園": ["青春", "日常", "恋愛"],
+                      "日常": ["コメディ", "青春", "ドラマ"],
+                      "スポーツ": ["青春", "学園", "ドラマ"],
+                      "音楽": ["青春", "ドラマ", "アイドル"],
+                      "アイドル": ["音楽", "青春", "ドラマ"],
+                      "ホラー": ["サスペンス", "推理", "ドラマ"],
+                      "サスペンス": ["推理", "ドラマ", "ホラー"],
+                      "推理": ["サスペンス", "ドラマ", "冒険"],
+                      "歴史": ["戦争", "ドラマ", "冒険"],
+                      "戦争": ["ミリタリー", "歴史", "ドラマ"],
+                      "ミリタリー": ["戦争", "メカ", "アクション"],
+                      "メカ": ["SF", "アクション", "戦争"],
+                      "魔法少女": ["ファンタジー", "アクション", "青春"],
+                      "異世界": ["ファンタジー", "冒険", "アクション"],
+                      "ファミリー": ["日常", "コメディ", "ドラマ"],
+                      "ショート": ["コメディ", "日常", "ファミリー"]
+                  }
+                  for name in fallback_map.get(primary, ["ドラマ", "コメディ", "冒険"]):
                       if name in scores and name not in chosen:
                           selected.append((name, 0.30))
-                          reasons[name].append(why)
+                          reasons[name].append("primary-genre semantic fallback")
                           chosen.add(name)
                       if len(selected) >= 3:
                           break
