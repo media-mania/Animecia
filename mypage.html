@@ -48,7 +48,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 <section class="hero"><h1>マイページ</h1><p>お気に入り、視聴状況、評価、レビュー、通知、活動履歴をまとめて管理できます。</p><p style="margin-top:12px"><a class="btn secondary" href="user-search.html">ユーザーを検索</a></p></section>
 
 <div id="auth-warning" class="panel" style="display:none">
-<div class="empty">ログインするとマイページを利用できます。<br><br><a class="btn" href="index.html#login">ログインする</a></div>
+<div class="empty"><h2 style="margin-top:0">ログインが必要です</h2><p>お気に入り、視聴状況、評価、レビューなどを利用するにはログインしてください。</p><br><a class="btn" href="login.html?redirect=mypage.html">ログインする</a><a class="btn secondary" href="signup.html" style="margin-left:8px">新規登録</a></div>
 </div>
 
 <div id="content" style="display:none">
@@ -477,6 +477,7 @@ window.addEventListener("error",event=>{
 (async()=>{
   const warning=document.getElementById("auth-warning");
   const content=document.getElementById("content");
+  warning.style.display="none";
   try{
     currentUser=await authState();
     if(!currentUser){
@@ -489,8 +490,9 @@ window.addEventListener("error",event=>{
     await loadTab();
   }catch(error){
     console.error("Mypage initialization error:",error);
+    warning.style.display="none";
     content.style.display="block";
-    document.getElementById("list").innerHTML='<div class="error">マイページの読み込みに失敗しました。ページを再読み込みしてください。</div>';
+    document.getElementById("list").innerHTML='<div class="error">マイページの読み込みに失敗しました。<br>ページを再読み込みしてください。</div>';
   }
 })();
 </script>
