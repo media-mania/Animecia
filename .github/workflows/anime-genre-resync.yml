@@ -32,7 +32,7 @@ jobs:
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
       MAL_API: https://api.jikan.moe/v4
-      CLASSIFICATION_VERSION: "animecia-cross-source-v12-evidence-first-min3"
+      CLASSIFICATION_VERSION: "animecia-cross-source-v13-evidence-expanded-min3"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -134,12 +134,13 @@ jobs:
           # タグはrankが高いほど強い。ただし「spoiler」タグは除外する。
           TAG_RULES = {
               "学園": {
-                  "school": 0.98, "school club": 0.95, "college": 0.90,
-                  "high school": 0.98, "middle school": 0.98
+                  "school": 0.98, "school club": 0.95, "school life": 0.96, "college": 0.90,
+                  "high school": 0.98, "middle school": 0.98, "university": 0.90
               },
               "異世界": {"isekai": 1.00},
               "冒険": {
-                  "adventure": 0.95, "pirates": 0.90, "treasure": 0.90
+                  "adventure": 0.95, "journey": 0.82, "travel": 0.78, "pirates": 0.90, "treasure": 0.90,
+                  "treasure hunt": 0.90, "survival": 0.72
               },
               "アクション": {
                   "action": 0.92, "martial arts": 0.92, "swordplay": 0.88,
@@ -148,22 +149,24 @@ jobs:
                   "revenge": 0.78
               },
               "コメディ": {
-                  "comedy": 0.95, "parody": 0.92, "satire": 0.90
+                  "comedy": 0.95, "parody": 0.92, "satire": 0.90, "slapstick": 0.88, "gag": 0.88
               },
               "恋愛": {
                   "romance": 0.96, "love triangle": 0.92,
-                  "love interest": 0.88, "tsundere": 0.72
+                  "love interest": 0.88, "tsundere": 0.72, "romantic comedy": 0.82
               },
               "日常": {
                   "slice of life": 0.98, "school club": 0.70,
                   "workplace": 0.66, "episodic": 0.58
               },
               "スポーツ": {
-                  "sports": 0.96, "athletics": 0.90
+                  "sports": 0.96, "athletics": 0.90, "baseball": 0.98, "basketball": 0.98,
+                  "soccer": 0.98, "volleyball": 0.98, "tennis": 0.98, "swimming": 0.94,
+                  "cycling": 0.94, "boxing": 0.94, "racing": 0.90
               },
               "ホラー": {
                   "horror": 0.98, "gore": 0.84, "vampire": 0.72,
-                  "zombie": 0.88, "ghost": 0.80
+                  "zombie": 0.88, "ghost": 0.80, "psychological horror": 0.94
               },
               "サスペンス": {
                   "thriller": 0.98, "psychological": 0.92,
@@ -207,20 +210,20 @@ jobs:
               "SF": {
                   "sci-fi": 1.00, "cyberpunk": 0.98, "space": 0.92,
                   "space opera": 0.96, "aliens": 0.84,
-                  "artificial intelligence": 0.94, "augmented reality": 0.86,
+                  "artificial intelligence": 0.94, "android": 0.84, "augmented reality": 0.86,
                   "virtual world": 0.84, "time manipulation": 0.78,
                   "post-apocalyptic": 0.80, "steampunk": 0.84
               },
               "ファンタジー": {
                   "fantasy": 1.00, "fairy tale": 0.94, "mythology": 0.90,
-                  "demons": 0.78, "vampire": 0.72, "youkai": 0.82,
-                  "supernatural": 0.70, "alchemy": 0.76,
+                  "demons": 0.78, "vampire": 0.72, "dragons": 0.92, "fairies": 0.90, "youkai": 0.82,
+                  "supernatural": 0.70, "magic": 0.92, "witches": 0.90, "alchemy": 0.76,
                   "urban fantasy": 0.88, "high fantasy": 0.98,
                   "dark fantasy": 0.98
               },
               "メカ": {
                   "mecha": 1.00, "real robot": 0.98,
-                  "super robot": 0.98, "robots": 0.96
+                  "super robot": 0.98, "robots": 0.96, "android": 0.84
               },
           }
 
