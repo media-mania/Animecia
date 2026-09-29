@@ -24,7 +24,7 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-      BATCH_SIZE: ${{ inputs.batch_size || '200' }}
+      BATCH_SIZE: ${{ inputs.batch_size || '300' }}
       ANN_REPORT_URL: https://www.animenewsnetwork.com/encyclopedia/reports.xml
       ANN_DETAIL_URL: https://cdn.animenewsnetwork.com/encyclopedia/api.xml
       ANN_EXTERNAL_ID_BASE: '2000000000'
