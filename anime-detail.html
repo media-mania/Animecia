@@ -5447,9 +5447,9 @@
                         "user-rating"
                     )
                     .value =
-                    Number(
-                        data.rating
-                    ).toFixed(1);
+                    String(
+                        Number(data.rating)
+                    );
             }
 
 
