@@ -1,0 +1,177 @@
+name: Animecia AniList New Anime Discovery
+
+on:
+  schedule:
+    - cron: '20 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      seasons_ahead:
+        description: "取得する先のシーズン数"
+        required: false
+        default: "2"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: animecia-anilist-discovery
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      ANILIST_URL: https://graphql.anilist.co
+    steps:
+      - name: Discover upcoming and current anime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import datetime as dt
+          import json, os, re, time, urllib.error, urllib.parse, urllib.request
+
+          BASE=os.environ["SUPABASE_URL"].rstrip("/")
+          KEY=os.environ["SUPABASE_SECRET_KEY"]
+          ANI=os.environ["ANILIST_URL"]
+          UA="Animecia-AniList-Discovery/1.0 (+https://github.com/media-mania/Animecia)"
+          ALLOWED={"TV","MOVIE","OVA","OAV","ONA"}
+
+          def http(url,method="GET",body=None,retries=5):
+              data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
+              h={"User-Agent":UA,"Accept":"application/json","Content-Type":"application/json"}
+              for n in range(retries):
+                  try:
+                      req=urllib.request.Request(url,data=data,method=method,headers=h)
+                      with urllib.request.urlopen(req,timeout=60) as r:
+                          return r.read()
+                  except urllib.error.HTTPError as e:
+                      if e.code in (408,425,429,500,502,503,504) and n<retries-1:
+                          time.sleep(min(20,2**n)); continue
+                      raise
+
+          def sb(path,method="GET",body=None,params=None):
+              url=BASE+path
+              if params: url+="?"+urllib.parse.urlencode(params,doseq=True)
+              h={"apikey":KEY,"Authorization":"Bearer "+KEY,"Accept":"application/json","Content-Type":"application/json","Prefer":"return=minimal"}
+              data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
+              req=urllib.request.Request(url,data=data,method=method,headers=h)
+              for n in range(5):
+                  try:
+                      with urllib.request.urlopen(req,timeout=60) as r:
+                          raw=r.read()
+                          return json.loads(raw.decode()) if raw else []
+                  except urllib.error.HTTPError as e:
+                      if e.code in (408,425,429,500,502,503,504) and n<4:
+                          time.sleep(min(20,2**n)); continue
+                      raise
+
+          today=dt.date.today()
+          season_names=["WINTER","SPRING","SUMMER","FALL"]
+
+          def season_at(offset):
+              idx=(today.year*4)+((today.month-1)//3)+offset
+              return idx//4,season_names[idx%4]
+
+          query="""query($season:MediaSeason!,$year:Int!,$page:Int!){
+            Page(page:$page,perPage:50){
+              media(type:ANIME,season:$season,seasonYear:$year,sort:START_DATE){
+                id
+                title{native romaji english userPreferred}
+                format
+                status
+                startDate{year month day}
+                endDate{year month day}
+                episodes
+                duration
+                description(asHtml:false)
+                genres
+                synonyms
+                coverImage{large}
+                bannerImage
+                siteUrl
+                externalLinks{url site language type}
+              }
+            }
+          }"""
+
+          candidates={}
+          for off in (0,1,2):
+              year,season=season_at(off)
+              for page in range(1,4):
+                  raw=http(ANI,"POST",{"query":query,"variables":{"season":season,"year":year,"page":page}})
+                  media=((json.loads(raw.decode()).get("data") or {}).get("Page") or {}).get("media") or []
+                  if not media: break
+                  for m in media:
+                      fmt=(m.get("format") or "").upper()
+                      if fmt not in ALLOWED: continue
+                      sid=str(m.get("id") or "")
+                      if sid: candidates[sid]=m
+                  time.sleep(.15)
+
+          def iso(d):
+              if not d or not d.get("year") or not d.get("month") or not d.get("day"): return None
+              return f'{d["year"]:04d}-{d["month"]:02d}-{d["day"]:02d}'
+
+          def choose_official(m):
+              links=m.get("externalLinks") or []
+              good=[]
+              bad=("twitter.com","x.com","facebook.com","instagram.com","youtube.com","wikipedia.org","myanimelist.net","anilist.co","animenewsnetwork.com")
+              for x in links:
+                  url=(x.get("url") or "").strip()
+                  if not url.startswith(("http://","https://")): continue
+                  host=(urllib.parse.urlparse(url).hostname or "").lower()
+                  if any(b in host for b in bad): continue
+                  typ=(x.get("type") or "").lower()
+                  lang=(x.get("language") or "").lower()
+                  score=(60 if "official" in typ else 0)+(35 if lang in ("ja","japanese") else 0)+(20 if host.endswith(".jp") or ".co.jp" in host else 0)
+                  if score>=60: good.append((score,url))
+              good.sort(reverse=True)
+              return good[0][1] if good else None
+
+          rows=[]
+          for m in candidates.values():
+              title=m.get("title") or {}
+              jp=title.get("native") or title.get("userPreferred") or title.get("romaji") or "タイトル未設定"
+              desc=re.sub(r"<[^>]+>"," ",m.get("description") or "")
+              rows.append({
+                "title":jp[:1000],
+                "title_japanese":title.get("native"),
+                "title_native":title.get("native"),
+                "title_romaji":title.get("romaji"),
+                "title_english":title.get("english"),
+                "description":desc[:20000] if desc else None,
+                "official_url":choose_official(m),
+                "external_id":2000000000+int(m["id"]),
+                "start_date":iso(m.get("startDate")),
+                "end_date":iso(m.get("endDate")),
+                "episodes":m.get("episodes"),
+                "duration":m.get("duration"),
+                "status":m.get("status"),
+                "format":"OVA" if m.get("format") in ("OVA","OAV") else m.get("format"),
+                "season":m.get("season"),
+                "season_year":m.get("seasonYear"),
+                "source":"AniList automatic discovery",
+                "site_url":m.get("siteUrl"),
+                "aliases":(m.get("synonyms") or [])[:30],
+                "genres":m.get("genres") or [],
+                "studios":[],
+                "source_provider":"anilist",
+                "source_id":str(m["id"]),
+                "cover_image":(m.get("coverImage") or {}).get("large"),
+                "banner_image":m.get("bannerImage")
+              })
+
+          inserted=skipped=errors=0
+          for i in range(0,len(rows),100):
+              result=sb("/rest/v1/rpc/bulk_register_anime_batch","POST",rows[i:i+100])
+              result=result[0] if isinstance(result,list) and result else (result if isinstance(result,dict) else {})
+              inserted+=int(result.get("inserted",0))
+              skipped+=int(result.get("skipped",0))
+              errors+=int(result.get("errors",0))
+
+          print(json.dumps({"candidates":len(rows),"inserted":inserted,"skipped":skipped,"errors":errors},ensure_ascii=False))
+          PY
