@@ -44,10 +44,12 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
 const imgOf=a=>a?.cover_image||"";
 const params=new URLSearchParams(location.search);
-const ids=[...new Set((params.get("ids")||"").split(",").map(Number).filter(Number.isInteger))].slice(0,5);
+function readStoredIds(){try{const raw=localStorage.getItem("animecia_compare");const a=raw?JSON.parse(raw):[];return Array.isArray(a)?a.map(Number).filter(Number.isInteger):[]}catch(e){return []}}
+let ids=[...new Set((params.get("ids")||"").split(",").map(Number).filter(Number.isInteger))].slice(0,5);
+if(!ids.length) ids=[...new Set(readStoredIds())].slice(0,5);
 async function load(){
  const app=document.getElementById("app");
- if(!ids.length){app.innerHTML='<div class="empty">比較する作品がありません。アニメ一覧から比較に追加してください。</div>';return}
+ if(!ids.length){app.innerHTML='<div class="empty">比較する作品がありません。<br><br><a class="btn" href="anime.html">アニメ一覧から作品を選ぶ</a></div>';return}
  const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url").in("id",ids);
  if(error){app.innerHTML='<div class="error">作品情報を取得できませんでした。</div>';return}
  const rows=ids.map(id=>(data||[]).find(a=>a.id===id)).filter(Boolean);
