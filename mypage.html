@@ -158,13 +158,21 @@ async function updateNotificationBadge(){
  badge.textContent=count?String(count):"";
  badge.style.display=count?"inline-block":"none";
 }
+let notificationChannel=null;
+let notificationPollTimer=null;
+async function refreshNotifications(){
+ await updateNotificationBadge();
+ if(currentTab==="notifications") await loadTab();
+}
 function subscribeNotifications(){
- supabaseClient.channel("user-notifications-"+currentUser.id)
+ if(notificationChannel) supabaseClient.removeChannel(notificationChannel);
+ notificationChannel=supabaseClient.channel("user-notifications-"+currentUser.id)
   .on("postgres_changes",{event:"INSERT",schema:"public",table:"user_notifications",filter:"user_id=eq."+currentUser.id},async()=>{
-    await updateNotificationBadge();
-    if(currentTab==="notifications") await loadTab();
+    await refreshNotifications();
   })
-  .subscribe();
+  .subscribe((status)=>console.log("notification realtime:",status));
+ if(notificationPollTimer) clearInterval(notificationPollTimer);
+ notificationPollTimer=setInterval(refreshNotifications,15000);
 }
 async function loadUserFollowList(mode){
  const el=document.getElementById("list");
@@ -252,11 +260,12 @@ async function start(){
   document.getElementById("auth-btn").onclick=async()=>{await supabaseClient.auth.signOut();location.href="mypage.html";};
   await Promise.all([loadProfile(),loadStats(),updateNotificationBadge()]);
   subscribeNotifications();
+  await refreshNotifications();
   await loadTab();
  }catch(e){console.error("mypage start error",e);document.getElementById("auth-warning").style.display="block";document.getElementById("auth-warning").innerHTML='<div class="error">マイページを読み込めませんでした。ページを再読み込みしてください。</div>';}
 }
 document.addEventListener("DOMContentLoaded",()=>{
- document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;await loadTab();}));
+ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;await loadTab();if(currentTab==="notifications")await updateNotificationBadge();}));
  document.getElementById("save-profile").addEventListener("click",saveProfile);
  document.getElementById("upload-avatar").addEventListener("click",uploadAvatar);
  start();
