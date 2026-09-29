@@ -90,28 +90,38 @@ jobs:
               return {int(x["id"]):x.get("episodes") for x in data.get("data",{}).get("Page",{}).get("media",[])}
 
           def ann(ids):
-              if not ids: return {}
-              q = urllib.parse.urlencode({"anime":"/".join(map(str,ids))})
-              raw = request(
-                  "https://cdn.animenewsnetwork.com/encyclopedia/api.xml?" + q,
-                  headers={"Accept":"application/xml,text/xml"}
-              )
+              if not ids:
+                  return {}
               import xml.etree.ElementTree as ET, re
-              root = ET.fromstring(raw)
               out = {}
-              for a in root.iter():
-                  if a.tag.lower() != "anime": continue
-                  aid = a.get("id")
-                  if not aid or not aid.isdigit(): continue
-                  value = None
-                  for e in a.iter():
-                      if e.tag.lower() == "info" and "episode" in (e.get("type") or "").lower():
-                          m = re.search(r"\d+", " ".join(e.itertext()))
-                          if m:
-                              value = int(m.group())
+              for anime_id in ids:
+                  try:
+                      raw = request(
+                          "https://cdn.animenewsnetwork.com/encyclopedia/api.xml?" +
+                          urllib.parse.urlencode({"anime": str(anime_id)}),
+                          headers={"Accept":"application/xml,text/xml"}
+                      )
+                      root = ET.fromstring(raw)
+                      for a in root.iter():
+                          if a.tag.lower() != "anime":
+                              continue
+                          aid = a.get("id")
+                          if not aid or not aid.isdigit() or int(aid) != int(anime_id):
+                              continue
+                          value = None
+                          for e in a.iter():
+                              if e.tag.lower() == "info" and "episode" in (e.get("type") or "").lower():
+                                  text_value = " ".join(e.itertext())
+                                  m = re.search(r"\\d+", text_value)
+                                  if m:
+                                      value = int(m.group())
+                                      break
+                          if value is not None and 1 <= value <= 10000:
+                              out[int(anime_id)] = value
                               break
-                  if value is not None and 1 <= value <= 10000:
-                      out[int(aid)] = value
+                  except Exception as exc:
+                      print(f"ANN lookup failed for {anime_id}: {exc}")
+                  time.sleep(0.15)
               return out
 
           rows = sb("/rest/v1/anime", params={
