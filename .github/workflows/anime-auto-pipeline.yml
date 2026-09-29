@@ -53,7 +53,7 @@ jobs:
           BATCH = max(20, min(300, int(os.environ.get("BATCH_SIZE", "300"))))
           HALF = max(10, BATCH // 2)
           UA = "Animecia-AutoImporter/2.0 (+https://github.com/media-mania/Animecia)"
-          ALLOWED = {"TV", "MOVIE", "OVA", "OAV", "ONA", "SPECIAL", "OMNIBUS"}
+          ALLOWED = {"TV", "MOVIE", "OVA", "OAV", "ONA"}
           TODAY = dt.date.today()
 
           def http(url, method="GET", body=None, headers=None, timeout=120):
