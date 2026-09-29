@@ -179,7 +179,7 @@ async function load(){
  const [count,seasonRes,rankRes,newRes,genreRes]=await Promise.all([
    sb.from("anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").gte("start_date","1963-01-01"),
    sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,average_score,anime_verification_status,season,season_year").eq("anime_verification_status","verified").gte("start_date","1963-01-01").eq("season_year",year).eq("season",season).order("average_score",{ascending:false,nullsFirst:false}).limit(10),
-   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date").eq("anime_verification_status","verified").gte("start_date","1963-01-01").not("average_score","is",null).order("average_score",{ascending:false}).limit(10),
+   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").not("average_score","is",null).order("average_score",{ascending:false}).limit(10),
    sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date").eq("anime_verification_status","verified").gte("start_date","1963-01-01").order("id",{ascending:false}).limit(10),
    sb.rpc("get_catalog_genres")
  ]);
@@ -187,7 +187,7 @@ async function load(){
  const seasonRows=(seasonRes.data||[]).filter(valid);
  const rankRows=(rankRes.data||[]).filter(valid);
  const newRows=(newRes.data||[]).filter(valid);
- setCards("season-grid",seasonRows);
+ setCards("season-grid",seasonRows.length?seasonRows:rankRows.slice(0,10));
  setCards("new-grid",newRows);
  const rank=document.getElementById("rank-list");
  rank.innerHTML=rankRows.length?rankRows.map((a,i)=>'<a class="rank-item" href="anime-detail.html?id='+a.id+'"><div class="rank-no">'+(i+1)+'</div><div>'+ (a.cover_image?'<img class="rank-thumb" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-thumb"></div>')+'</div><div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+" · "+esc(a.format||"")+'</div></div><div class="rank-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<span>評価</span></div></a>').join(""):'<div class="empty">評価データが集まるとランキングが表示されます。</div>';
