@@ -352,7 +352,33 @@ jobs:
               if scores.get("メカ", 0) >= 0.95 and scores.get("ロボット", 0) < 0.95:
                   scores["ロボット"] *= 0.75
 
-              # 6. 信頼度閾値。
+              # 6. 意味が近いジャンルの重複を正規化。
+              # ジャンル体系そのものは33種類のまま維持するが、
+              # 同一作品へほぼ同義のジャンルを同時付与しない。
+              EXCLUSIVE_GROUPS = [
+                  ["アクション", "バトル"],
+                  ["コメディ", "ギャグ"],
+                  ["スポーツ", "競技"],
+                  ["メカ", "ロボット"],
+                  ["恋愛", "ラブコメ"],
+                  ["ドラマ", "青春"],
+                  ["ファミリー", "キッズ"],
+                  ["ファンタジー", "魔法"],
+                  ["戦争", "戦記", "ミリタリー"],
+                  ["ホラー", "サスペンス"],
+              ]
+
+              for group in EXCLUSIVE_GROUPS:
+                  candidates = [(n, scores.get(n, 0.0)) for n in group if n in scores]
+                  strong = [x for x in candidates if x[1] >= 0.78]
+                  if len(strong) > 1:
+                      # 根拠が強いものを残す。同点ならリスト上で先に定義されたものを優先。
+                      winner = max(strong, key=lambda x: x[1])
+                      for name, score in candidates:
+                          if name != winner[0] and score < 0.92:
+                              scores[name] = min(scores[name], 0.70)
+
+              # 7. 信頼度閾値。
               # 0.78以上を採用。複数ジャンルは各ジャンルが独立して閾値を満たした場合のみ。
               selected = [
                   (name, score) for name, score in scores.items()
