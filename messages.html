@@ -1,149 +1,68 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>メッセージ | Animecia</title>
-<link rel="stylesheet" href="site-theme.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>メッセージ | Animecia</title><link rel="stylesheet" href="site-theme.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-main{max-width:1100px;margin:auto;padding:32px 16px 60px}.grid{display:grid;grid-template-columns:320px 1fr;gap:16px}.panel{padding:18px;border-radius:14px}.threads{display:grid;gap:7px}.thread{display:block;width:100%;text-align:left;border:1px solid #e7e7e9;border-radius:10px;background:#fff;padding:12px;cursor:pointer}.thread.active{background:#f1f3f5}.sub{font-size:12px;color:#777;margin-top:4px}.chat{min-height:520px;display:flex;flex-direction:column}.messages{flex:1;overflow:auto;padding:8px}.bubble{max-width:75%;margin:8px 0;padding:9px 12px;border-radius:13px;background:#f0f1f3}.mine{margin-left:auto;background:#111;color:#fff}.read{font-size:11px;opacity:.65;margin-top:3px;text-align:right}.composer{display:flex;gap:8px;margin-top:12px}.composer textarea{flex:1;min-height:48px;resize:vertical}.newbox{margin-bottom:14px}.newbox input{width:100%;margin:5px 0}.empty{text-align:center;color:#777;padding:35px 10px}.badge{font-size:11px;border-radius:999px;padding:2px 6px;background:#e33;color:#fff;float:right}.delete-msg{margin-left:8px;border:0;background:transparent;color:#777;font-size:11px;cursor:pointer}.delete-msg:hover{color:#c00}.members{font-size:12px;color:#666;margin-top:5px}@media(max-width:760px){.grid{grid-template-columns:1fr}.chat{min-height:420px}}
-</style>
-</head>
-<body>
-<header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav><a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a></nav><div class="userbar"><span id="user-name"></span><button id="auth-btn" class="btn secondary">ログアウト</button></div></div></header>
-<main>
-<h1>メッセージ</h1>
-<div id="auth-warning" class="panel empty" style="display:none">ログインが必要です。</div>
-<div id="app" class="grid" style="display:none">
-<section class="panel">
-<h2>会話</h2>
-<div class="newbox">
-<input id="member-search" placeholder="ユーザー名で検索（@不要）">
-<button id="start-dm" class="btn secondary" type="button">1対1を開始</button>
-<button id="start-group" class="btn secondary" type="button">グループを作成</button>
-<div id="user-results"></div>
-<p class="sub">検索結果からユーザーを選択してから開始します。グループは複数選択できます。</p>
-</div>
-<div id="threads" class="threads"></div>
-</section>
-<section class="panel chat">
-<div id="chat-title"><h2>会話を選択してください</h2></div>
-<div id="messages" class="messages"><div class="empty">左側から会話を選択してください。</div></div>
-<div class="composer" id="composer" style="display:none"><textarea id="message-input" maxlength="2000" placeholder="メッセージを入力"></textarea><button id="send" class="btn" type="button">送信</button></div>
-</section>
-</div>
-</main>
+main{max-width:1180px;margin:auto;padding:18px 12px 60px}.messenger{height:calc(100vh - 150px);min-height:620px;display:grid;grid-template-columns:330px 1fr;background:#fff;border:1px solid #e3e5e8;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.06)}.sidebar{border-right:1px solid #e6e7ea;display:flex;flex-direction:column;min-width:0}.side-head{padding:16px;border-bottom:1px solid #eee}.side-head h1{font-size:20px;margin:0 0 12px}.search{width:100%;border:1px solid #dfe1e5;border-radius:999px;padding:10px 13px;background:#f6f7f8}.new-results{margin-top:8px;max-height:180px;overflow:auto}.user-choice{display:flex;width:100%;align-items:center;gap:9px;border:0;background:#fff;padding:9px;text-align:left;cursor:pointer;border-radius:9px}.user-choice:hover{background:#f3f4f6}.thread-list{overflow:auto;flex:1;padding:7px}.thread{display:flex;gap:10px;width:100%;padding:11px;border:0;background:#fff;text-align:left;border-radius:11px;cursor:pointer}.thread:hover,.thread.active{background:#f1f3f5}.thread-main{min-width:0;flex:1}.thread-top{display:flex;justify-content:space-between;gap:8px}.thread-name{font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.thread-time{font-size:11px;color:#8a8f98;white-space:nowrap}.thread-preview{font-size:12px;color:#747982;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}.unread{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:#d9002b;color:#fff;font-size:10px;font-weight:900}.chat{display:flex;flex-direction:column;min-width:0}.chat-head{padding:13px 16px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px}.chat-title{min-width:0}.chat-title b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chat-title span{font-size:11px;color:#777}.chat-actions{margin-left:auto}..messages{flex:1;overflow:auto;padding:18px 16px;background:#fafbfc}.day{text-align:center;color:#888;font-size:11px;margin:10px 0}.msg-row{display:flex;gap:8px;margin:8px 0;align-items:flex-end}.msg-row.mine{justify-content:flex-end}.bubble{max-width:min(72%,520px);padding:9px 12px;border-radius:17px;background:#fff;border:1px solid #e2e4e8;line-height:1.55;word-break:break-word}.mine .bubble{background:#111;color:#fff;border-color:#111;border-bottom-right-radius:5px}.msg-row:not(.mine) .bubble{border-bottom-left-radius:5px}.msg-meta{font-size:10px;color:#8a8f98;margin-top:4px;text-align:right}.mine .msg-meta{color:#c6c8cc}.delete{border:0;background:none;font-size:10px;color:#9a9da3;cursor:pointer;margin-left:5px}.composer{border-top:1px solid #eee;padding:11px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;min-height:44px;max-height:150px;resize:none;border:1px solid #dfe1e5;border-radius:18px;padding:10px 13px;outline:none}.composer textarea:focus{border-color:#aaa}.send{min-width:72px}.empty{text-align:center;color:#777;padding:40px 15px}.mobile-back{display:none}.badge{display:inline-grid;place-items:center}.selected-users{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.chip{font-size:11px;background:#eef0f2;padding:4px 8px;border-radius:999px}.group-row{display:flex;gap:7px;margin-top:8px}.secondary-btn{border:1px solid #ddd;background:#fff;border-radius:9px;padding:8px 10px;cursor:pointer;font-weight:700}@media(max-width:760px){main{padding:0}.messenger{height:calc(100vh - 105px);min-height:500px;border-radius:0;border-left:0;border-right:0;grid-template-columns:1fr}.sidebar{display:flex}.chat{display:none}.messenger.chat-open .sidebar{display:none}.messenger.chat-open .chat{display:flex}.mobile-back{display:block;border:0;background:none;font-size:20px;cursor:pointer}.bubble{max-width:82%}.chat-head{padding:10px}.messages{padding:12px}.composer{padding:8px}}
+</style></head>
+<body><header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav class="main-nav"><a href="index.html">ホーム</a><a href="discover.html">探す</a><a href="ranking.html">ランキング</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a></nav></div></header>
+<main><div id="auth-warning" class="panel empty" style="display:none">ログインが必要です。</div><div id="messenger" class="messenger" style="display:none">
+<aside class="sidebar"><div class="side-head"><h1>メッセージ</h1><input id="user-search" class="search" placeholder="ユーザーを検索"><div id="new-results" class="new-results"></div><div id="selected-users" class="selected-users"></div><div class="group-row"><button id="start-dm" class="secondary-btn">1対1</button><button id="start-group" class="secondary-btn">グループ</button></div></div><div id="threads" class="thread-list"></div></aside>
+<section class="chat"><div class="chat-head"><button id="mobile-back" class="mobile-back">‹</button><div id="chat-avatar"></div><div id="chat-title" class="chat-title"><b>会話を選択してください</b><span>メッセージ</span></div><div class="chat-actions"><a id="profile-link" class="secondary-btn" style="display:none" href="#">プロフィール</a></div></div><div id="messages" class="messages"><div class="empty">会話を選択すると、ここにメッセージが表示されます。</div></div><div id="composer" class="composer" style="display:none"><textarea id="message-input" maxlength="2000" placeholder="メッセージを入力"></textarea><button id="send" class="btn send">送信</button></div></section>
+</div></main>
 <script>
-const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
-const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
-let sb,currentUser,currentThread,selectedUsers=[],channel;
+const U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",sb=window.supabase.createClient(U,K);
+let currentUser,currentThread,selectedUsers=[],channel,threadMeta=new Map();
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-async function profiles(ids){if(!ids.length)return new Map();const {data,error}=await sb.from("profiles").select("id,username,display_name,avatar_url").in("id",ids);if(error)throw error;return new Map((data||[]).map(x=>[x.id,x]));}
+const fmt=d=>new Date(d).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
+async function getProfiles(ids){const u=[...new Set(ids.filter(Boolean))];if(!u.length)return new Map();const {data,error}=await sb.from("profiles").select("id,username,display_name,avatar_url").in("id",u);if(error)throw error;return new Map((data||[]).map(p=>[p.id,p]))}
+function avatar(p){return p?.avatar_url?'<img class="avatar" src="'+esc(p.avatar_url)+'" alt="">':'<div class="avatar avatar-fallback">'+esc((p?.display_name||p?.username||"A").slice(0,1))+'</div>'}
 async function loadThreads(){
- const {data,error}=await sb.from("message_members").select("thread_id,last_read_at").eq("user_id",currentUser.id).order("joined_at",{ascending:false});if(error)throw error;
- const ids=(data||[]).map(x=>x.thread_id);if(!ids.length){document.getElementById("threads").innerHTML='<div class="empty">まだ会話はありません。</div>';return;}
- const {data:ts,error:te}=await sb.from("message_threads").select("id,title,is_group,created_at").in("id",ids).order("created_at",{ascending:false});if(te)throw te;
+ const {data:members,error}=await sb.from("message_members").select("thread_id,last_read_at").eq("user_id",currentUser.id).order("joined_at",{ascending:false});if(error)throw error;
+ const ids=(members||[]).map(x=>x.thread_id);if(!ids.length){document.getElementById("threads").innerHTML='<div class="empty">まだ会話はありません。<br>上の検索からユーザーを選択してください。</div>';return}
+ const {data:threads,error:te}=await sb.from("message_threads").select("id,title,is_group,created_at").in("id",ids).order("created_at",{ascending:false});if(te)throw te;
+ const {data:latest}=await sb.from("thread_messages").select("id,thread_id,sender_id,body,created_at").in("thread_id",ids).order("created_at",{ascending:false}).limit(Math.min(500,ids.length*10));
+ const latestMap=new Map();(latest||[]).forEach(x=>{if(!latestMap.has(x.thread_id))latestMap.set(x.thread_id,x)});
  const html=[];
- for(const t of ts||[]){let label=t.title||"1対1の会話";if(!t.is_group){const {data:ms}=await sb.from("message_members").select("user_id").eq("thread_id",t.id).neq("user_id",currentUser.id).limit(1);const map=await profiles((ms||[]).map(x=>x.user_id));const p=map.values().next().value;if(p)label=p.display_name||p.username||"ユーザー";}
- const row=(data||[]).find(x=>x.thread_id===t.id);
- const lastRead=row?.last_read_at;
- let unreadQuery=sb.from("thread_messages").select("id",{count:"exact",head:true}).eq("thread_id",t.id).neq("sender_id",currentUser.id);
- if(lastRead) unreadQuery=unreadQuery.gt("created_at",lastRead);
- const {count}=await unreadQuery;
- html.push('<button class="thread '+(currentThread===t.id?'active':'')+'" data-id="'+t.id+'"><b>'+esc(label)+'</b>'+(t.is_group?'<div class="members">グループ</div>':"")+(count?'<span class="badge">'+count+'</span>':"")+'</button>');}
+ for(const t of threads||[]){
+  const {data:ms}=await sb.from("message_members").select("user_id").eq("thread_id",t.id);
+  const map=await getProfiles((ms||[]).map(x=>x.user_id));let other=(ms||[]).map(x=>x.user_id).find(x=>x!==currentUser.id);const p=other?map.get(other):null;
+  const label=t.is_group?(t.title||"グループ"):p?.display_name||p?.username||"ユーザー";
+  const preview=latestMap.get(t.id);const ownRead=(members||[]).find(x=>x.thread_id===t.id)?.last_read_at;let uq=sb.from("thread_messages").select("id",{count:"exact",head:true}).eq("thread_id",t.id).neq("sender_id",currentUser.id);if(ownRead)uq=uq.gt("created_at",ownRead);const {count}=await uq;
+  threadMeta.set(t.id,{profile:p,label});
+  html.push('<button class="thread '+(currentThread===t.id?'active':'')+'" data-id="'+t.id+'">'+avatar(p)+'<div class="thread-main"><div class="thread-top"><span class="thread-name">'+esc(label)+'</span><span class="thread-time">'+(preview?esc(fmt(preview.created_at)):"")+'</span></div><div class="thread-preview">'+esc(preview?.body||"メッセージはありません")+'</div></div>'+(count?'<span class="unread">'+count+'</span>':"")+'</button>');
+ }
  document.getElementById("threads").innerHTML=html.join("");document.querySelectorAll(".thread").forEach(x=>x.onclick=()=>openThread(x.dataset.id));
 }
 async function openThread(id){
- currentThread=id;await loadThreads();
+ currentThread=id;document.getElementById("messenger").classList.add("chat-open");await loadThreads();
  const {data:t}=await sb.from("message_threads").select("id,title,is_group").eq("id",id).single();if(!t)return;
- let title=t.title||"1対1の会話";
- const {data:members}=await sb.from("message_members").select("user_id").eq("thread_id",id);
- const map=await profiles((members||[]).map(x=>x.user_id));
- if(!t.is_group){const p=map.get((members||[]).map(x=>x.user_id).find(x=>x!==currentUser.id));if(p)title=p.display_name||p.username||title;}
- document.getElementById("chat-title").innerHTML='<h2>'+esc(title)+'</h2><div class="sub">'+(t.is_group?(members||[]).length+"人のグループ":"1対1")+'</div>';
- document.getElementById("composer").style.display="flex";
- await loadMessages();
+ const {data:ms}=await sb.from("message_members").select("user_id").eq("thread_id",id);const map=await getProfiles((ms||[]).map(x=>x.user_id));const other=(ms||[]).map(x=>x.user_id).find(x=>x!==currentUser.id);const p=other?map.get(other):null;
+ const title=t.is_group?(t.title||"グループ"):p?.display_name||p?.username||"ユーザー";
+ document.getElementById("chat-avatar").innerHTML=t.is_group?"":avatar(p);document.getElementById("chat-title").innerHTML='<b>'+esc(title)+'</b><span>'+esc(t.is_group?((ms||[]).length+"人のグループ"):(p?.username?"@"+p.username:"1対1"))+'</span>';
+ const pl=document.getElementById("profile-link");if(p){pl.style.display="inline-block";pl.href="profile.html?id="+encodeURIComponent(p.id)}else pl.style.display="none";
+ document.getElementById("composer").style.display="flex";await loadMessages();
  if(channel)sb.removeChannel(channel);
- channel=sb.channel("thread-"+id)
-  .on("postgres_changes",{event:"INSERT",schema:"public",table:"thread_messages",filter:"thread_id=eq."+id},async()=>await loadMessages())
-  .on("postgres_changes",{event:"UPDATE",schema:"public",table:"message_members",filter:"thread_id=eq."+id},async(payload)=>{if(payload.new?.user_id!==currentUser.id)await loadMessages();})
-  .subscribe();
+ channel=sb.channel("messages-"+id).on("postgres_changes",{event:"INSERT",schema:"public",table:"thread_messages",filter:"thread_id=eq."+id},loadMessages).on("postgres_changes",{event:"UPDATE",schema:"public",table:"message_members",filter:"thread_id=eq."+id},loadMessages).subscribe();
 }
 async function loadMessages(){
- if(!currentThread)return;
- const {data,error}=await sb.from("thread_messages").select("id,sender_id,body,created_at").eq("thread_id",currentThread).order("created_at",{ascending:true}).limit(200);
- if(error)throw error;
- const {data:members,error:memberError}=await sb.from("message_members").select("user_id,last_read_at").eq("thread_id",currentThread);
- if(memberError)throw memberError;
- const otherMembers=(members||[]).filter(m=>m.user_id!==currentUser.id);
- const map=await profiles([...new Set((data||[]).map(x=>x.sender_id))]);
- const readCountFor=(createdAt)=>{
-   const t=new Date(createdAt).getTime();
-   return otherMembers.filter(m=>m.last_read_at&&new Date(m.last_read_at).getTime()>=t).length;
- };
- document.getElementById("messages").innerHTML=(data||[]).map(x=>{
-   const mine=x.sender_id===currentUser.id;
-   const p=map.get(x.sender_id),name=p?.display_name||p?.username||"ユーザー";
-   let status="";
-   if(mine){
-     const readCount=readCountFor(x.created_at);
-     const total=otherMembers.length;
-     status=total===0?"送信済み":(readCount===total?"既読":readCount>0?"既読 "+readCount+"/"+total:"送信済み");
-   }
-   return '<div class="bubble '+(mine?'mine':'')+'"><div>'+esc(x.body).replace(/\n/g,"<br>")+'</div><div class="read">'+esc(name)+" ・ "+new Date(x.created_at).toLocaleString("ja-JP")+(mine?' ・ '+status+' <button class="delete-msg" type="button" data-message-id="'+x.id+'">削除</button>':"")+'</div></div>';
- }).join("")||'<div class="empty">メッセージはありません。</div>';
- const {error:re}=await sb.from("message_members").update({last_read_at:new Date().toISOString()}).eq("thread_id",currentThread).eq("user_id",currentUser.id);
- if(re)console.error(re);
- document.querySelectorAll(".delete-msg").forEach(btn=>btn.onclick=()=>deleteMessage(btn.dataset.messageId));
- document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
+ if(!currentThread)return;const {data,error}=await sb.from("thread_messages").select("id,sender_id,body,created_at").eq("thread_id",currentThread).order("created_at",{ascending:true}).limit(500);if(error)throw error;
+ const {data:members}=await sb.from("message_members").select("user_id,last_read_at").eq("thread_id",currentThread);const others=(members||[]).filter(x=>x.user_id!==currentUser.id);const map=await getProfiles((data||[]).map(x=>x.sender_id));
+ document.getElementById("messages").innerHTML=(data||[]).map(x=>{const mine=x.sender_id===currentUser.id,p=map.get(x.sender_id),name=p?.display_name||p?.username||"ユーザー";let status="送信済み";if(mine){const t=new Date(x.created_at).getTime(),read=others.filter(o=>o.last_read_at&&new Date(o.last_read_at).getTime()>=t).length;status=others.length&&read===others.length?"既読":read?"既読 "+read+"/"+others.length:"送信済み"}return '<div class="msg-row '+(mine?"mine":"")+'"><div><div class="bubble">'+esc(x.body).replace(/\n/g,"<br>")+'</div><div class="msg-meta">'+esc(name)+" · "+fmt(x.created_at)+(mine?' · '+status+' <button class="delete" data-id="'+x.id+'">削除</button>':"")+'</div></div></div>'}).join("")||'<div class="empty">メッセージはありません。</div>';
+ await sb.from("message_members").update({last_read_at:new Date().toISOString()}).eq("thread_id",currentThread).eq("user_id",currentUser.id);
+ document.querySelectorAll(".delete").forEach(b=>b.onclick=async()=>{if(!confirm("このメッセージを削除しますか？"))return;await sb.from("thread_messages").delete().eq("id",b.dataset.id).eq("sender_id",currentUser.id);await loadMessages();await loadThreads()});
+ const box=document.getElementById("messages");box.scrollTop=box.scrollHeight;
 }
-async function deleteMessage(id){
- if(!id||!currentThread)return;
- if(!confirm("このメッセージを削除しますか？"))return;
- const {error}=await sb.from("thread_messages").delete().eq("id",id).eq("sender_id",currentUser.id).eq("thread_id",currentThread);
- if(error){console.error(error);alert("メッセージを削除できませんでした。");return;}
- await loadMessages();
- await loadThreads();
-}
-async function send(){const input=document.getElementById("message-input"),body=input.value.trim();if(!body||!currentThread)return;const {error}=await sb.from("thread_messages").insert({thread_id:currentThread,sender_id:currentUser.id,body});if(error){alert("送信できませんでした。");console.error(error);return;}input.value="";await loadMessages();}
-async function searchUsers(){
- const q=document.getElementById("member-search").value.trim().replace(/^@/,"");if(q.length<2){document.getElementById("user-results").innerHTML="";return;}
- const {data,error}=await sb.from("profiles").select("id,username,display_name").ilike("username","%"+q+"%").neq("id",currentUser.id).limit(10);if(error)throw error;
- document.getElementById("user-results").innerHTML=(data||[]).map(p=>'<button class="thread user-result" data-id="'+p.id+'">'+esc(p.display_name||p.username||"ユーザー")+' <span class="sub">@'+esc(p.username||"")+'</span></button>').join("")||'<div class="sub">ユーザーが見つかりません。</div>';
- document.querySelectorAll(".user-result").forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(!selectedUsers.includes(id))selectedUsers.push(id);b.style.opacity=".5";});
-}
-async function createThread(isGroup){
- if(!selectedUsers.length){alert("先にユーザーを選択してください。");return;}
- if(!isGroup&&selectedUsers.length!==1){alert("1対1では1人だけ選択してください。");return;}
- if(!isGroup){
-  const other=selectedUsers[0];
-  const {data:mine,error:mineError}=await sb.from("message_members").select("thread_id").eq("user_id",currentUser.id);
-  if(mineError){console.error(mineError);alert("会話を確認できませんでした。");return;}
-  for(const x of mine||[]){
-   const {data:otherRow}=await sb.from("message_members").select("user_id").eq("thread_id",x.thread_id).eq("user_id",other).maybeSingle();
-   if(otherRow){currentThread=x.thread_id;await openThread(x.thread_id);selectedUsers=[];return;}
-  }
- }
- const {data:threadId,error}=await sb.rpc("create_message_thread",{p_member_ids:[currentUser.id,...selectedUsers],p_is_group:isGroup,p_title:isGroup?"新しいグループ":null});
- if(error){console.error(error);alert("会話を作成できませんでした。");return;}
- selectedUsers=[];document.getElementById("user-results").innerHTML="";
- await loadThreads();await openThread(threadId);
-}
+async function send(){const input=document.getElementById("message-input"),body=input.value.trim();if(!body||!currentThread)return;const btn=document.getElementById("send");btn.disabled=true;const {error}=await sb.from("thread_messages").insert({thread_id:currentThread,sender_id:currentUser.id,body});btn.disabled=false;if(error){console.error(error);alert("送信できませんでした。");return}input.value="";input.style.height="44px";await loadMessages();await loadThreads()}
+async function searchUsers(){const q=document.getElementById("user-search").value.trim().replace(/^@/,"");const el=document.getElementById("new-results");if(q.length<2){el.innerHTML="";return}const {data,error}=await sb.from("profiles").select("id,username,display_name,avatar_url").or("username.ilike.%"+q+"%,display_name.ilike.%"+q+"%").neq("id",currentUser.id).limit(12);if(error){el.innerHTML='<div class="empty">検索できませんでした。</div>';return}el.innerHTML=(data||[]).map(p=>'<button class="user-choice" data-id="'+p.id+'">'+avatar(p)+'<span><b>'+esc(p.display_name||p.username||"ユーザー")+'</b><br><span class="small">@'+esc(p.username||"")+'</span></span></button>').join("")||'<div class="empty">ユーザーが見つかりません。</div>';document.querySelectorAll(".user-choice").forEach(b=>b.onclick=()=>{if(!selectedUsers.includes(b.dataset.id))selectedUsers.push(b.dataset.id);renderSelected()})}
+function renderSelected(){const el=document.getElementById("selected-users");el.innerHTML=selectedUsers.map(id=>'<span class="chip">'+esc(threadMeta.get(id)?.label||"選択済み")+' ×</span>').join("")}
+async function createThread(group){if(!selectedUsers.length){alert("ユーザーを選択してください。");return}if(!group&&selectedUsers.length!==1){alert("1対1では1人だけ選択してください。");return}
+ if(!group){const other=selectedUsers[0];const {data:mine}=await sb.from("message_members").select("thread_id").eq("user_id",currentUser.id);for(const x of mine||[]){const {data:row}=await sb.from("message_members").select("user_id").eq("thread_id",x.thread_id).eq("user_id",other).maybeSingle();if(row){selectedUsers=[];document.getElementById("new-results").innerHTML="";renderSelected();return openThread(x.thread_id)}}}
+ const {data,error}=await sb.rpc("create_message_thread",{p_member_ids:[currentUser.id,...selectedUsers],p_is_group:group,p_title:group?"新しいグループ":null});if(error){console.error(error);alert("会話を作成できませんでした。");return}selectedUsers=[];document.getElementById("new-results").innerHTML="";renderSelected();await loadThreads();await openThread(error?null:data)}
 async function start(){
- sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);const {data}=await sb.auth.getSession();currentUser=data?.session?.user;
- if(!currentUser||!currentUser.email_confirmed_at){document.getElementById("auth-warning").style.display="block";return;}
- document.getElementById("app").style.display="grid";document.getElementById("user-name").textContent=currentUser.email;
- document.getElementById("auth-btn").onclick=async()=>{await sb.auth.signOut();location.href="login.html"};
+ const {data}=await sb.auth.getSession();currentUser=data?.session?.user;if(!currentUser||!currentUser.email_confirmed_at){document.getElementById("auth-warning").style.display="block";return}
+ document.getElementById("messenger").style.display="grid";const params=new URLSearchParams(location.search);
+ const userId=params.get("user");if(userId){selectedUsers=[userId];}
  await loadThreads();
- const params=new URLSearchParams(location.search);
- const threadFromUrl=params.get("thread");
- if(threadFromUrl){
-  const {data:memberRow}=await sb.from("message_members").select("thread_id").eq("thread_id",threadFromUrl).eq("user_id",currentUser.id).maybeSingle();
-  if(memberRow) await openThread(threadFromUrl);
- }
+ const thread=params.get("thread");if(thread){const {data:m}=await sb.from("message_members").select("thread_id").eq("thread_id",thread).eq("user_id",currentUser.id).maybeSingle();if(m)await openThread(thread)}
+ if(userId&&!thread){await createThread(false)}
 }
-document.addEventListener("DOMContentLoaded",()=>{document.getElementById("member-search").addEventListener("input",searchUsers);document.getElementById("start-dm").onclick=()=>createThread(false);document.getElementById("start-group").onclick=()=>createThread(true);document.getElementById("send").onclick=send;document.getElementById("message-input").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}});start();});
-</script>
-</body>
-</html>
+document.addEventListener("DOMContentLoaded",()=>{document.getElementById("user-search").oninput=searchUsers;document.getElementById("start-dm").onclick=()=>createThread(false);document.getElementById("start-group").onclick=()=>createThread(true);document.getElementById("send").onclick=send;document.getElementById("message-input").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}};document.getElementById("message-input").oninput=e=>{e.target.style.height="44px";e.target.style.height=Math.min(e.target.scrollHeight,150)+"px"};document.getElementById("mobile-back").onclick=()=>document.getElementById("messenger").classList.remove("chat-open");start()});
+</script></body></html>
