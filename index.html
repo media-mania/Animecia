@@ -89,7 +89,7 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
 <div class="hero-side-label">ANIME DATABASE</div>
 <strong id="database-count">—</strong>
 <span>公開中のアニメ作品</span>
-<div class="hero-side-row"><span>ジャンル</span><b id="genre-count">33</b></div>
+<div class="hero-side-row"><span>ジャンル</span><b id="genre-count">—</b></div>
 <div class="hero-side-row"><span>作品を探す</span><b>検索・絞り込み</b></div>
 </div>
 </div>
@@ -127,7 +127,7 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
 </section>
 
 <section class="section">
-<div class="section-head"><div><h2 class="section-title">アニメをジャンルから探す</h2><p class="section-desc">33ジャンルから作品を見つけられます</p></div><a class="more" href="discover.html">ジャンル一覧 →</a></div>
+<div class="section-head"><div><h2 class="section-title">アニメをジャンルから探す</h2><p class="section-desc">現在のジャンルから作品を見つけられます</p></div><a class="more" href="discover.html">ジャンル一覧 →</a></div>
 <div class="genre-grid" id="genre-grid"><div class="loading">読み込み中…</div></div>
 </section>
 
@@ -193,8 +193,8 @@ async function load(){
  rank.innerHTML=rankRows.length?rankRows.map((a,i)=>'<a class="rank-item" href="anime-detail.html?id='+a.id+'"><div class="rank-no">'+(i+1)+'</div><div>'+ (a.cover_image?'<img class="rank-thumb" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-thumb"></div>')+'</div><div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+" · "+esc(a.format||"")+'</div></div><div class="rank-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<span>評価</span></div></a>').join(""):'<div class="empty">評価データが集まるとランキングが表示されます。</div>';
  const genres=genreRes.data||[];
  const ge=document.getElementById("genre-grid");
- document.getElementById("genre-count").textContent=genres.length||33;
- ge.innerHTML=genres.slice(0,33).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンルを読み込めませんでした。</div>';
+ document.getElementById("genre-count").textContent=genres.length||"—";
+ ge.innerHTML=genres.slice(0,50).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンルを読み込めませんでした。</div>';
 }
 document.getElementById("search-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("search-input").value.trim();if(q)location.href="anime.html?search="+encodeURIComponent(q);});
 (async()=>{
