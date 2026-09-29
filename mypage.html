@@ -25,60 +25,35 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 @media(max-width:800px){.stats{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}.hero h1{font-size:27px}nav{display:none}}
 @media(max-width:520px){main{padding:26px 13px 50px}.panel{padding:18px}.tabs{gap:6px}.tab{padding:9px 11px}.thumb{width:54px;height:72px}}
 </style>
-<link rel="stylesheet" href="site-theme.css">
 </head>
 <body>
-<header>
-<div class="wrap head">
+<header><div class="wrap head">
 <a class="logo" href="index.html">Animecia</a>
 <nav>
-<a href="index.html">ホーム</a>
-<a href="anime.html">アニメ一覧</a>
-<a href="ranking.html">ランキング</a>
-<a href="anime.html?season=current">今期アニメ</a>
-<a href="recommendations.html">おすすめ</a><a href="discover.html">作品発見</a><a href="genres.html">ジャンル</a><a href="community.html">コミュニティ</a>
-<a href="mypage.html">マイページ</a>
-<a href="compare.html">作品比較</a>
+<a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a>
+<a href="anime.html?season=current">今期アニメ</a><a href="recommendations.html">おすすめ</a>
+<a href="discover.html">作品発見</a><a href="genres.html">ジャンル</a><a href="community.html">コミュニティ</a>
+<a href="compare.html">作品比較</a><a href="mypage.html">マイページ</a>
 </nav>
 <div class="userbar"><span id="user-name"></span><button id="auth-btn" class="btn secondary" type="button">ログイン</button></div>
-</div>
-</header>
-
+</div></header>
 <main>
-<section class="hero"><h1>マイページ</h1><p>お気に入り、視聴状況、評価、レビュー、通知、活動履歴をまとめて管理できます。</p><p style="margin-top:12px"><a class="btn secondary" href="user-search.html">ユーザーを検索</a></p></section>
-
-<div id="auth-warning" class="panel" style="display:none">
-<div class="empty"><h2 style="margin-top:0">ログインが必要です</h2><p>お気に入り、視聴状況、評価、レビューなどを利用するにはログインしてください。</p><br><a class="btn" href="login.html?redirect=mypage.html">ログインする</a><a class="btn secondary" href="signup.html" style="margin-left:8px">新規登録</a></div>
-</div>
-
+<section class="hero"><h1>マイページ</h1><p>お気に入り、視聴状況、評価、レビュー、通知、活動履歴を管理できます。</p><p style="margin-top:12px"><a class="btn secondary" href="user-search.html">ユーザーを検索</a></p></section>
+<div id="auth-warning" class="panel" style="display:none"><div class="empty"><h2>ログインが必要です</h2><p>マイページの機能を利用するにはログインしてください。</p><p><a class="btn" href="login.html?redirect=mypage.html">ログインする</a> <a class="btn secondary" href="signup.html">新規登録</a></p></div></div>
 <div id="content" style="display:none">
-<section class="panel">
-<h2>アカウント統計</h2>
-<div id="stats" class="stats"></div>
-</section>
-
+<section class="panel"><h2>アカウント統計</h2><div id="stats" class="stats"></div></section>
 <section class="panel">
 <h2>プロフィール</h2>
-<div class="profile-head"><img id="avatar-preview" class="avatar" alt="プロフィール画像"><div class="sub">プロフィールは公開プロフィールページにも表示されます。</div></div>
-<div class="avatar-picker">
-<label class="btn secondary" for="avatar-file">ライブラリから選択</label>
-<input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
-<span class="avatar-help">JPG / PNG / WebP / GIF・2MBまで</span>
-</div>
+<div class="profile-head"><img id="avatar-preview" class="avatar" alt="プロフィール画像"><div class="sub">公開プロフィールに表示されます。</div></div>
 <div class="profile-grid">
-<div>
-<div class="field"><label for="username">ユーザー名</label><div class="username-input"><span>@</span><input id="username" maxlength="30" autocomplete="username" placeholder="username"></div><div class="avatar-help">「@」から始まります。入力時に「@」は不要です。</div></div>
+<div><div class="field"><label for="username">ユーザー名</label><div class="username-input"><span>@</span><input id="username" maxlength="30"></div></div>
 <div class="field"><label for="display_name">表示名</label><input id="display_name" maxlength="50"></div>
-<div class="field"><label for="avatar_url">アバターURL</label><input id="avatar_url" type="url" inputmode="url"></div>
+<div class="field"><label for="avatar_url">アバターURL</label><input id="avatar_url" type="url"></div></div>
+<div class="field"><label for="bio">自己紹介</label><textarea id="bio" maxlength="500" style="min-height:150px"></textarea></div>
 </div>
-<div class="field"><label for="bio">自己紹介</label><textarea id="bio" maxlength="500" style="min-height:170px"></textarea></div>
-</div>
-<button id="save-profile" class="btn" type="button">プロフィールを保存</button>
-<div id="profile-msg" class="message"></div>
+<button id="save-profile" class="btn" type="button">プロフィールを保存</button><span id="profile-msg" class="message"></span>
 </section>
-
-<section class="panel">
-<div class="tabs">
+<section class="panel"><div class="tabs">
 <button class="tab active" data-tab="favorites" type="button">お気に入り</button>
 <button class="tab" data-tab="follows" type="button">フォロー中</button>
 <button class="tab" data-tab="watching" type="button">視聴中</button>
@@ -90,411 +65,126 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 <button class="tab" data-tab="reviews" type="button">レビュー</button>
 <button class="tab" data-tab="notifications" type="button">通知 <span id="notification-badge" style="display:none"></span></button>
 <button class="tab" data-tab="activity" type="button">活動履歴</button>
-</div>
-<div id="list" class="list"></div>
-</section>
+</div><div id="list" class="list"></div></section>
 </div>
 </main>
-
 <script>
 const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let supabaseClient=null,currentUser=null,currentTab="favorites";
 
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function titleOf(a){return a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";}
+function imageMarkup(url,alt){return url?'<img class="thumb" src="'+esc(url)+'" alt="'+esc(alt)+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">':'<div class="thumb" style="display:grid;place-items:center;font-size:11px;color:#888">画像なし</div>';}
 
-let currentUser=null,currentTab="favorites";
-
-function isVerifiedUser(user){
-  return Boolean(user && user.is_anonymous !== true && user.email && (user.email_confirmed_at || user.confirmed_at));
+async function getUser(){
+ const {data,error}=await supabaseClient.auth.getUser();
+ if(error){console.error(error);return null;}
+ const u=data?.user||null;
+ return u&&u.email_confirmed_at?u:null;
 }
-
-function imageMarkup(url,alt=""){
-  return '<img class="thumb" data-anime-image src="'+esc(url||"")+'" alt="'+esc(alt)+'" loading="lazy">';
-}
-
-function repairImages(root=document){
-  root.querySelectorAll("img[data-anime-image]").forEach(img=>{
-    if(!img.getAttribute("src")){
-      replaceImage(img);
-      return;
-    }
-    img.addEventListener("error",()=>replaceImage(img),{once:true});
-  });
-}
-
-function replaceImage(img){
-  const placeholder=document.createElement("div");
-  placeholder.className="thumb";
-  placeholder.style.display="flex";
-  placeholder.style.alignItems="center";
-  placeholder.style.justifyContent="center";
-  placeholder.style.color="#888";
-  placeholder.style.fontSize="11px";
-  placeholder.textContent="画像なし";
-  img.replaceWith(placeholder);
-}
-
-async function authState(){
-  const name=document.getElementById("user-name");
-  const btn=document.getElementById("auth-btn");
-  try{
-    const {data,error}=await supabaseClient.auth.getSession();
-    if(error) throw error;
-    const user=data?.session?.user||null;
-    if(user){
-      name.textContent=user.email||"";
-      btn.textContent="ログアウト";
-      btn.onclick=async()=>{await supabaseClient.auth.signOut();location.reload();};
-    }else{
-      name.textContent="";
-      btn.textContent="ログイン";
-      btn.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);
-      return null;
-    }
-    if(!isVerifiedUser(user)){
-      btn.textContent="ログイン";
-      btn.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);
-      return null;
-    }
-    return user;
-  }catch(error){
-    console.error("Auth error:",error);
-    name.textContent="";
-    btn.textContent="ログイン";
-    btn.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);
-    return null;
-  }
-}
-
-async function loadStats(){
-  const stats=document.getElementById("stats");
-  stats.innerHTML='<div class="loading" style="grid-column:1/-1">統計を読み込み中…</div>';
-  try{
-    const [fav,watch,rating]=await Promise.all([
-      supabaseClient.from("favorites").select("anime_id",{count:"exact",head:true}).eq("user_id",currentUser.id),
-      supabaseClient.from("watch_status").select("status").eq("user_id",currentUser.id),
-      supabaseClient.from("user_ratings").select("rating").eq("user_id",currentUser.id)
-    ]);
-    const errors=[fav.error,watch.error,rating.error].filter(Boolean);
-    if(errors.length) console.error("Stats errors:",errors);
-    const watchingCount=(watch.data||[]).filter(x=>x.status==="watching").length;
-    const completedCount=(watch.data||[]).filter(x=>x.status==="completed").length;
-    const ratings=(rating.data||[]).map(x=>Number(x.rating)).filter(Number.isFinite);
-    const average=ratings.length?(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1):"—";
-    stats.innerHTML=[
-      ["favorite_count","お気に入り",fav.count??0],
-      ["watching_count","視聴中",watchingCount],
-      ["completed_count","視聴完了",completedCount],
-      ["average_rating","平均評価",average]
-    ].map(([k,l,v])=>'<div class="stat"><span class="stat-label">'+l+'</span><b>'+esc(v)+'</b></div>').join("");
-  }catch(error){
-    console.error("Stats error:",error);
-    stats.innerHTML='<div class="error" style="grid-column:1/-1">統計を読み込めませんでした。</div>';
-  }
+async function getAnime(ids){
+ const unique=[...new Set((ids||[]).map(Number).filter(Number.isInteger))],map=new Map();
+ for(let i=0;i<unique.length;i+=500){
+  const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,format").in("id",unique.slice(i,i+500));
+  if(error){console.error(error);continue;}
+  (data||[]).forEach(a=>map.set(Number(a.id),a));
+ }
+ return map;
 }
 async function loadProfile(){
-  const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,bio").eq("id",currentUser.id).maybeSingle();
-  if(error){console.error("Profile error:",error);return;}
-  if(!data)return;
-  for(const key of ["username","display_name","avatar_url","bio"]){
-    const value=data[key]||"";
-    document.getElementById(key).value=key==="username" ? String(value).replace(/^@/,"") : value;
-  }
-  updateAvatarPreview(data.avatar_url||"");
+ const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,bio").eq("id",currentUser.id).maybeSingle();
+ if(error){console.error(error);return;}
+ if(!data)return;
+ document.getElementById("username").value=String(data.username||"").replace(/^@/,"");
+ document.getElementById("display_name").value=data.display_name||"";
+ document.getElementById("avatar_url").value=data.avatar_url||"";
+ document.getElementById("bio").value=data.bio||"";
+ document.getElementById("avatar-preview").src=data.avatar_url||"";
 }
-
-function updateAvatarPreview(url){
-  const img=document.getElementById("avatar-preview");
-  img.onerror=()=>{img.removeAttribute("src");img.alt="画像なし";};
-  img.src=url||"";
-  if(!url)img.alt="画像なし";
-}
-
 async function saveProfile(){
-  const msg=document.getElementById("profile-msg");
-  const button=document.getElementById("save-profile");
-  const usernameRaw=document.getElementById("username").value.trim();
-  const username=usernameRaw.replace(/^@+/,"");
-
-  if(!currentUser){
-    msg.textContent="ログインしてください。";
-    return;
-  }
-
-  if(username && !/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){
-    msg.textContent="ユーザー名は@を除いて2〜30文字で入力してください。";
-    return;
-  }
-
-  const payload={
-    id:currentUser.id,
-    username:username ? "@"+username : null,
-    display_name:document.getElementById("display_name").value.trim()||null,
-    avatar_url:document.getElementById("avatar_url").value.trim()||null,
-    bio:document.getElementById("bio").value.trim()||null,
-    updated_at:new Date().toISOString()
-  };
-
-  button.disabled=true;
-  const originalText=button.textContent;
-  button.textContent="保存中…";
-  msg.textContent="";
-
-  try{
-    // 既存プロフィールがある場合はUPDATE、ない場合だけINSERT。
-    const {data:existing,error:findError}=await supabaseClient
-      .from("profiles")
-      .select("id")
-      .eq("id",currentUser.id)
-      .maybeSingle();
-
-    if(findError)throw findError;
-
-    let error=null;
-
-    if(existing?.id){
-      const result=await supabaseClient
-        .from("profiles")
-        .update(payload)
-        .eq("id",currentUser.id)
-        .select("id")
-        .single();
-      error=result.error;
-    }else{
-      const result=await supabaseClient
-        .from("profiles")
-        .insert(payload)
-        .select("id")
-        .single();
-      error=result.error;
-    }
-
-    if(error){
-      console.error("Save profile error:",error);
-      if(error.code==="23505" && String(error.message||"").includes("profiles_username_key")){
-        throw new Error("そのユーザー名はすでに使用されています。");
-      }
-      throw error;
-    }
-
-    updateAvatarPreview(payload.avatar_url||"");
-    msg.textContent="プロフィールを保存しました。";
-  }catch(error){
-    console.error("Save profile error:",error);
-    msg.textContent=error?.message||"プロフィールの保存に失敗しました。";
-  }finally{
-    button.disabled=false;
-    button.textContent=originalText;
-  }
+ const msg=document.getElementById("profile-msg"),username=document.getElementById("username").value.trim().replace(/^@+/,"");
+ if(username&&!/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){msg.textContent="ユーザー名は2〜30文字で入力してください。";return;}
+ const payload={id:currentUser.id,username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,updated_at:new Date().toISOString()};
+ const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
+ if(error){console.error(error);msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";return;}
+ document.getElementById("avatar-preview").src=payload.avatar_url||"";
+ msg.textContent="プロフィールを保存しました。";
 }
-
-async function getAnime(ids){
-  const unique=[...new Set((ids||[]).filter(Boolean).map(Number).filter(Number.isInteger))];
-  const map=new Map();
-  for(let i=0;i<unique.length;i+=500){
-    const batch=unique.slice(i,i+500);
-    const {data,error}=await supabaseClient
-      .from("anime")
-      .select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,format")
-      .in("id",batch);
-    if(error){console.error("Anime fetch error:",error);break;}
-    (data||[]).forEach(a=>map.set(Number(a.id),a));
-  }
-  return map;
+async function loadStats(){
+ const el=document.getElementById("stats");
+ const [fav,watch,ratings]=await Promise.all([
+  supabaseClient.from("favorites").select("anime_id",{count:"exact",head:true}).eq("user_id",currentUser.id),
+  supabaseClient.from("watch_status").select("status").eq("user_id",currentUser.id),
+  supabaseClient.from("user_ratings").select("rating").eq("user_id",currentUser.id)
+ ]);
+ const w=watch.data||[],r=(ratings.data||[]).map(x=>Number(x.rating)).filter(Number.isFinite);
+ const avg=r.length?(r.reduce((a,b)=>a+b,0)/r.length).toFixed(1):"—";
+ el.innerHTML=[["お気に入り",fav.count??0],["視聴中",w.filter(x=>x.status==="watching").length],["視聴完了",w.filter(x=>x.status==="completed").length],["平均評価",avg]].map(x=>'<div class="stat"><span class="stat-label">'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join("");
 }
-
-async function loadNotifications(){
-  const el=document.getElementById("list");
-  const {data,error}=await supabaseClient.from("user_notifications")
-    .select("id,title,message,target_url,is_read,created_at")
-    .eq("user_id",currentUser.id)
-    .order("created_at",{ascending:false})
-    .limit(100);
-  if(error){el.innerHTML='<div class="error">通知を読み込めませんでした。</div>';return;}
-  const rows=data||[];
-  const unreadCount=rows.filter(n=>!n.is_read).length;
-  const badge=document.getElementById("notification-badge");
-  if(badge){badge.textContent=unreadCount?String(unreadCount):"";badge.style.display=unreadCount?"inline-block":"none";badge.style.background="#d92d20";badge.style.color="#fff";badge.style.borderRadius="999px";badge.style.padding="2px 6px";badge.style.fontSize="11px";}
-  const controls=rows.some(n=>!n.is_read)?'<div style="margin-bottom:12px"><button id="mark-all-read" class="btn secondary" type="button">すべて既読にする</button></div>':"";
-  el.innerHTML=controls+(rows.map(n=>'<div class="list-item" style="align-items:flex-start;'+(n.is_read?"":"background:#f8f9ff;border-color:#cdd2ff;")+'"><div class="grow"><div class="title">'+esc(n.title)+'</div><div class="sub">'+esc(n.message||"")+'</div><div class="meta"><span>'+new Date(n.created_at).toLocaleString("ja-JP")+'</span>'+(n.is_read?'':'<span class="pill">未読</span>')+'</div>'+(n.target_url?'<div style="margin-top:8px"><a class="btn secondary" href="'+esc(n.target_url)+'">開く</a></div>':'')+'</div></div>').join("")||'<div class="empty">通知はありません。</div>';
-  document.getElementById("mark-all-read")?.addEventListener("click",async()=>{
-    const {error}=await supabaseClient.from("user_notifications").update({is_read:true}).eq("user_id",currentUser.id).eq("is_read",false);
-    if(error){alert("既読処理に失敗しました。");return;}
-    await loadNotifications();
-  });
+function renderAnimeList(rows,map,labelFn){
+ const el=document.getElementById("list");
+ const html=rows.map(x=>{const a=map.get(Number(x.anime_id));if(!a)return "";return '<a class="list-item" href="anime-detail.html?id='+a.id+'">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="meta"><span class="pill">'+esc(labelFn(x))+'</span></div></div></a>';}).join("");
+ el.innerHTML=html||'<div class="empty">該当する作品はありません。</div>';
 }
-
-async function loadActivity(){
-  const el=document.getElementById("list");
-  const {data,error}=await supabaseClient.from("user_activity")
-    .select("anime_id,activity_type,metadata,created_at")
-    .eq("user_id",currentUser.id)
-    .order("created_at",{ascending:false})
-    .limit(100);
-  if(error){el.innerHTML='<div class="error">活動履歴を読み込めませんでした。</div>';return;}
-  const rows=data||[];
-  const map=await getAnime(rows.map(x=>x.anime_id));
-  const labels={favorite:"お気に入り",unfavorite:"お気に入り解除",status_change:"視聴状況変更",rating:"評価",review:"レビュー",review_like:"レビューいいね",progress:"進捗更新",follow:"フォロー"};
-  el.innerHTML=rows.map(x=>{
-    const a=map.get(Number(x.anime_id));
-    const name=a?titleOf(a):"作品";
-    return '<div class="list-item"><div class="grow"><div class="title">'+esc(labels[x.activity_type]||x.activity_type)+'：'+(a?'<a href="anime-detail.html?id='+encodeURIComponent(a.id)+'">'+esc(name)+'</a>':esc(name))+'</div><div class="sub">'+esc(JSON.stringify(x.metadata||{}))+'</div><div class="meta"><span>'+new Date(x.created_at).toLocaleString("ja-JP")+'</span></div></div></div>';
-  }).join("")||'<div class="empty">活動履歴はありません。</div>';
-}
-
 async function loadTab(){
-  const el=document.getElementById("list");
-  el.innerHTML='<div class="loading">読み込み中…</div>';
-
-  if(currentTab==="notifications"){await loadNotifications();return;}
-  if(currentTab==="activity"){await loadActivity();return;}
-
-  if(currentTab==="follows"){
-    const {data,error}=await supabaseClient
-      .from("user_anime_follows")
-      .select("anime_id,notify_new_episode,notify_new_info,created_at")
-      .eq("user_id",currentUser.id)
-      .order("created_at",{ascending:false});
-
-    if(error){
-      console.error("Follow load error:",error);
-      el.innerHTML='<div class="error">フォロー中の作品を読み込めませんでした。</div>';
-      return;
-    }
-
-    const rows=data||[];
-    const map=await getAnime(rows.map(x=>x.anime_id));
-    el.innerHTML=rows.map(x=>{
-      const a=map.get(Number(x.anime_id));
-      if(!a)return"";
-      const notices=[];
-      if(x.notify_new_episode)notices.push("新エピソード通知");
-      if(x.notify_new_info)notices.push("作品情報通知");
-      return '<a class="list-item" href="anime-detail.html?id='+a.id+'">'+
-        imageMarkup(a.cover_image,titleOf(a))+
-        '<div class="grow"><div class="title">'+esc(titleOf(a))+'</div>'+
-        '<div class="meta"><span class="pill">フォロー中</span>'+
-        (notices.length?'<span>'+esc(notices.join(" / "))+'</span>':'')+
-        '</div></div></a>';
-    }).join("")||'<div class="empty">まだフォローしている作品はありません。</div>';
-
-    repairImages(el);
-    return;
-  }
-
+ const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';
+ try{
   if(currentTab==="favorites"){
-    const {data,error}=await supabaseClient.from("favorites").select("anime_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});
-    if(error){el.innerHTML='<div class="error">お気に入りを読み込めませんでした。</div>';return;}
-    const map=await getAnime((data||[]).map(x=>x.anime_id));
-    renderCards((data||[]).map(x=>map.get(Number(x.anime_id))).filter(Boolean));
-    return;
+   const {data,error}=await supabaseClient.from("favorites").select("anime_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});if(error)throw error;
+   const map=await getAnime((data||[]).map(x=>x.anime_id));renderAnimeList(data||[],map,()=> "お気に入り");return;
   }
-
+  if(currentTab==="follows"){
+   const {data,error}=await supabaseClient.from("user_anime_follows").select("anime_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});if(error)throw error;
+   const map=await getAnime((data||[]).map(x=>x.anime_id));renderAnimeList(data||[],map,()=> "フォロー中");return;
+  }
   if(currentTab==="ratings"){
-    const {data,error}=await supabaseClient.from("user_ratings").select("anime_id,rating,updated_at").eq("user_id",currentUser.id).order("updated_at",{ascending:false});
-    if(error){el.innerHTML='<div class="error">評価を読み込めませんでした。</div>';return;}
-    const map=await getAnime((data||[]).map(x=>x.anime_id));
-    el.innerHTML=(data||[]).map(x=>{
-      const a=map.get(Number(x.anime_id));
-      if(!a)return"";
-      return '<a class="list-item" href="anime-detail.html?id='+a.id+'">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="meta"><span class="pill">★ '+esc(x.rating)+'/10</span></div></div></a>';
-    }).join("")||'<div class="empty">まだ評価した作品はありません。</div>';
-    repairImages(el);
-    return;
+   const {data,error}=await supabaseClient.from("user_ratings").select("anime_id,rating,updated_at").eq("user_id",currentUser.id).order("updated_at",{ascending:false});if(error)throw error;
+   const map=await getAnime((data||[]).map(x=>x.anime_id));renderAnimeList(data||[],map,x=>"★ "+x.rating+"/10");return;
   }
-
   if(currentTab==="reviews"){
-    const {data,error}=await supabaseClient.from("reviews").select("id,anime_id,title,content,rating,spoiler,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});
-    if(error){el.innerHTML='<div class="error">レビューを読み込めませんでした。</div>';return;}
-    const map=await getAnime((data||[]).map(x=>x.anime_id));
-    el.innerHTML=(data||[]).map(x=>{
-      const a=map.get(Number(x.anime_id));
-      if(!a)return"";
-      return '<div class="list-item" style="align-items:flex-start">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><a href="anime-detail.html?id='+a.id+'" class="title">'+esc(titleOf(a))+'</a><div class="sub">'+esc(x.title||"レビュー")+(x.rating!=null?" · ★ "+esc(x.rating)+"/10":"")+(x.spoiler?' · ネタバレあり':'')+'</div><div class="sub" style="margin-top:6px">'+esc(x.content).slice(0,220)+(x.content.length>220?"…":"")+'</div><div class="meta"><span>'+new Date(x.created_at).toLocaleDateString("ja-JP")+'</span></div></div></div>';
-    }).join("")||'<div class="empty">まだレビューはありません。</div>';
-    repairImages(el);
-    return;
+   const {data,error}=await supabaseClient.from("reviews").select("anime_id,title,content,rating,spoiler,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});if(error)throw error;
+   const map=await getAnime((data||[]).map(x=>x.anime_id));
+   el.innerHTML=(data||[]).map(x=>{const a=map.get(Number(x.anime_id));if(!a)return "";return '<div class="list-item" style="align-items:flex-start">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><a class="title" href="anime-detail.html?id='+a.id+'">'+esc(titleOf(a))+'</a><div class="sub">'+esc(x.title||"レビュー")+(x.rating!=null?" ・ ★"+esc(x.rating):"")+(x.spoiler?" ・ ネタバレあり":"")+'</div><div class="sub">'+esc(x.content||"")+'</div></div></div>';}).join("")||'<div class="empty">レビューはありません。</div>';return;
   }
-
-  const {data,error}=await supabaseClient.from("watch_status")
-    .select("anime_id,status,progress,updated_at")
-    .eq("user_id",currentUser.id)
-    .eq("status",currentTab)
-    .order("updated_at",{ascending:false});
-
-  if(error){el.innerHTML='<div class="error">視聴状況を読み込めませんでした。</div>';return;}
-
-  const map=await getAnime((data||[]).map(x=>x.anime_id));
-  const statusLabels={watching:"視聴中",completed:"視聴完了",want_to_watch:"視聴予定",paused:"一時停止",dropped:"視聴中止"};
-  el.innerHTML=(data||[]).map(x=>{
-    const a=map.get(Number(x.anime_id));
-    if(!a)return"";
-    return '<a class="list-item" href="anime-detail.html?id='+a.id+'">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="meta"><span class="pill">'+esc(statusLabels[x.status]||x.status)+'</span><span>進捗 '+esc(x.progress||0)+'話</span></div></div></a>';
-  }).join("")||'<div class="empty">該当作品はありません。</div>';
-  repairImages(el);
-}
-
-function renderCards(arr){
-  const el=document.getElementById("list");
-  el.innerHTML=arr.map(a=>'<a class="list-item" href="anime-detail.html?id='+a.id+'">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="sub">'+esc(a.format||"")+'</div></div></a>').join("")||'<div class="empty">該当作品はありません。</div>';
-  repairImages(el);
-}
-
-document.querySelectorAll(".tab").forEach(button=>{
-  button.addEventListener("click",()=>{
-    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-    button.classList.add("active");
-    currentTab=button.dataset.tab;
-    loadTab();
-  });
-});
-
-document.getElementById("avatar_url").addEventListener("input",e=>updateAvatarPreview(e.target.value.trim()));
-document.getElementById("avatar-file").addEventListener("change",async e=>{
-  const file=e.target.files?.[0];
-  const msg=document.getElementById("profile-msg");
-  if(!file)return;
-  if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type)){msg.textContent="対応していない画像形式です。";e.target.value="";return;}
-  if(file.size>2*1024*1024){msg.textContent="画像は2MB以下にしてください。";e.target.value="";return;}
-  msg.textContent="画像をアップロードしています…";
-  const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
-  const path=currentUser.id+"/"+crypto.randomUUID()+"."+ext;
-  const {error}=await supabaseClient.storage.from("profile-avatars").upload(path,file,{contentType:file.type,upsert:false});
-  if(error){console.error("Avatar upload error:",error);msg.textContent="画像のアップロードに失敗しました。";return;}
-  const {data}=supabaseClient.storage.from("profile-avatars").getPublicUrl(path);
-  document.getElementById("avatar_url").value=data.publicUrl;
-  updateAvatarPreview(data.publicUrl);
-  msg.textContent="画像を選択しました。プロフィールを保存すると反映されます。";
-});
-document.getElementById("save-profile").addEventListener("click",saveProfile);
-
-window.addEventListener("error",event=>{
-  console.error("Mypage error:",event.error||event.message);
-});
-
-(async()=>{
-  const warning=document.getElementById("auth-warning");
-  const content=document.getElementById("content");
-  warning.style.display="none";
-  try{
-    currentUser=await authState();
-    if(!currentUser){
-      warning.style.display="block";
-      return;
-    }
-    content.style.display="block";
-    await loadProfile();
-    await loadStats();
-    await loadTab();
-  }catch(error){
-    console.error("Mypage initialization error:",error);
-    warning.style.display="none";
-    content.style.display="block";
-    document.getElementById("list").innerHTML='<div class="error">マイページの読み込みに失敗しました。<br>ページを再読み込みしてください。</div>';
+  if(currentTab==="notifications"){
+   const {data,error}=await supabaseClient.from("user_notifications").select("id,title,message,target_url,is_read,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);if(error)throw error;
+   const rows=data||[],unread=rows.filter(x=>!x.is_read).length;document.getElementById("notification-badge").textContent=unread?String(unread):"";document.getElementById("notification-badge").style.display=unread?"inline-block":"none";
+   el.innerHTML=rows.map(x=>'<div class="list-item"><div class="grow"><div class="title">'+esc(x.title||"通知")+'</div><div class="sub">'+esc(x.message||"")+'</div><div class="meta">'+new Date(x.created_at).toLocaleString("ja-JP")+(x.is_read?"":" ・ 未読")+'</div>'+(x.target_url?'<a class="btn secondary" href="'+esc(x.target_url)+'">開く</a>':"")+'</div></div>').join("")||'<div class="empty">通知はありません。</div>';return;
   }
-})();
+  if(currentTab==="activity"){
+   const {data,error}=await supabaseClient.from("user_activity").select("anime_id,activity_type,metadata,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);if(error)throw error;
+   const map=await getAnime((data||[]).map(x=>x.anime_id));const labels={favorite:"お気に入り",unfavorite:"お気に入り解除",status_change:"視聴状況変更",rating:"評価",review:"レビュー",review_like:"レビューへのいいね",progress:"進捗更新",follow:"フォロー"};
+   el.innerHTML=(data||[]).map(x=>{const a=map.get(Number(x.anime_id));return '<div class="list-item"><div class="grow"><div class="title">'+esc(labels[x.activity_type]||x.activity_type)+(a?'：<a href="anime-detail.html?id='+a.id+'">'+esc(titleOf(a))+'</a>':"")+'</div><div class="meta">'+new Date(x.created_at).toLocaleString("ja-JP")+'</div></div></div>';}).join("")||'<div class="empty">活動履歴はありません。</div>';return;
+  }
+  const {data,error}=await supabaseClient.from("watch_status").select("anime_id,status,progress,updated_at").eq("user_id",currentUser.id).eq("status",currentTab).order("updated_at",{ascending:false});if(error)throw error;
+  const map=await getAnime((data||[]).map(x=>x.anime_id));const labels={watching:"視聴中",completed:"視聴完了",want_to_watch:"視聴予定",paused:"一時停止",dropped:"視聴中止"};renderAnimeList(data||[],map,x=>(labels[x.status]||x.status)+" ・ "+(x.progress||0)+"話");
+ }catch(e){console.error("mypage tab error",e);el.innerHTML='<div class="error">この項目を読み込めませんでした。</div>';}
+}
+async function start(){
+ try{
+  if(!window.supabase){throw new Error("Supabase library not loaded");}
+  supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  const {data,error}=await supabaseClient.auth.getSession();if(error)throw error;
+  const user=data?.session?.user||null;
+  document.getElementById("user-name").textContent=user?.email||"";
+  if(!user||!user.email_confirmed_at){
+   document.getElementById("auth-warning").style.display="block";
+   document.getElementById("auth-btn").onclick=()=>location.href="login.html?redirect=mypage.html";
+   return;
+  }
+  currentUser=user;
+  document.getElementById("content").style.display="block";
+  document.getElementById("auth-btn").textContent="ログアウト";
+  document.getElementById("auth-btn").onclick=async()=>{await supabaseClient.auth.signOut();location.href="mypage.html";};
+  await Promise.all([loadProfile(),loadStats()]);
+  await loadTab();
+ }catch(e){console.error("mypage start error",e);document.getElementById("auth-warning").style.display="block";document.getElementById("auth-warning").innerHTML='<div class="error">マイページを読み込めませんでした。ページを再読み込みしてください。</div>';}
+}
+document.addEventListener("DOMContentLoaded",()=>{
+ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;await loadTab();}));
+ document.getElementById("save-profile").addEventListener("click",saveProfile);
+ start();
+});
 </script>
-</body>
-</html>
+</body></html>
