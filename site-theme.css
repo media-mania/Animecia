@@ -1048,3 +1048,324 @@ input:focus,select:focus,textarea:focus,
   .auth-modal-card{padding:22px!important}
   .info-table th{width:100px}
 }
+
+
+/* =========================================================
+   Animecia v4 — Unified discovery-first redesign
+   Inspired by the information architecture of major anime
+   databases, while keeping Animecia's own visual language.
+   ========================================================= */
+
+:root{
+  --ac4-red:#e6002d;
+  --ac4-red-dark:#b90024;
+  --ac4-ink:#15181d;
+  --ac4-muted:#737983;
+  --ac4-line:#e2e5e9;
+  --ac4-bg:#f5f6f8;
+  --ac4-surface:#fff;
+  --ac4-soft:#fff2f5;
+  --ac4-dark:#10141a;
+  --ac4-radius:14px;
+  --ac4-shadow:0 8px 28px rgba(16,20,26,.055);
+  --ac4-shadow-lg:0 18px 50px rgba(16,20,26,.10);
+}
+
+/* Shared page rhythm */
+body{
+  background:
+    linear-gradient(180deg,#fff 0,#f7f8fa 180px,#f5f6f8 100%)!important;
+}
+main{
+  width:min(1280px,100%)!important;
+  margin-inline:auto!important;
+}
+main > *{
+  max-width:100%;
+}
+h1,h2,h3,h4{
+  color:var(--ac4-ink);
+}
+p{
+  color:inherit;
+}
+
+/* Header: compact, readable, consistent */
+header,.site-header{
+  height:68px!important;
+  background:rgba(16,20,26,.97)!important;
+  box-shadow:0 4px 20px rgba(0,0,0,.13)!important;
+}
+.header-inner,.wrap.head{
+  min-height:68px!important;
+  width:min(1280px,100%)!important;
+  padding:0 20px!important;
+  gap:18px!important;
+}
+.logo{
+  font-size:23px!important;
+}
+.main-nav,.site-nav,header nav{
+  gap:2px!important;
+}
+.main-nav a,.site-nav a,header nav a{
+  padding:8px 10px!important;
+  border-radius:8px!important;
+  font-size:12px!important;
+  font-weight:800!important;
+}
+.main-nav a:hover,.site-nav a:hover,header nav a:hover{
+  background:rgba(255,255,255,.09)!important;
+}
+.userbar .btn,.userbar a,.header-actions a{
+  border-radius:9px!important;
+}
+
+/* Page headers */
+.page-header,.hero{
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:var(--ac4-shadow-lg);
+}
+.page-header{
+  background:
+    radial-gradient(circle at 90% 0,rgba(230,0,45,.18),transparent 35%),
+    linear-gradient(135deg,#12161d,#242a33)!important;
+  color:#fff!important;
+}
+.page-header h1,.page-header h2,.hero h1,.hero h2{
+  color:#fff!important;
+}
+.page-header p,.hero p{
+  color:#cbd0d7!important;
+}
+
+/* Search-first controls */
+.search-box{
+  border-radius:13px!important;
+}
+.search-button,.search-btn,.primary,.btn-primary{
+  background:var(--ac4-red)!important;
+  border-color:var(--ac4-red)!important;
+  color:#fff!important;
+}
+.search-button:hover,.search-btn:hover,.primary:hover,.btn-primary:hover{
+  background:var(--ac4-red-dark)!important;
+}
+input,select,textarea{
+  border-radius:10px!important;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--ac4-red)!important;
+}
+
+/* Lists and cards */
+.panel,.card,.profile-card,.list-item,.review-item,.anime-card,.feature-card,.genre-card{
+  background:var(--ac4-surface)!important;
+  border:1px solid var(--ac4-line)!important;
+  border-radius:var(--ac4-radius)!important;
+  box-shadow:var(--ac4-shadow)!important;
+}
+.card:hover,.anime-card:hover,.genre-card:hover,.feature-card:hover{
+  border-color:#d5d9df!important;
+  box-shadow:0 15px 35px rgba(16,20,26,.09)!important;
+}
+
+/* Anime grids */
+.anime-grid,.grid,.recommendation-grid{
+  gap:14px!important;
+}
+.anime-card-image{
+  border-radius:13px 13px 0 0!important;
+}
+.anime-card h3{
+  font-size:15px!important;
+  line-height:1.45!important;
+}
+.anime-meta span,.pill,.badge,.chip{
+  border-radius:999px!important;
+}
+
+/* Ranking pages */
+.rank,.ranking-item,.rank-item{
+  border-bottom:1px solid #eef0f2;
+}
+.rank:last-child,.ranking-item:last-child,.rank-item:last-child{
+  border-bottom:0;
+}
+.rank-score,.score,.rating,.review-rating{
+  color:var(--ac4-red)!important;
+  font-weight:950!important;
+}
+
+/* Tabs: clear selected state */
+.tabs,.tab-list{
+  border-bottom:1px solid var(--ac4-line)!important;
+}
+.tab.active,.tabs .active{
+  color:var(--ac4-red)!important;
+  background:var(--ac4-soft)!important;
+  border-color:#ffc4cf!important;
+  font-weight:900!important;
+}
+
+/* Profile/stat blocks */
+.stats,.stats-grid,.profile-grid{
+  gap:12px!important;
+}
+.stat,.stat-card,.profile-stat{
+  background:#fff!important;
+  border:1px solid var(--ac4-line)!important;
+  border-radius:12px!important;
+  box-shadow:0 5px 18px rgba(16,20,26,.04)!important;
+}
+
+/* Forms / actions */
+button,.btn{
+  min-height:40px;
+  border-radius:10px!important;
+  font-weight:800!important;
+}
+button:not(.secondary):not(.ghost):not(.tab):not(.season-button){
+  border-color:var(--ac4-red);
+}
+.secondary,.ghost{
+  background:#f4f5f7!important;
+  color:#343941!important;
+  border:1px solid #dfe2e6!important;
+}
+.danger{
+  background:#fff1f2!important;
+  color:#b00025!important;
+  border-color:#ffc7d0!important;
+}
+
+/* Review/community cards */
+.review,.review-card{
+  border:1px solid var(--ac4-line)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:var(--ac4-shadow)!important;
+}
+.review-head{
+  border-bottom:1px solid #eef0f2!important;
+}
+.review-content,.review-body{
+  line-height:1.85!important;
+}
+
+/* Detail page: keep favorite action obvious */
+#favorite-button{
+  min-width:154px!important;
+  font-weight:900!important;
+}
+#favorite-button.active{
+  background:#17191d!important;
+  color:#fff!important;
+}
+
+/* Footer */
+footer,.site-footer{
+  margin-top:55px!important;
+  background:#10141a!important;
+}
+
+/* Home page v4 */
+header .nav{
+  min-height:68px!important;
+}
+header .nav .brand{
+  color:#fff!important;
+}
+.home-v4,.home-v4 .container{
+  width:min(1280px,100%);
+}
+.home-v4 .hero{
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 85% 5%,rgba(230,0,45,.25),transparent 32%),
+    linear-gradient(135deg,#11151c,#252b34)!important;
+}
+.home-v4 .hero h1{
+  letter-spacing:-.055em!important;
+}
+.home-v4 .hero-search{
+  border:1px solid #e1e4e8;
+}
+.home-v4 .hero-search button{
+  background:var(--ac4-red)!important;
+}
+.home-v4 .quick a{
+  border:1px solid var(--ac4-line)!important;
+  box-shadow:var(--ac4-shadow)!important;
+}
+.home-v4 .quick a:hover{
+  border-color:#ffb8c5!important;
+}
+.home-v4 .section-title{
+  font-weight:950!important;
+}
+.home-v4 .card{
+  border-radius:13px!important;
+}
+.home-v4 .rank-layout{
+  grid-template-columns:1.35fr .65fr;
+}
+.home-v4 .score{
+  color:var(--ac4-red)!important;
+}
+.home-v4 .discover-card:after{
+  background:var(--ac4-soft)!important;
+}
+.home-v4 .genre:hover{
+  border-color:#ffc3cd!important;
+  background:var(--ac4-soft)!important;
+}
+
+/* Mobile: prioritize content over navigation */
+@media(max-width:760px){
+  header,.site-header{height:62px!important}
+  .header-inner,.wrap.head{min-height:62px!important;padding:0 12px!important}
+  main{padding-left:12px!important;padding-right:12px!important}
+  .main-nav,.site-nav,header nav{
+    display:flex!important;
+    overflow-x:auto!important;
+  }
+  .main-nav a,.site-nav a,header nav a{
+    font-size:11px!important;
+    padding:7px 8px!important;
+  }
+  .userbar,.header-actions{display:none!important}
+  .page-header,.hero{border-radius:14px!important}
+  .anime-grid,.grid,.recommendation-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+  }
+  .filters{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .profile-grid,.stats,.stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .home-v4 .hero-inner{
+    grid-template-columns:1fr!important;
+    padding:34px 20px 24px!important;
+  }
+  .home-v4 .cards{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .home-v4 .rank-layout,.home-v4 .discovery,.home-v4 .features{
+    grid-template-columns:1fr!important;
+  }
+}
+@media(max-width:470px){
+  .main-nav a,.site-nav a,header nav a{
+    font-size:10px!important;
+    padding:7px 7px!important;
+  }
+  .filters{
+    grid-template-columns:1fr!important;
+  }
+  .profile-grid,.stats,.stats-grid{
+    grid-template-columns:1fr 1fr!important;
+  }
+}
