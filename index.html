@@ -88,7 +88,7 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
 <div class="hero-side">
 <div class="hero-side-label">ANIME DATABASE</div>
 <strong id="database-count">—</strong>
-<span>登録作品数</span>
+<span>公開作品数</span>
 <div class="hero-side-row"><span>ジャンル</span><b id="genre-count">—</b></div>
 <div class="hero-side-row"><span>作品を探す</span><b>検索・絞り込み</b></div>
 </div>
@@ -177,7 +177,7 @@ async function load(){
  const month=new Date().getMonth()+1;
  const season=month<=3?"WINTER":month<=6?"SPRING":month<=9?"SUMMER":"FALL";
  const [count,seasonRes,rankRes,newRes,genreRes]=await Promise.all([
-   sb.from("anime").select("id",{count:"exact",head:true}),
+   sb.from("anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").neq("format","SPECIAL"),
    sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,average_score,anime_verification_status,season,season_year,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").eq("season_year",year).eq("season",season).order("average_score",{ascending:false,nullsFirst:false}).limit(10),
    sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").not("average_score","is",null).order("average_score",{ascending:false}).limit(10),
    sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").order("created_at",{ascending:false}).limit(10),
