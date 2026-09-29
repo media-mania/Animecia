@@ -88,7 +88,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 <button class="tab" data-tab="dropped" type="button">視聴中止</button>
 <button class="tab" data-tab="ratings" type="button">評価</button>
 <button class="tab" data-tab="reviews" type="button">レビュー</button>
-<button class="tab" data-tab="notifications" type="button">通知</button>
+<button class="tab" data-tab="notifications" type="button">通知 <span id="notification-badge" style="display:none"></span></button>
 <button class="tab" data-tab="activity" type="button">活動履歴</button>
 </div>
 <div id="list" class="list"></div>
@@ -296,11 +296,16 @@ async function loadNotifications(){
     .limit(100);
   if(error){el.innerHTML='<div class="error">通知を読み込めませんでした。</div>';return;}
   const rows=data||[];
-  el.innerHTML=rows.map(n=>'<div class="list-item" style="align-items:flex-start"><div class="grow"><div class="title">'+esc(n.title)+'</div><div class="sub">'+esc(n.message||"")+'</div><div class="meta"><span>'+new Date(n.created_at).toLocaleString("ja-JP")+'</span>'+(n.is_read?'':'<span class="pill">未読</span>')+'</div>'+(n.target_url?'<div style="margin-top:8px"><a class="btn secondary" href="'+esc(n.target_url)+'">開く</a></div>':'')+'</div></div>').join("")||'<div class="empty">通知はありません。</div>';
-  const unread=rows.filter(n=>!n.is_read).map(n=>n.id);
-  if(unread.length){
-    await supabaseClient.from("user_notifications").update({is_read:true}).in("id",unread).eq("user_id",currentUser.id);
-  }
+  const unreadCount=rows.filter(n=>!n.is_read).length;
+  const badge=document.getElementById("notification-badge");
+  if(badge){badge.textContent=unreadCount?String(unreadCount):"";badge.style.display=unreadCount?"inline-block":"none";badge.style.background="#d92d20";badge.style.color="#fff";badge.style.borderRadius="999px";badge.style.padding="2px 6px";badge.style.fontSize="11px";}
+  const controls=rows.some(n=>!n.is_read)?'<div style="margin-bottom:12px"><button id="mark-all-read" class="btn secondary" type="button">すべて既読にする</button></div>':"";
+  el.innerHTML=controls+(rows.map(n=>'<div class="list-item" style="align-items:flex-start;'+(n.is_read?"":"background:#f8f9ff;border-color:#cdd2ff;")+'"><div class="grow"><div class="title">'+esc(n.title)+'</div><div class="sub">'+esc(n.message||"")+'</div><div class="meta"><span>'+new Date(n.created_at).toLocaleString("ja-JP")+'</span>'+(n.is_read?'':'<span class="pill">未読</span>')+'</div>'+(n.target_url?'<div style="margin-top:8px"><a class="btn secondary" href="'+esc(n.target_url)+'">開く</a></div>':'')+'</div></div>').join("")||'<div class="empty">通知はありません。</div>';
+  document.getElementById("mark-all-read")?.addEventListener("click",async()=>{
+    const {error}=await supabaseClient.from("user_notifications").update({is_read:true}).eq("user_id",currentUser.id).eq("is_read",false);
+    if(error){alert("既読処理に失敗しました。");return;}
+    await loadNotifications();
+  });
 }
 
 async function loadActivity(){
