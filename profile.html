@@ -120,8 +120,8 @@ async function loadFollowList(profileId,mode){
  const map=new Map((profiles||[]).map(p=>[p.id,p]));
  el.innerHTML=ids.map(uid=>{const p=map.get(uid);if(!p)return"";const name=p.display_name||p.username||"Animeciaユーザー";return '<a href="profile.html?id='+encodeURIComponent(p.id)+'" class="list-item"><div class="grow"><div class="title">'+esc(name)+'</div><div class="sub">'+(p.username?'@'+esc(p.username):"")+'</div></div></a>';}).join("")||'<div class="empty">ユーザーはいません。</div>';
 }
-setupFollow(id); document.getElementById("show-followers")?.addEventListener("click",()=>loadFollowList(id,"followers")); document.getElementById("show-following")?.addEventListener("click",()=>loadFollowList(id,"following")); loadFollowList(id,"followers");
-load();
+document.getElementById("show-followers")?.addEventListener("click",()=>loadFollowList(id,"followers")); document.getElementById("show-following")?.addEventListener("click",()=>loadFollowList(id,"following"));
+(async()=>{ await load(); await setupFollow(id); await loadFollowList(id,"followers"); })();
 </script>
 </body>
 </html>
