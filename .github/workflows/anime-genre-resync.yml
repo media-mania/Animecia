@@ -171,10 +171,6 @@ jobs:
                   "edo period": 0.96, "sengoku period": 0.96,
                   "ancient china": 0.96, "ancient japan": 0.96
               },
-              "戦記": {
-                  "war": 0.74, "military": 0.60, "samurai": 0.58,
-                  "politics": 0.70, "strategy": 0.84
-              },
               "戦争": {
                   "war": 1.00, "warfare": 0.96,
                   "military conflict": 0.96
