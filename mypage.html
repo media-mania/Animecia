@@ -181,6 +181,7 @@ function setAvatar(targetId,fallbackId,url,name){
 }
 function clampCrop(v,min,max,def){const n=Number(v);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):def;}
 function applyCoverStyle(el,x,y,zoom){if(!el)return;el.style.backgroundPosition=clampCrop(x,0,100,50)+"% "+clampCrop(y,0,100,50)+"%";el.style.backgroundSize=clampCrop(zoom,100,180,100)+"% auto";}
+function applyAvatarStyle(el,x,y,zoom){if(!el)return;el.style.objectPosition=clampCrop(x,0,100,50)+"% "+clampCrop(y,0,100,50)+"%";el.style.transform="scale("+(clampCrop(zoom,100,220,100)/100)+")";}
 function applyCropState(type,x,y,zoom,url){
  const px=clampCrop(x,0,100,50),py=clampCrop(y,0,100,50),pz=clampCrop(zoom,100,type==="avatar"?220:180,100);
  const ids=type==="avatar"?["avatar-x","avatar-y","avatar-zoom"]:["background-x","background-y","background-zoom"];
@@ -189,6 +190,7 @@ function applyCropState(type,x,y,zoom,url){
  [px,py,pz].forEach((v,i)=>{const el=document.getElementById(vals[i]);if(el)el.textContent=v+"%";});
  const img=document.getElementById(type==="avatar"?"avatar-crop-image":"background-crop-image");
  if(img){if(url){img.src=url;img.style.objectPosition=px+"% "+py+"%";img.style.transform="scale("+(pz/100)+")";img.style.display="block";}else{img.removeAttribute("src");img.style.display="none";}}
+ if(type==="avatar")applyAvatarStyle(document.getElementById("profile-avatar-large"),px,py,pz);
 }
 function bindCropControls(){
  [["avatar",220],["background",180]].forEach(([type,maxZoom])=>{
@@ -198,7 +200,7 @@ function bindCropControls(){
        const x=Number(document.getElementById(type+"-x").value),y=Number(document.getElementById(type+"-y").value),z=Number(document.getElementById(type+"-zoom").value);
        document.getElementById(type+"-x-value").textContent=x+"%";document.getElementById(type+"-y-value").textContent=y+"%";document.getElementById(type+"-zoom-value").textContent=z+"%";
        const img=document.getElementById(type+"-crop-image");if(img){img.style.objectPosition=x+"% "+y+"%";img.style.transform="scale("+(z/100)+")";}
-       if(type==="avatar"){const img2=document.getElementById("profile-avatar-large");if(img2)img2.style.objectPosition=x+"% "+y+"%";}else{const cover=document.getElementById("profile-cover");applyCoverStyle(cover,x,y,z);}
+       if(type==="avatar"){applyAvatarStyle(document.getElementById("profile-avatar-large"),x,y,z);}else{const cover=document.getElementById("profile-cover");applyCoverStyle(cover,x,y,z);}
      });
    });
  });
@@ -277,10 +279,15 @@ async function saveProfile(){
  const msg=document.getElementById("profile-msg"),username=document.getElementById("username").value.trim().replace(/^@+/,"");
  if(username&&!/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){msg.textContent="ユーザー名は2〜30文字で入力してください。";return;}
  const payload={id:currentUser.id,background_url:document.getElementById("profile-background-url").value.trim()||null,avatar_position_x:Number(document.getElementById("avatar-x")?.value||50),avatar_position_y:Number(document.getElementById("avatar-y")?.value||50),avatar_zoom:Number(document.getElementById("avatar-zoom")?.value||100),background_position_x:Number(document.getElementById("background-x")?.value||50),background_position_y:Number(document.getElementById("background-y")?.value||50),background_zoom:Number(document.getElementById("background-zoom")?.value||100),username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,show_favorites:document.getElementById("show-favorites")?.checked!==false,show_anime_follows:document.getElementById("show-anime_follows")?.checked!==false,show_watch_status:document.getElementById("show-watch_status")?.checked!==false,show_ratings:document.getElementById("show-ratings")?.checked!==false,show_reviews:document.getElementById("show-reviews")?.checked!==false,show_user_follows:document.getElementById("show-user_follows")?.checked!==false,show_ranking:document.getElementById("show-ranking")?.checked!==false,show_posts:document.getElementById("show-posts")?.checked!==false,updated_at:new Date().toISOString()};
- const {error}=await supabaseClient.from("profiles").update(payload).eq("id",currentUser.id);
+ const {data:savedProfile,error}=await supabaseClient.from("profiles").update(payload).eq("id",currentUser.id).select("avatar_url,background_url,avatar_position_x,avatar_position_y,avatar_zoom,background_position_x,background_position_y,background_zoom").single();
  if(error){console.error(error);msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";return;}
- setAvatar("avatar-preview","avatar-preview-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");document.getElementById("profile-display-name").textContent=payload.display_name||payload.username||"Animeciaユーザー";document.getElementById("profile-handle").textContent=payload.username?"@"+payload.username.replace(/^@/,""):"@ユーザー名未設定";document.getElementById("profile-bio").textContent=payload.bio||"";
- const cover=document.getElementById("profile-cover");if(cover){cover.style.backgroundImage=payload.background_url?"url(\""+payload.background_url.replace(/\"/g,"%22")+"\")":"";applyCoverStyle(cover,payload.background_position_x,payload.background_position_y,payload.background_zoom);} const ai=document.getElementById("profile-avatar-large");if(ai){ai.style.objectPosition=payload.avatar_position_x+"% "+payload.avatar_position_y+"%";ai.style.transform="scale("+(payload.avatar_zoom/100)+")";}
+ const saved=savedProfile||payload;
+ document.getElementById("avatar_url").value=saved.avatar_url||"";
+ document.getElementById("profile-background-url").value=saved.background_url||"";
+ applyCropState("avatar",saved.avatar_position_x,saved.avatar_position_y,saved.avatar_zoom,saved.avatar_url);
+ applyCropState("background",saved.background_position_x,saved.background_position_y,saved.background_zoom,saved.background_url);
+ setAvatar("avatar-preview","avatar-preview-fallback",saved.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",saved.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");document.getElementById("profile-display-name").textContent=payload.display_name||payload.username||"Animeciaユーザー";document.getElementById("profile-handle").textContent=payload.username?"@"+payload.username.replace(/^@/,""):"@ユーザー名未設定";document.getElementById("profile-bio").textContent=payload.bio||"";
+ const cover=document.getElementById("profile-cover");if(cover){cover.style.backgroundImage=payload.background_url?"url(\""+payload.background_url.replace(/\"/g,"%22")+"\")":"";applyCoverStyle(cover,payload.background_position_x,payload.background_position_y,payload.background_zoom);} const ai=document.getElementById("profile-avatar-large");if(ai)applyAvatarStyle(ai,saved.avatar_position_x,saved.avatar_position_y,saved.avatar_zoom);
  msg.textContent="プロフィールを保存しました。";
 }
 
