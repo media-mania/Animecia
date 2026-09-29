@@ -209,6 +209,29 @@ def genres_for(media):
           updated=0
           for r in rows:
             title=r.get("title_japanese") or r.get("title_native") or r.get("title_user_preferred") or r.get("title_romaji") or r.get("title_english")
+
+            # Existing-link audit does not require AniList metadata.
+            if phase=="audit" and r.get("official_url"):
+              patch={}
+              try:
+                host=(urllib.parse.urlparse(r["official_url"]).hostname or "").lower()
+                if any(bad in host for bad in ("twitter.com","x.com","facebook.com","instagram.com","youtube.com","wikipedia.org","myanimelist.net","anilist.co","animenewsnetwork.com")):
+                  patch["official_url"]=None
+                else:
+                  raw,_=request(r["official_url"],"GET",None,{"Accept":"text/html,application/xhtml+xml"},15)
+                  html=raw.decode("utf-8","ignore")[:100000]
+                  if not re.search(r"[ぁ-んァ-ヶ一-龠]",html) and not (host.endswith(".jp") or ".co.jp" in host):
+                    patch["official_url"]=None
+              except urllib.error.HTTPError as e:
+                if e.code in (404,410):
+                  patch["official_url"]=None
+              except Exception:
+                pass
+              if patch:
+                update(r["id"],patch)
+                updated+=1
+              continue
+
             media=None
             sid=str(r.get("source_id") or "")
             if r.get("source_provider")=="anilist" and sid.isdigit():
@@ -228,22 +251,6 @@ def genres_for(media):
             if (not r.get("official_url")):
               url=official(media)
               if url and japanese_official(url,title): patch["official_url"]=url
-
-            if phase=="audit" and r.get("official_url"):
-              try:
-                host=(urllib.parse.urlparse(r["official_url"]).hostname or "").lower()
-                if any(bad in host for bad in ("twitter.com","x.com","facebook.com","instagram.com","youtube.com","wikipedia.org","myanimelist.net","anilist.co","animenewsnetwork.com")):
-                  patch["official_url"]=None
-                else:
-                  raw,_=request(r["official_url"],"GET",None,{"Accept":"text/html,application/xhtml+xml"},15)
-                  html=raw.decode("utf-8","ignore")[:100000]
-                  if not re.search(r"[ぁ-んァ-ヶ一-龠]",html) and not (host.endswith(".jp") or ".co.jp" in host):
-                    patch["official_url"]=None
-              except urllib.error.HTTPError as e:
-                if e.code in (404,410):
-                  patch["official_url"]=None
-              except Exception:
-                pass
 
             if patch:
               update(r["id"],patch)
