@@ -283,8 +283,7 @@ jobs:
                   "Fantasy":"ファンタジー","Horror":"ホラー","Mystery":"推理","Romance":"恋愛",
                   "Sci-Fi":"SF","Sports":"スポーツ","Supernatural":"ファンタジー","School":"学園",
                   "Slice of Life":"日常","Music":"音楽","Military":"ミリタリー","Historical":"歴史",
-                  "Mecha":"メカ","Ecchi":"恋愛","Shounen":"アクション","Shoujo":"恋愛",
-                  "Josei":"ドラマ","Seinen":"ドラマ","Award Winning":"ドラマ","Gourmet":"日常"
+                  "Mecha":"メカ","Supernatural":"ファンタジー","Suspense":"サスペンス"
               }
               for mg in mal_genres or []:
                   target = MAL_GENRE.get(str(mg).strip())
