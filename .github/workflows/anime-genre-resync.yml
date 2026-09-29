@@ -32,7 +32,7 @@ jobs:
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
       MAL_API: https://api.jikan.moe/v4
-      CLASSIFICATION_VERSION: "animecia-cross-source-v13-evidence-expanded-min3"
+      CLASSIFICATION_VERSION: "animecia-cross-source-v14-source-first"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -305,27 +305,11 @@ jobs:
                   scores["ショート"] = 1.0
                   reasons["ショート"].append("format/duration")
 
-              # 4. 高確信の日本語/英語キーワードは補助根拠のみ。
-              text_rules = {
-                  "学園": ["学園", "高校", "中学", "大学", "school"],
-                  "異世界": ["異世界", "iseka"],
-                  "恋愛": ["恋愛", "恋人", "romance"],
-                  "SF": ["sf", "science fiction", "未来", "宇宙"],
-                  "スポーツ": ["野球", "サッカー", "バスケット", "テニス", "スポーツ"],
-                  "音楽": ["音楽", "バンド", "歌", "musical"],
-                  "アイドル": ["アイドル", "idol"],
-                  "推理": ["探偵", "推理", "謎解き", "mystery"],
-                  "ホラー": ["ホラー", "恐怖", "怪談", "horror"],
-                  "日常": ["日常系", "日常", "slice of life"]
-              }
-              for name, words in text_rules.items():
-                  if name in scores:
-                      # タイトルは分類根拠に使わない。あらすじだけを補助根拠にする。
-                      description_text = norm(media.get("description") or "")
-                      ts = text_score(description_text, words)
-                      if ts > scores[name]:
-                          scores[name] = ts
-                          reasons[name].append("description keyword")
+              # 4. 説明文の単語だけではジャンルを決めない。
+              # 「ドラマ」「恋愛」「青春」などは多くの作品説明に登場するため、
+              # それだけを根拠にすると誤分類が大量に発生する。
+              # ジャンル判定はAniList genre / AniList tag / MAL genreを中心に行う。
+              # ここではdescription keywordによる加点を廃止する。
 
               # 5. Evidence-first selection.
               # 根拠のないジャンルを「3個にするためだけ」に補完しない。
