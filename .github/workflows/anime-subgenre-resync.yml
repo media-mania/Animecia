@@ -88,11 +88,12 @@ jobs:
             "love-triangle":["love triangle"]
           }
 
-          query='''query($ids:[Int]){Page(page:1,perPage:50){media(id_in:$ids){id{genres tags{name rank isMediaSpoiler isGeneralSpoiler}}}}}'''
+          query='''query($ids:[Int]){Page(page:1,perPage:50){media(id_in:$ids){id genres tags{name rank isMediaSpoiler isGeneralSpoiler}}}}'''
 
           rows=sb("/rest/v1/anime",params={
               "select":"id,source_id,external_id,source_provider",
               "anime_verification_status":"eq.verified",
+              "subgenre_classification_version":"is.null",
               "order":"id.asc","limit":str(BATCH)
           })
 
@@ -130,6 +131,8 @@ jobs:
 
           if updates:
               sb("/rest/v1/rpc/bulk_replace_anime_subgenres","POST",updates)
+              ids_done=[str(x["anime_id"]) for x in updates]
+              sb("/rest/v1/anime","PATCH",{"subgenre_classification_version":VERSION,"subgenres_classified_at":"now()"}, {"id":"in.("+",".join(ids_done)+")"})
               print("classified",len(updates),"anime")
           else:
               print("No subgenre evidence found")
