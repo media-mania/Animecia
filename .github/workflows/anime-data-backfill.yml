@@ -2,13 +2,13 @@ name: Animecia Data Backfill
 
 on:
   schedule:
-    - cron: '20 */3 * * *'
+    - cron: '20 * * * *'
   workflow_dispatch:
     inputs:
       batch:
         description: "1回の処理件数"
         required: false
-        default: "100"
+        default: "150"
 
 permissions:
   contents: read
