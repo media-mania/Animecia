@@ -81,7 +81,7 @@ async function load(){
  const genreIds=new Map();(ag||[]).forEach(x=>{const id=Number(x.anime_id);if(!genreIds.has(id))genreIds.set(id,[]);genreIds.get(id).push(Number(x.genre_id))});
  const ids=(ar||[]).map(a=>a.id),em=new Map();
  for(let i=0;i<ids.length;i+=500){const {data:e}=await s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count,rating_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}
- rows=(ar||[]).filter(a=>a.anime_verification_status==="verified").map(a=>({...a,e:em.get(Number(a.id))||{},g:genreIds.get(Number(a.id))||[]}));
+ rows=(ar||[]).filter(a=>a.anime_verification_status==="verified" && a.start_date && a.start_date >= "1963-01-01").map(a=>({...a,e:em.get(Number(a.id))||{},g:genreIds.get(Number(a.id))||[]}));
  const years=[...new Set(rows.map(a=>Number(a.season_year)).filter(y=>Number.isInteger(y)&&y>=1900&&y<=new Date().getFullYear()+1))].sort((a,b)=>b-a);
  document.getElementById("year").innerHTML='<option value="">すべて</option>'+years.map(y=>'<option>'+y+'</option>').join("");
  const initialGenre=new URLSearchParams(location.search).get("genre");if(initialGenre){selectedGenres.add(Number(initialGenre));}renderGenres(gr.data||[]);render();
