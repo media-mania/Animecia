@@ -1,6 +1,9 @@
 name: Animecia Episode Count Backfill
 
 on:
+  push:
+    paths:
+      - '.github/workflows/anime-episode-backfill.yml'
   schedule:
     - cron: '20 * * * *'
   workflow_dispatch:
