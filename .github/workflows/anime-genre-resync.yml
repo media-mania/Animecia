@@ -31,7 +31,8 @@ jobs:
       SUPABASE_KEY: ${{ secrets.SUPABASE_SECRET_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      CLASSIFICATION_VERSION: "animecia-existing-genres-v10-24-min3-full-audit"
+      MAL_API: https://api.jikan.moe/v4
+      CLASSIFICATION_VERSION: "animecia-cross-source-v11-24-min3-full-audit"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -243,7 +244,7 @@ jobs:
                       return 0.52
               return 0.0
 
-          def classify(media, existing_ids=None):
+          def classify(media, existing_ids=None, mal_genres=None):
               genres = {norm(x) for x in media.get("genres") or []}
               tags = [
                   t for t in (media.get("tags") or [])
@@ -273,6 +274,23 @@ jobs:
                           if name in scores:
                               scores[name] = max(scores[name], score)
                               reasons[name].append("AniList genre: " + source)
+
+
+              # 1.5 MyAnimeListのジャンル。AniListと一致する場合は確信度を上げ、
+              # 一方だけに存在する場合も補助根拠として利用する。
+              MAL_GENRE = {
+                  "Action":"アクション","Adventure":"冒険","Comedy":"コメディ","Drama":"ドラマ",
+                  "Fantasy":"ファンタジー","Horror":"ホラー","Mystery":"推理","Romance":"恋愛",
+                  "Sci-Fi":"SF","Sports":"スポーツ","Supernatural":"ファンタジー","School":"学園",
+                  "Slice of Life":"日常","Music":"音楽","Military":"ミリタリー","Historical":"歴史",
+                  "Mecha":"メカ","Ecchi":"恋愛","Shounen":"アクション","Shoujo":"恋愛",
+                  "Josei":"ドラマ","Seinen":"ドラマ","Award Winning":"ドラマ","Gourmet":"日常"
+              }
+              for mg in mal_genres or []:
+                  target = MAL_GENRE.get(str(mg).strip())
+                  if target in scores:
+                      scores[target] = max(scores[target], 0.88)
+                      reasons[target].append("MyAnimeList genre: " + str(mg))
 
               # 2. AniList tag。rankを重みとして利用。
               for name, rules in TAG_RULES.items():
@@ -319,27 +337,9 @@ jobs:
               # 6. 意味が近いジャンルの重複を正規化。
               # ジャンル体系は現在24種類。
               # 同一作品へほぼ同義のジャンルを同時付与しない。
-              EXCLUSIVE_GROUPS = [
-                  ["アクション"],
-                  ["コメディ"],
-                  ["スポーツ"],
-                  ["メカ"],
-                  ["ドラマ", "青春"],
-                  ["ファミリー"],
-                  ["ファンタジー"],
-                  ["戦争", "ミリタリー"],
-                  ["ホラー", "サスペンス"],
-              ]
-
-              for group in EXCLUSIVE_GROUPS:
-                  candidates = [(n, scores.get(n, 0.0)) for n in group if n in scores]
-                  strong = [x for x in candidates if x[1] >= 0.78]
-                  if len(strong) > 1:
-                      # 根拠が強いものを残す。同点ならリスト上で先に定義されたものを優先。
-                      winner = max(strong, key=lambda x: x[1])
-                      for name, score in candidates:
-                          if name != winner[0] and score < 0.92:
-                              scores[name] = min(scores[name], 0.70)
+              # ジャンル同士を排他的にしない。
+              # 実際の作品は「アクション＋ファンタジー」「戦争＋ミリタリー」など
+              # 複数ジャンルを同時に持つため、根拠の強いジャンルを独立して評価する。
 
               # 7. 作品名だけでジャンルを決めない。
               # タイトル由来のキーワードは使用せず、AniListのgenre/tag、
@@ -524,6 +524,23 @@ jobs:
                   media_by_id[int(m["id"])] = m
               time.sleep(0.4)
 
+
+          # MyAnimeList照合。JikanはMyAnimeListのデータを取得するAPIで、
+          # 作品ページから公式タイトル・ジャンル等を取得できる。
+          # リクエスト間隔を空け、取得失敗時はAniListだけで分類する。
+          mal_genres_by_id = {}
+          for m in media_by_id.values():
+              mid = m.get("idMal")
+              if not mid:
+                  continue
+              try:
+                  response = http(MAL_API + "/anime/" + str(int(mid)))
+                  data = response.get("data") or {}
+                  mal_genres_by_id[int(m["id"])] = [g.get("name") for g in (data.get("genres") or []) if g.get("name")]
+              except Exception as e:
+                  print("MAL lookup failed", mid, str(e)[:120])
+              time.sleep(0.35)
+
           updates = []
           skipped_source = 0
           no_evidence = 0
@@ -539,7 +556,7 @@ jobs:
                   skipped_source += 1
                   continue
 
-              names, confidence, reasons = classify(media, EXISTING.get(int(row["id"]), []))
+              names, confidence, reasons = classify(media, EXISTING.get(int(row["id"]), []), mal_genres_by_id.get(int(row["_anilist_id"]), []))
               genre_ids = [GENRE_ID[n] for n in names if n in GENRE_ID]
 
               if not genre_ids:
@@ -566,6 +583,7 @@ jobs:
           print(json.dumps({
               "candidate_count": len(rows),
               "anilist_records": len(ani_rows),
+              "mal_records": len(mal_genres_by_id),
               "classified_records": len(updates),
               "db_changed": changed,
               "no_evidence": no_evidence,
