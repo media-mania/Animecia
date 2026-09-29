@@ -123,7 +123,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <a class="side-link" href="compare.html">作品を比較 <span>›</span></a>
 <a class="side-link" href="messages.html">メッセージ <span>›</span></a>
 <a class="side-link" href="user-search.html">ユーザー検索 <span>›</span></a>
-<a class="side-link" href="notifications.html" id="notification-side-link">通知 <span id="side-notification-count"></span></a>
+<a class="side-link" href="#notifications" id="notification-side-link">通知 <span id="side-notification-count"></span></a>
 </section>
 <section class="panel side-panel">
 <div class="side-title">アカウント統計</div>
@@ -157,15 +157,34 @@ async function getAnime(ids){
  }
  return map;
 }
+function setAvatar(targetId,fallbackId,url,name){
+ const img=document.getElementById(targetId),fallback=document.getElementById(fallbackId);
+ if(!img||!fallback)return;
+ if(url){img.src=url;img.alt=name||"";img.style.display="block";fallback.style.display="none";}
+ else{img.style.display="none";fallback.textContent=(name||"Animeciaユーザー").slice(0,1).toUpperCase();fallback.style.display="grid";}
+}
 async function loadProfile(){
  const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,bio").eq("id",currentUser.id).maybeSingle();
  if(error){console.error(error);return;}
- if(!data)return;
- document.getElementById("username").value=String(data.username||"").replace(/^@/,"");
- document.getElementById("display_name").value=data.display_name||"";
- document.getElementById("avatar_url").value=data.avatar_url||"";
- document.getElementById("bio").value=data.bio||"";
- document.getElementById("avatar-preview").src=data.avatar_url||"";
+ const p=data||{};
+ const username=String(p.username||"").replace(/^@/,"");
+ const displayName=p.display_name||username||"Animeciaユーザー";
+ document.getElementById("username").value=username;
+ document.getElementById("display_name").value=p.display_name||"";
+ document.getElementById("avatar_url").value=p.avatar_url||"";
+ document.getElementById("bio").value=p.bio||"";
+ document.getElementById("profile-display-name").textContent=displayName;
+ document.getElementById("profile-handle").textContent=username?"@"+username:"@ユーザー名未設定";
+ document.getElementById("profile-bio").textContent=p.bio||"";
+ setAvatar("profile-avatar-large","profile-avatar-fallback",p.avatar_url,displayName);
+ setAvatar("avatar-preview","avatar-preview-fallback",p.avatar_url,displayName);
+}
+async function loadSocialStats(){
+ const {data,error}=await supabaseClient.rpc("get_profile_follow_stats",{p_profile_id:currentUser.id});
+ if(error){console.error("follow stats error",error);return;}
+ const s=data?.[0]||data||{};
+ document.getElementById("followers-count").textContent=String(s.followers_count??0);
+ document.getElementById("following-count").textContent=String(s.following_count??0);
 }
 async function uploadAvatar(){
  const msg=document.getElementById("profile-msg"),file=document.getElementById("avatar-file"),button=document.getElementById("upload-avatar");
@@ -183,7 +202,7 @@ async function uploadAvatar(){
  if(!url){msg.textContent="画像URLを取得できませんでした。";button.disabled=false;return;}
  const cacheBusted=url+"?v="+Date.now();
  document.getElementById("avatar_url").value=cacheBusted;
- document.getElementById("avatar-preview").src=cacheBusted;
+ setAvatar("avatar-preview","avatar-preview-fallback",cacheBusted,document.getElementById("display_name").value.trim()||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",cacheBusted,document.getElementById("display_name").value.trim()||"Animeciaユーザー");
  const {error:saveError}=await supabaseClient.from("profiles").upsert({id:currentUser.id,avatar_url:cacheBusted,updated_at:new Date().toISOString()},{onConflict:"id"});
  if(saveError){console.error(saveError);msg.textContent="画像は保存されましたがプロフィール更新に失敗しました。";button.disabled=false;return;}
  msg.textContent="プロフィール画像を更新しました。";
@@ -195,7 +214,7 @@ async function saveProfile(){
  const payload={id:currentUser.id,username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,updated_at:new Date().toISOString()};
  const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
  if(error){console.error(error);msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";return;}
- document.getElementById("avatar-preview").src=payload.avatar_url||"";
+ setAvatar("avatar-preview","avatar-preview-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");document.getElementById("profile-display-name").textContent=payload.display_name||payload.username||"Animeciaユーザー";document.getElementById("profile-handle").textContent=payload.username?"@"+payload.username.replace(/^@/,""):"@ユーザー名未設定";document.getElementById("profile-bio").textContent=payload.bio||"";
  msg.textContent="プロフィールを保存しました。";
 }
 async function loadStats(){
@@ -220,6 +239,7 @@ async function updateNotificationBadge(){
  const badge=document.getElementById("notification-badge");
  badge.textContent=count?String(count):"";
  badge.style.display=count?"inline-block":"none";
+ const side=document.getElementById("side-notification-count");if(side)side.textContent=count?String(count):"";
 }
 let notificationChannel=null;
 let notificationPollTimer=null;
@@ -321,7 +341,7 @@ async function start(){
   document.getElementById("content").style.display="block";
   document.getElementById("auth-btn").textContent="ログアウト";
   document.getElementById("auth-btn").onclick=async()=>{await supabaseClient.auth.signOut();location.href="mypage.html";};
-  await Promise.all([loadProfile(),loadStats(),updateNotificationBadge()]);
+  await Promise.all([loadProfile(),loadStats(),loadSocialStats(),updateNotificationBadge()]);
   subscribeNotifications();
   await refreshNotifications();
   await loadTab();
@@ -331,6 +351,9 @@ document.addEventListener("DOMContentLoaded",()=>{
  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;await loadTab();if(currentTab==="notifications")await updateNotificationBadge();}));
  document.getElementById("save-profile").addEventListener("click",saveProfile);
  document.getElementById("upload-avatar").addEventListener("click",uploadAvatar);
+ document.getElementById("notification-side-link")?.addEventListener("click",async e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="notifications"]');if(b)b.click();document.getElementById("list")?.scrollIntoView({behavior:"smooth",block:"start"});});
+ document.getElementById("followers-link")?.addEventListener("click",e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="user_followers"]');if(b)b.click();});
+ document.getElementById("following-link")?.addEventListener("click",e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="user_following"]');if(b)b.click();});
  start();
 });
 </script>
