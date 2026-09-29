@@ -55,7 +55,9 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 </section>
 <section class="panel"><div class="tabs">
 <button class="tab active" data-tab="favorites" type="button">お気に入り</button>
-<button class="tab" data-tab="follows" type="button">フォロー中</button>
+<button class="tab" data-tab="follows" type="button">作品フォロー中</button>
+<button class="tab" data-tab="user_following" type="button">ユーザーのフォロー中</button>
+<button class="tab" data-tab="user_followers" type="button">フォロワー</button>
 <button class="tab" data-tab="watching" type="button">視聴中</button>
 <button class="tab" data-tab="completed" type="button">視聴完了</button>
 <button class="tab" data-tab="want_to_watch" type="button">視聴予定</button>
@@ -164,6 +166,31 @@ function subscribeNotifications(){
   })
   .subscribe();
 }
+async function loadUserFollowList(mode){
+ const el=document.getElementById("list");
+ const isFollowers=mode==="user_followers";
+ const column=isFollowers?"following_id":"follower_id";
+ let query=supabaseClient.from("user_follows").select("follower_id,following_id,created_at").eq(column,currentUser.id).order("created_at",{ascending:false}).limit(100);
+ const {data,error}=await query;
+ if(error)throw error;
+ const rows=data||[];
+ const ids=rows.map(x=>isFollowers?x.follower_id:x.following_id);
+ if(!ids.length){
+   el.innerHTML='<div class="empty">'+(isFollowers?"フォロワーはいません。":"フォロー中のユーザーはいません。")+'</div>';
+   return;
+ }
+ const {data:profiles,error:profileError}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio").in("id",ids);
+ if(profileError)throw profileError;
+ const map=new Map((profiles||[]).map(p=>[p.id,p]));
+ el.innerHTML=rows.map(row=>{
+   const uid=isFollowers?row.follower_id:row.following_id;
+   const p=map.get(uid);
+   if(!p)return "";
+   const name=p.display_name||p.username||"Animeciaユーザー";
+   const avatar=p.avatar_url?'<img class="avatar" src="'+esc(p.avatar_url)+'" alt="'+esc(name)+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">':'<div class="avatar" style="display:grid;place-items:center;font-weight:800;color:#888">'+esc(name.slice(0,1))+'</div>';
+   return '<a class="list-item" href="profile.html?id='+encodeURIComponent(uid)+'">'+avatar+'<div class="grow"><div class="title">'+esc(name)+'</div><div class="sub">'+(p.username?'@'+esc(p.username):"ユーザー名未設定")+'</div>'+(p.bio?'<div class="sub">'+esc(p.bio).slice(0,120)+'</div>':"")+'</div><div class="pill">プロフィール</div></a>';
+ }).join("")||'<div class="empty">ユーザーはいません。</div>';
+}
 async function loadTab(){
  const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';
  try{
@@ -171,6 +198,8 @@ async function loadTab(){
    const {data,error}=await supabaseClient.from("favorites").select("anime_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});if(error)throw error;
    const map=await getAnime((data||[]).map(x=>x.anime_id));renderAnimeList(data||[],map,()=> "お気に入り");return;
   }
+  if(currentTab==="user_following"){await loadUserFollowList("user_following");return;}
+  if(currentTab==="user_followers"){await loadUserFollowList("user_followers");return;}
   if(currentTab==="follows"){
    const {data,error}=await supabaseClient.from("user_anime_follows").select("anime_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});if(error)throw error;
    const map=await getAnime((data||[]).map(x=>x.anime_id));renderAnimeList(data||[],map,()=> "フォロー中");return;
