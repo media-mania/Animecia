@@ -111,20 +111,12 @@ jobs:
                       out[int(aid)] = value
               return out
 
-          rows = []
-          offset = 0
-          while len(rows) < BATCH:
-              page = sb("/rest/v1/anime", params={
-                  "select":"id,source_provider,source_id,episodes",
-                  "episodes":"is.null",
-                  "order":"id.asc",
-                  "offset":str(offset),
-                  "limit":str(min(1000,BATCH-len(rows)))
-              })
-              if not page: break
-              rows.extend(page)
-              if len(page) < min(1000,BATCH-len(rows)): break
-              offset += len(page)
+          rows = sb("/rest/v1/anime", params={
+              "select":"id,source_provider,source_id,episodes",
+              "episodes":"is.null",
+              "order":"id.asc",
+              "limit":str(BATCH)
+          })
 
           updates = []
           ani_ids = []
