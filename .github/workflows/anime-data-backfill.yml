@@ -77,7 +77,7 @@ jobs:
           def anilist_by_ids(ids):
             if not ids: return {}
             q="""query($ids:[Int!]){Page(page:1,perPage:50){media(id_in:$ids,type:ANIME){
-              id title{native romaji english userPreferred} genres
+              id title{native romaji english userPreferred} genres source relations{edges{relationType node{type title{native userPreferred romaji}}}} staff(perPage:20){edges{role node{name{native userPreferred}}}}
               externalLinks{url site language type}
               siteUrl coverImage{large}
             }}}"""
@@ -113,23 +113,43 @@ jobs:
               if score>=82 and (best is None or score>best[0]): best=(score,x)
             return best[1] if best else None
 
-          def japanese_official(url,title):
-  try:
-    host=(urllib.parse.urlparse(url).hostname or "").lower()
-    if any(bad in host for bad in ("twitter.com","x.com","facebook.com","instagram.com","youtube.com","wikipedia.org","myanimelist.net","anilist.co","animenewsnetwork.com","crunchyroll.com")):
-      return False
-    raw,_=request(url,"GET",None,{"Accept":"text/html,application/xhtml+xml"},20)
-    html=raw.decode("utf-8","ignore")[:120000]
-    if not re.search(r"[ぁ-んァ-ヶ一-龠]",html):
-      return False
-    low=html.lower()
-    if any(x in low for x in ("privacy policy","cookie settings","javascript is required")) and not re.search(r"(アニメ|公式|作品|放送|劇場|キャラクター|スタッフ)",html):
-      return False
-    return True
-  except Exception:
-    return False
+                    def japanese_official(url,title):
+            try:
+              host=(urllib.parse.urlparse(url).hostname or "").lower()
+              if any(bad in host for bad in ("twitter.com","x.com","facebook.com","instagram.com","youtube.com","wikipedia.org","myanimelist.net","anilist.co","animenewsnetwork.com","crunchyroll.com")):
+                return False
+              raw,_=request(url,"GET",None,{"Accept":"text/html,application/xhtml+xml"},20)
+              html=raw.decode("utf-8","ignore")[:120000]
+              return bool(re.search(r"[ぁ-んァ-ヶ一-龠]",html))
+            except Exception:
+              return False
 
-def genres_for(media):
+          SOURCE_MAP={
+            "ORIGINAL":"オリジナル","MANGA":"漫画","LIGHT_NOVEL":"ライトノベル",
+            "NOVEL":"小説","WEB_NOVEL":"Web小説","GAME":"ゲーム","VISUAL_NOVEL":"ゲーム",
+            "VIDEO_GAME":"ゲーム","CARD_GAME":"ゲーム","BOOK":"小説","OTHER":"その他"
+          }
+
+          def original_meta(media):
+            source=SOURCE_MAP.get(media.get("source"),media.get("source"))
+            original_title=None
+            authors=[]
+            # Prefer a related manga/novel/game title over the anime's own title.
+            for edge in (media.get("relations") or {}).get("edges",[]):
+              node=edge.get("node") or {}
+              if node.get("type") in ("MANGA","NOVEL","ONE_SHOT","VIDEO_GAME","VISUAL_NOVEL","GAME"):
+                t=node.get("title") or {}
+                original_title=t.get("native") or t.get("userPreferred") or t.get("romaji")
+                if original_title: break
+            for edge in (media.get("staff") or {}).get("edges",[]):
+              role=(edge.get("role") or "").lower()
+              node=edge.get("node") or {}
+              name=(node.get("name") or {}).get("native") or (node.get("name") or {}).get("userPreferred")
+              if name and any(k in role for k in ("original creator","original author","story","原作")):
+                if name not in authors: authors.append(name)
+            return source,original_title,", ".join(authors)
+
+          def genres_for(media):
             vals=[]
             for raw in media.get("genres") or []:
               key=str(raw).strip().lower()
@@ -246,6 +266,10 @@ def genres_for(media):
 
             patch={}
             gs=genres_for(media)
+            osrc,otitle,oauth=original_meta(media)
+            if osrc and not r.get("original_source"): patch["original_source"]=osrc
+            if otitle and not r.get("original_title"): patch["original_title"]=otitle
+            if oauth and not r.get("original_authors"): patch["original_authors"]=oauth
             if (not r.get("genre")) and gs:
               patch["genre"]=", ".join(gs)
             if (not r.get("official_url")):
