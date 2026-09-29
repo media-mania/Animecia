@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="site-theme.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-main{max-width:1100px;margin:auto;padding:32px 16px 60px}.grid{display:grid;grid-template-columns:320px 1fr;gap:16px}.panel{padding:18px;border-radius:14px}.threads{display:grid;gap:7px}.thread{display:block;width:100%;text-align:left;border:1px solid #e7e7e9;border-radius:10px;background:#fff;padding:12px;cursor:pointer}.thread.active{background:#f1f3f5}.sub{font-size:12px;color:#777;margin-top:4px}.chat{min-height:520px;display:flex;flex-direction:column}.messages{flex:1;overflow:auto;padding:8px}.bubble{max-width:75%;margin:8px 0;padding:9px 12px;border-radius:13px;background:#f0f1f3}.mine{margin-left:auto;background:#111;color:#fff}.read{font-size:11px;opacity:.65;margin-top:3px;text-align:right}.composer{display:flex;gap:8px;margin-top:12px}.composer textarea{flex:1;min-height:48px;resize:vertical}.newbox{margin-bottom:14px}.newbox input{width:100%;margin:5px 0}.empty{text-align:center;color:#777;padding:35px 10px}.badge{font-size:11px;border-radius:999px;padding:2px 6px;background:#e33;color:#fff;float:right}.members{font-size:12px;color:#666;margin-top:5px}@media(max-width:760px){.grid{grid-template-columns:1fr}.chat{min-height:420px}}
+main{max-width:1100px;margin:auto;padding:32px 16px 60px}.grid{display:grid;grid-template-columns:320px 1fr;gap:16px}.panel{padding:18px;border-radius:14px}.threads{display:grid;gap:7px}.thread{display:block;width:100%;text-align:left;border:1px solid #e7e7e9;border-radius:10px;background:#fff;padding:12px;cursor:pointer}.thread.active{background:#f1f3f5}.sub{font-size:12px;color:#777;margin-top:4px}.chat{min-height:520px;display:flex;flex-direction:column}.messages{flex:1;overflow:auto;padding:8px}.bubble{max-width:75%;margin:8px 0;padding:9px 12px;border-radius:13px;background:#f0f1f3}.mine{margin-left:auto;background:#111;color:#fff}.read{font-size:11px;opacity:.65;margin-top:3px;text-align:right}.composer{display:flex;gap:8px;margin-top:12px}.composer textarea{flex:1;min-height:48px;resize:vertical}.newbox{margin-bottom:14px}.newbox input{width:100%;margin:5px 0}.empty{text-align:center;color:#777;padding:35px 10px}.badge{font-size:11px;border-radius:999px;padding:2px 6px;background:#e33;color:#fff;float:right}.delete-msg{margin-left:8px;border:0;background:transparent;color:#777;font-size:11px;cursor:pointer}.delete-msg:hover{color:#c00}.members{font-size:12px;color:#666;margin-top:5px}@media(max-width:760px){.grid{grid-template-columns:1fr}.chat{min-height:420px}}
 </style>
 </head>
 <body>
@@ -46,8 +46,12 @@ async function loadThreads(){
  const {data:ts,error:te}=await sb.from("message_threads").select("id,title,is_group,created_at").in("id",ids).order("created_at",{ascending:false});if(te)throw te;
  const html=[];
  for(const t of ts||[]){let label=t.title||"1対1の会話";if(!t.is_group){const {data:ms}=await sb.from("message_members").select("user_id").eq("thread_id",t.id).neq("user_id",currentUser.id).limit(1);const map=await profiles((ms||[]).map(x=>x.user_id));const p=map.values().next().value;if(p)label=p.display_name||p.username||"ユーザー";}
- const {count}=await sb.from("thread_messages").select("id",{count:"exact",head:true}).eq("thread_id",t.id).neq("sender_id",currentUser.id);
- const row=(data||[]).find(x=>x.thread_id===t.id);html.push('<button class="thread '+(currentThread===t.id?'active':'')+'" data-id="'+t.id+'"><b>'+esc(label)+'</b>'+(t.is_group?'<div class="members">グループ</div>':"")+(count?'<span class="badge">'+count+'</span>':"")+'</button>');}
+ const row=(data||[]).find(x=>x.thread_id===t.id);
+ const lastRead=row?.last_read_at;
+ let unreadQuery=sb.from("thread_messages").select("id",{count:"exact",head:true}).eq("thread_id",t.id).neq("sender_id",currentUser.id);
+ if(lastRead) unreadQuery=unreadQuery.gt("created_at",lastRead);
+ const {count}=await unreadQuery;
+ html.push('<button class="thread '+(currentThread===t.id?'active':'')+'" data-id="'+t.id+'"><b>'+esc(label)+'</b>'+(t.is_group?'<div class="members">グループ</div>':"")+(count?'<span class="badge">'+count+'</span>':"")+'</button>');}
  document.getElementById("threads").innerHTML=html.join("");document.querySelectorAll(".thread").forEach(x=>x.onclick=()=>openThread(x.dataset.id));
 }
 async function openThread(id){
@@ -66,9 +70,18 @@ async function openThread(id){
 async function loadMessages(){
  if(!currentThread)return;const {data,error}=await sb.from("thread_messages").select("id,sender_id,body,created_at").eq("thread_id",currentThread).order("created_at",{ascending:true}).limit(200);if(error)throw error;
  const map=await profiles([...new Set((data||[]).map(x=>x.sender_id))]);
- document.getElementById("messages").innerHTML=(data||[]).map(x=>{const mine=x.sender_id===currentUser.id,p=map.get(x.sender_id),name=p?.display_name||p?.username||"ユーザー";return '<div class="bubble '+(mine?'mine':'')+'"><div>'+esc(x.body).replace(/\n/g,"<br>")+'</div><div class="read">'+esc(name)+" ・ "+new Date(x.created_at).toLocaleString("ja-JP")+(mine?' ・ 送信済み':" ・ 既読")+'</div></div>';}).join("")||'<div class="empty">メッセージはありません。</div>';
+ document.getElementById("messages").innerHTML=(data||[]).map(x=>{const mine=x.sender_id===currentUser.id,p=map.get(x.sender_id),name=p?.display_name||p?.username||"ユーザー";return '<div class="bubble '+(mine?'mine':'')+'"><div>'+esc(x.body).replace(/\n/g,"<br>")+'</div><div class="read">'+esc(name)+" ・ "+new Date(x.created_at).toLocaleString("ja-JP")+(mine?' ・ 送信済み <button class=\"delete-msg\" type=\"button\" data-message-id=\"'+x.id+'\">削除</button>':" ・ 既読")+'</div></div>';}).join("")||'<div class="empty">メッセージはありません。</div>';
  const {error:re}=await sb.from("message_members").update({last_read_at:new Date().toISOString()}).eq("thread_id",currentThread).eq("user_id",currentUser.id);if(re)console.error(re);
+ document.querySelectorAll(".delete-msg").forEach(btn=>btn.onclick=()=>deleteMessage(btn.dataset.messageId));
  document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
+}
+async function deleteMessage(id){
+ if(!id||!currentThread)return;
+ if(!confirm("このメッセージを削除しますか？"))return;
+ const {error}=await sb.from("thread_messages").delete().eq("id",id).eq("sender_id",currentUser.id).eq("thread_id",currentThread);
+ if(error){console.error(error);alert("メッセージを削除できませんでした。");return;}
+ await loadMessages();
+ await loadThreads();
 }
 async function send(){const input=document.getElementById("message-input"),body=input.value.trim();if(!body||!currentThread)return;const {error}=await sb.from("thread_messages").insert({thread_id:currentThread,sender_id:currentUser.id,body});if(error){alert("送信できませんでした。");console.error(error);return;}input.value="";await loadMessages();}
 async function searchUsers(){
