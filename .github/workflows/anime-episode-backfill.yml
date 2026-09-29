@@ -115,7 +115,7 @@ jobs:
               return out
 
           rows = sb("/rest/v1/anime", params={
-              "select":"id,source_provider,source_id,episodes",
+              "select":"id,source_provider,source_id,external_id,format,episodes",
               "episodes":"is.null",
               "order":"id.asc",
               "limit":str(BATCH)
@@ -125,12 +125,41 @@ jobs:
           ani_ids = []
           ann_ids = []
           for r in rows:
-              sid = str(r.get("source_id") or "")
+              sid = str(r.get("source_id") or "").strip()
+              eid = str(r.get("external_id") or "").strip()
               provider = (r.get("source_provider") or "").lower()
-              if provider == "anilist" and sid.isdigit() and int(sid) < 2000000000:
-                  ani_ids.append((int(sid), int(r["id"])))
-              elif provider == "ann" and sid.isdigit():
-                  ann_ids.append((int(sid), int(r["id"])))
+              format_name = (r.get("format") or "").upper()
+
+              # Historical imports used external_id for AniList IDs without
+              # setting source_provider/source_id. Prefer that mapping first.
+              if provider == "anilist" and sid.isdigit():
+                  n = int(sid)
+                  if 1 <= n < 2000000000:
+                      ani_ids.append((n, int(r["id"])))
+                      continue
+                  # Older ANN imports were stored with a 2,000,000,000 prefix.
+                  if 2000000000 < n < 3000000000:
+                      ann_ids.append((n - 2000000000, int(r["id"])))
+                      continue
+
+              if not provider and eid.isdigit():
+                  n = int(eid)
+                  if 1 <= n < 2000000000:
+                      ani_ids.append((n, int(r["id"])))
+                      continue
+
+              if provider == "ann" and sid.isdigit():
+                  n = int(sid)
+                  if n >= 2000000000:
+                      n -= 2000000000
+                  if n > 0:
+                      ann_ids.append((n, int(r["id"])))
+                      continue
+
+              # Movies are single works even when an external source leaves
+              # the episode field empty. Do not invent counts for other formats.
+              if format_name == "MOVIE":
+                  updates.append({"id": int(r["id"]), "episodes": 1})
 
           ani_values = {}
           for i in range(0,len(ani_ids),50):
