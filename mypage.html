@@ -44,11 +44,11 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 <section class="panel"><h2>アカウント統計</h2><div id="stats" class="stats"></div></section>
 <section class="panel">
 <h2>プロフィール</h2>
-<div class="profile-head"><img id="avatar-preview" class="avatar" alt="プロフィール画像"><div class="sub">公開プロフィールに表示されます。</div></div>
+<div class="profile-head"><img id="avatar-preview" class="avatar" alt="プロフィール画像"><div><div class="sub">公開プロフィールに表示されます。</div><div class="avatar-picker" style="margin-top:10px"><input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button id="upload-avatar" class="btn secondary" type="button">画像をアップロード</button></div><div class="avatar-help">JPG / PNG / WebP / GIF、2MB以下。アップロードした画像はプロフィール画像として公開されます。</div></div></div>
 <div class="profile-grid">
 <div><div class="field"><label for="username">ユーザー名</label><div class="username-input"><span>@</span><input id="username" maxlength="30"></div></div>
 <div class="field"><label for="display_name">表示名</label><input id="display_name" maxlength="50"></div>
-<div class="field"><label for="avatar_url">アバターURL</label><input id="avatar_url" type="url"></div></div>
+<div class="field"><label for="avatar_url">画像URL（任意）</label><input id="avatar_url" type="url" placeholder="外部画像URLを使う場合のみ"></div></div>
 <div class="field"><label for="bio">自己紹介</label><textarea id="bio" maxlength="500" style="min-height:150px"></textarea></div>
 </div>
 <button id="save-profile" class="btn" type="button">プロフィールを保存</button><span id="profile-msg" class="message"></span>
@@ -101,6 +101,28 @@ async function loadProfile(){
  document.getElementById("avatar_url").value=data.avatar_url||"";
  document.getElementById("bio").value=data.bio||"";
  document.getElementById("avatar-preview").src=data.avatar_url||"";
+}
+async function uploadAvatar(){
+ const msg=document.getElementById("profile-msg"),file=document.getElementById("avatar-file"),button=document.getElementById("upload-avatar");
+ const selected=file.files?.[0];
+ if(!selected){msg.textContent="プロフィール画像を選択してください。";return;}
+ const allowed=["image/jpeg","image/png","image/webp","image/gif"];
+ if(!allowed.includes(selected.type)){msg.textContent="JPG、PNG、WebP、GIFのみアップロードできます。";return;}
+ if(selected.size>2*1024*1024){msg.textContent="画像は2MB以下にしてください。";return;}
+ button.disabled=true;msg.textContent="画像をアップロードしています…";
+ const path=currentUser.id+"/avatar";
+ const {error:uploadError}=await supabaseClient.storage.from("profile-avatars").upload(path,selected,{contentType:selected.type,cacheControl:"3600",upsert:true});
+ if(uploadError){console.error(uploadError);msg.textContent="画像のアップロードに失敗しました。";button.disabled=false;return;}
+ const {data}=supabaseClient.storage.from("profile-avatars").getPublicUrl(path);
+ const url=data?.publicUrl;
+ if(!url){msg.textContent="画像URLを取得できませんでした。";button.disabled=false;return;}
+ const cacheBusted=url+"?v="+Date.now();
+ document.getElementById("avatar_url").value=cacheBusted;
+ document.getElementById("avatar-preview").src=cacheBusted;
+ const {error:saveError}=await supabaseClient.from("profiles").upsert({id:currentUser.id,avatar_url:cacheBusted,updated_at:new Date().toISOString()},{onConflict:"id"});
+ if(saveError){console.error(saveError);msg.textContent="画像は保存されましたがプロフィール更新に失敗しました。";button.disabled=false;return;}
+ msg.textContent="プロフィール画像を更新しました。";
+ button.disabled=false;
 }
 async function saveProfile(){
  const msg=document.getElementById("profile-msg"),username=document.getElementById("username").value.trim().replace(/^@+/,"");
@@ -184,6 +206,7 @@ async function start(){
 document.addEventListener("DOMContentLoaded",()=>{
  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;await loadTab();}));
  document.getElementById("save-profile").addEventListener("click",saveProfile);
+ document.getElementById("upload-avatar").addEventListener("click",uploadAvatar);
  start();
 });
 </script>
