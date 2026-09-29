@@ -118,10 +118,9 @@ function updateMessagePhotoPreview(){
  const input=document.getElementById("message-image"),preview=document.getElementById("message-attachment"),files=[...(input.files||[])];
  if(files.length>4){alert("写真は4枚までです。");input.value="";preview.style.display="none";return}
  if(files.length){
-  preview.innerHTML='<div class="attach-photo-list">'+files.map((f,i)=>'<div class="attach-photo-item"><img src="'+URL.createObjectURL(f)+'" alt=""><button type="button" class="attach-photo-remove" data-photo-index="'+i+'" aria-label="この写真を解除">×</button></div>').join("")+'</div><span>'+files.length+'枚を選択中</span> <button type="button" class="attach-clear" id="message-photo-clear">すべて解除</button>';
+  preview.innerHTML='<div class="attach-photo-list">'+files.map((f,i)=>'<div class="attach-photo-item"><img src="'+URL.createObjectURL(f)+'" alt=""><button type="button" class="attach-photo-remove" data-photo-index="'+i+'" aria-label="この写真を解除">×</button></div>').join("")+'</div><span>'+files.length+'枚を選択中</span>';
   preview.style.display="flex";
   preview.querySelectorAll(".attach-photo-remove").forEach(btn=>btn.onclick=()=>removeMessagePhoto(Number(btn.dataset.photoIndex)));
-  const clear=document.getElementById("message-photo-clear");if(clear)clear.onclick=clearMessagePhotos;
  }else{preview.innerHTML="";preview.style.display="none"}
 }
 function setMessageFiles(files){const dt=new DataTransfer();files.slice(0,4).forEach(f=>dt.items.add(f));document.getElementById("message-image").files=dt.files;updateMessagePhotoPreview()}
