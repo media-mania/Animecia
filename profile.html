@@ -89,26 +89,38 @@ async function setupFollow(profileId){
  const button=document.getElementById("follow-button");
  const message=document.getElementById("follow-message");
  if(!button)return;
- const user=await getCurrentUser();
- if(!user || !user.email_confirmed_at){button.textContent="ログインしてフォロー";button.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);return;}
+ const {data:{user},error:userError}=await supabaseClient.auth.getUser();
+ if(userError || !user || !user.email_confirmed_at){
+   button.textContent="ログインしてフォロー";
+   button.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);
+   return;
+ }
  if(user.id===profileId){button.remove();return;}
  button.onclick=async()=>{
-   button.disabled=true; message.textContent="";
-   const {data:existing,error:findError}=await supabaseClient.from("user_follows").select("follower_id").eq("follower_id",user.id).eq("following_id",profileId).maybeSingle();
-   if(findError){message.textContent="状態を確認できませんでした。";button.disabled=false;return;}
-   if(existing){
-     const {error}=await supabaseClient.from("user_follows").delete().eq("follower_id",user.id).eq("following_id",profileId);
-     if(error)message.textContent="フォロー解除に失敗しました。";else button.textContent="フォロー";
-   }else{
-     const {error}=await supabaseClient.from("user_follows").insert({follower_id:user.id,following_id:profileId});
-     if(error)message.textContent="フォローに失敗しました。";else {button.textContent="フォロー中";message.textContent="フォローしました。相手に通知されます。";}
+   button.disabled=true;
+   message.textContent="処理中…";
+   const {data,error}=await supabaseClient.rpc("toggle_user_follow",{p_following_id:profileId});
+   if(error){
+     console.error("follow toggle error",error);
+     message.textContent=error.code==="42501"?"ログインが必要です。":"フォロー処理に失敗しました。";
+     button.disabled=false;
+     return;
    }
+   const result=data?.[0];
+   if(!result){
+     message.textContent="フォロー状態を取得できませんでした。";
+     button.disabled=false;
+     return;
+   }
+   button.textContent=result.is_following?"フォロー中":"フォロー";
+   message.textContent=result.is_following?"フォローしました。":"フォローを解除しました。";
+   const statNodes=document.querySelectorAll(".stat b");
+   if(statNodes[1])statNodes[1].textContent=String(result.followers_count||0);
    const {data:statsData}=await supabaseClient.rpc("get_profile_follow_stats",{p_profile_id:profileId});
    const stats=statsData?.[0];
    if(stats){
-     const statNodes=document.querySelectorAll(".stat b");
-     if(statNodes[1]) statNodes[1].textContent=String(stats.followers_count||0);
-     if(statNodes[2]) statNodes[2].textContent=String(stats.following_count||0);
+     if(statNodes[1])statNodes[1].textContent=String(stats.followers_count||0);
+     if(statNodes[2])statNodes[2].textContent=String(stats.following_count||0);
      button.textContent=stats.is_following?"フォロー中":"フォロー";
    }
    button.disabled=false;
