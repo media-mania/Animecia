@@ -59,7 +59,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <div class="page-shell">
 <div>
 <section class="profile-card">
-<div class="profile-cover"></div>
+<div id="profile-cover" class="profile-cover"></div>
 <div class="profile-main">
 <div class="profile-avatar-wrap" id="profile-avatar-wrap"><div id="profile-avatar-fallback" class="profile-avatar profile-avatar-fallback">A</div><img id="profile-avatar-large" class="profile-avatar" alt="" style="display:none"></div>
 <div class="profile-actions">
@@ -105,11 +105,12 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <h2>プロフィールを編集</h2>
 <div class="profile-head"><div id="avatar-preview-wrap"><div id="avatar-preview-fallback" class="avatar" style="display:grid;place-items:center;font-weight:900;color:#888">A</div><img id="avatar-preview" class="avatar" alt="" style="display:none"></div><div><div class="sub">公開プロフィールに表示されます。</div><div class="avatar-picker" style="margin-top:7px"><input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button id="upload-avatar" class="btn secondary" type="button">画像をアップロード</button></div><div class="avatar-help">JPG / PNG / WebP / GIF、2MB以下。</div></div></div>
 <div class="profile-editor">
+<div class="field" style="margin-bottom:16px"><label>プロフィール背景画像</label><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><input id="background-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button id="upload-background" class="btn secondary" type="button">背景画像をアップロード</button><span class="sub">JPG / PNG / WebP / GIF、5MB以下。プロフィール上部に表示されます。</span></div></div>
 <div class="profile-grid">
 <div>
 <div class="field"><label for="username">ユーザー名</label><div class="username-input"><span>@</span><input id="username" maxlength="30"></div></div>
 <div class="field"><label for="display_name">表示名</label><input id="display_name" maxlength="50"></div>
-<div class="field"><label for="avatar_url">画像URL（任意）</label><input id="avatar_url" type="url" placeholder="外部画像URLを使う場合のみ"></div>
+<div class="field"><label for="avatar_url">画像URL（任意）</label><input id="avatar_url" type="url" placeholder="外部画像URLを使う場合のみ"><input id="profile-background-url" type="hidden"></div>
 </div>
 <div class="field"><label for="bio">自己紹介</label><textarea id="bio" maxlength="500" style="min-height:130px"></textarea></div>
 </div>
@@ -178,7 +179,7 @@ function setAvatar(targetId,fallbackId,url,name){
  else{img.style.display="none";fallback.textContent=(name||"Animeciaユーザー").slice(0,1).toUpperCase();fallback.style.display="grid";}
 }
 async function loadProfile(){
- const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking").eq("id",currentUser.id).maybeSingle();
+ const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,background_url,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking").eq("id",currentUser.id).maybeSingle();
  if(error){console.error(error);return;}
  const p=data||{};
  const username=String(p.username||"").replace(/^@/,"");
@@ -186,6 +187,7 @@ async function loadProfile(){
  document.getElementById("username").value=username;
  document.getElementById("display_name").value=p.display_name||"";
  document.getElementById("avatar_url").value=p.avatar_url||"";
+ document.getElementById("profile-background-url").value=p.background_url||"";
  document.getElementById("bio").value=p.bio||"";
  const visibility={favorites:p.show_favorites!==false,anime_follows:p.show_anime_follows!==false,watch_status:p.show_watch_status!==false,ratings:p.show_ratings!==false,reviews:p.show_reviews!==false,user_follows:p.show_user_follows!==false,ranking:p.show_ranking!==false};
  Object.entries(visibility).forEach(([key,value])=>{const el=document.getElementById("show-"+key);if(el)el.checked=value;});
@@ -224,13 +226,33 @@ async function uploadAvatar(){
  msg.textContent="プロフィール画像を更新しました。";
  button.disabled=false;
 }
+async function uploadBackground(){
+ const msg=document.getElementById("profile-msg"),file=document.getElementById("background-file"),button=document.getElementById("upload-background"),selected=file.files?.[0];
+ if(!selected){msg.textContent="背景画像を選択してください。";return;}
+ const allowed=["image/jpeg","image/png","image/webp","image/gif"];
+ if(!allowed.includes(selected.type)){msg.textContent="JPG、PNG、WebP、GIFのみアップロードできます。";return;}
+ if(selected.size>5*1024*1024){msg.textContent="背景画像は5MB以下にしてください。";return;}
+ button.disabled=true;msg.textContent="背景画像をアップロードしています…";
+ const path=currentUser.id+"/background";
+ const {error}=await supabaseClient.storage.from("profile-backgrounds").upload(path,selected,{contentType:selected.type,cacheControl:"3600",upsert:true});
+ if(error){console.error(error);msg.textContent="背景画像のアップロードに失敗しました。";button.disabled=false;return;}
+ const {data}=supabaseClient.storage.from("profile-backgrounds").getPublicUrl(path),url=data?.publicUrl;
+ if(!url){msg.textContent="背景画像URLを取得できませんでした。";button.disabled=false;return;}
+ const cacheBusted=url+"?v="+Date.now();
+ const {error:saveError}=await supabaseClient.from("profiles").upsert({id:currentUser.id,background_url:cacheBusted,updated_at:new Date().toISOString()},{onConflict:"id"});
+ if(saveError){console.error(saveError);msg.textContent="画像は保存されましたがプロフィール更新に失敗しました。";button.disabled=false;return;}
+ document.getElementById("profile-background-url").value=cacheBusted;
+ const cover=document.getElementById("profile-cover");if(cover)cover.style.backgroundImage="url(\""+cacheBusted.replace(/"/g,"%22")+"\")";
+ msg.textContent="背景画像を更新しました。";button.disabled=false;
+}
 async function saveProfile(){
  const msg=document.getElementById("profile-msg"),username=document.getElementById("username").value.trim().replace(/^@+/,"");
  if(username&&!/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){msg.textContent="ユーザー名は2〜30文字で入力してください。";return;}
- const payload={id:currentUser.id,username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,show_favorites:document.getElementById("show-favorites")?.checked!==false,show_anime_follows:document.getElementById("show-anime_follows")?.checked!==false,show_watch_status:document.getElementById("show-watch_status")?.checked!==false,show_ratings:document.getElementById("show-ratings")?.checked!==false,show_reviews:document.getElementById("show-reviews")?.checked!==false,show_user_follows:document.getElementById("show-user_follows")?.checked!==false,show_ranking:document.getElementById("show-ranking")?.checked!==false,updated_at:new Date().toISOString()};
+ const payload={id:currentUser.id,background_url:document.getElementById("profile-background-url").value.trim()||null,username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,show_favorites:document.getElementById("show-favorites")?.checked!==false,show_anime_follows:document.getElementById("show-anime_follows")?.checked!==false,show_watch_status:document.getElementById("show-watch_status")?.checked!==false,show_ratings:document.getElementById("show-ratings")?.checked!==false,show_reviews:document.getElementById("show-reviews")?.checked!==false,show_user_follows:document.getElementById("show-user_follows")?.checked!==false,show_ranking:document.getElementById("show-ranking")?.checked!==false,updated_at:new Date().toISOString()};
  const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
  if(error){console.error(error);msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";return;}
  setAvatar("avatar-preview","avatar-preview-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");document.getElementById("profile-display-name").textContent=payload.display_name||payload.username||"Animeciaユーザー";document.getElementById("profile-handle").textContent=payload.username?"@"+payload.username.replace(/^@/,""):"@ユーザー名未設定";document.getElementById("profile-bio").textContent=payload.bio||"";
+ const cover=document.getElementById("profile-cover");if(cover)cover.style.backgroundImage=payload.background_url?"url(\""+payload.background_url.replace(/\"/g,"%22")+"\")":"";
  msg.textContent="プロフィールを保存しました。";
 }
 
@@ -391,6 +413,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  document.getElementById("save-profile").addEventListener("click",saveProfile);
 document.getElementById("save-visibility")?.addEventListener("click",saveVisibility);
  document.getElementById("upload-avatar").addEventListener("click",uploadAvatar);
+ document.getElementById("upload-background")?.addEventListener("click",uploadBackground);
  document.getElementById("notification-side-link")?.addEventListener("click",async e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="notifications"]');if(b)b.click();document.getElementById("list")?.scrollIntoView({behavior:"smooth",block:"start"});});
  document.getElementById("followers-link")?.addEventListener("click",e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="user_followers"]');if(b)b.click();});
  document.getElementById("following-link")?.addEventListener("click",e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="user_following"]');if(b)b.click();});
