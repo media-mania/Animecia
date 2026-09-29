@@ -113,7 +113,7 @@ jobs:
               if score>=82 and (best is None or score>best[0]): best=(score,x)
             return best[1] if best else None
 
-                    def japanese_official(url,title):
+          def japanese_official(url,title):
             try:
               host=(urllib.parse.urlparse(url).hostname or "").lower()
               if any(bad in host for bad in ("twitter.com","x.com","facebook.com","instagram.com","youtube.com","wikipedia.org","myanimelist.net","anilist.co","animenewsnetwork.com","crunchyroll.com")):
