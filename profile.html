@@ -32,11 +32,11 @@ const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?
 const imageMarkup=(url,alt)=>url?'<img class="thumb" src="'+esc(url)+'" alt="'+esc(alt)+'" loading="lazy">':'<div class="thumb" style="display:grid;place-items:center;color:#888">画像なし</div>';
 const getAnime=async ids=>{const u=[...new Set((ids||[]).map(Number).filter(Number.isInteger))],m=new Map();for(let i=0;i<u.length;i+=500){const {data}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image").in("id",u.slice(i,i+500));(data||[]).forEach(a=>m.set(Number(a.id),a));}return m;};
 let profile=null,visibility={},currentUser=null,tabs=[];
-function renderHeader(followStats,isSelf){
+function renderHeader(followStats,reviewCount,isSelf){
  const name=profile.display_name||profile.username||"Animeciaユーザー";
  const avatar=profile.avatar_url?'<img class="profile-avatar" src="'+esc(profile.avatar_url)+'" alt="'+esc(name)+'">':'<div class="profile-avatar profile-avatar-fallback">'+esc(name.slice(0,1))+'</div>';
  const actions=isSelf?'<a class="btn" href="mypage.html">プロフィールを編集</a>':'<button id="follow-button" class="btn" type="button">'+(followStats.is_following?"フォロー中":"フォロー")+'</button><a class="btn secondary" href="messages.html?user='+encodeURIComponent(profileId)+'">メッセージ</a>';
- const follows=visibility.user_follows!==false?'<div class="profile-stats"><button id="followers-link" class="profile-stat"><strong>'+esc(followStats.followers_count||0)+'</strong>フォロワー</button><button id="following-link" class="profile-stat"><strong>'+esc(followStats.following_count||0)+'</strong>フォロー中</button></div>':"";
+ const follows=visibility.user_follows!==false?'<div class="profile-stats"><span class="profile-stat"><strong>'+esc(reviewCount||0)+'</strong>レビュー</span><button id="followers-link" class="profile-stat"><strong>'+esc(followStats.followers_count||0)+'</strong>フォロワー</button><button id="following-link" class="profile-stat"><strong>'+esc(followStats.following_count||0)+'</strong>フォロー中</button></div>':'<div class="profile-stats"><span class="profile-stat"><strong>'+esc(reviewCount||0)+'</strong>レビュー</span></div>';
  return '<section class="profile-card"><div class="profile-cover"></div><div class="profile-main"><div class="profile-avatar-wrap">'+avatar+'</div><div class="profile-actions">'+actions+'</div><h1 class="profile-name">'+esc(name)+'</h1><div class="profile-handle">'+(profile.username?"@"+esc(String(profile.username).replace(/^@/,"")):"@ユーザー名未設定")+'</div><div class="profile-bio">'+esc(profile.bio||"自己紹介はまだありません。")+'</div>'+follows+'</div></section>';
 }
 function makeTabs(){
@@ -51,9 +51,10 @@ function makeTabs(){
 async function renderContent(){
  const {data:followData}=await supabaseClient.rpc("get_profile_follow_stats",{p_profile_id:profileId});
  const followStats=followData?.[0]||{followers_count:0,following_count:0,is_following:false};
+ const {count:reviewCount}=await supabaseClient.from("reviews").select("id",{count:"exact",head:true}).eq("user_id",profileId);
  const user=await supabaseClient.auth.getUser();currentUser=user.data?.user||null;
  const isSelf=currentUser?.id===profileId;
- document.getElementById("app").innerHTML=renderHeader(followStats,isSelf)+'<section class="panel"><div id="tabs" class="tabs">'+makeTabs().map((x,i)=>'<button class="tab'+(i===0?" active":"")+'" data-tab="'+x[0]+'" type="button">'+x[1]+'</button>').join("")+'</div><div id="list" class="list"></div></section>';
+ document.getElementById("app").innerHTML=renderHeader(followStats,reviewCount||0,isSelf)+'<section class="panel"><div id="tabs" class="tabs">'+makeTabs().map((x,i)=>'<button class="tab'+(i===0?" active":"")+'" data-tab="'+x[0]+'" type="button">'+x[1]+'</button>').join("")+'</div><div id="list" class="list"></div></section>';
  tabs=makeTabs().map(x=>x[0]);
  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");loadTab(b.dataset.tab);}));
  if(visibility.user_follows!==false){
