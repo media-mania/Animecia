@@ -139,7 +139,7 @@ async function loadStats(){
  const el=document.getElementById("stats");
  const [fav,watch,ratings]=await Promise.all([
   supabaseClient.from("favorites").select("anime_id",{count:"exact",head:true}).eq("user_id",currentUser.id),
-  supabaseClient.from("watch_status").select("status").eq("user_id",currentUser.id),
+  supabaseClient.from("user_anime_status").select("status").eq("user_id",currentUser.id),
   supabaseClient.from("user_ratings").select("rating").eq("user_id",currentUser.id)
  ]);
  const w=watch.data||[],r=(ratings.data||[]).map(x=>Number(x.rating)).filter(Number.isFinite);
@@ -238,7 +238,7 @@ async function loadTab(){
    const map=await getAnime((data||[]).map(x=>x.anime_id));const labels={favorite:"お気に入り",unfavorite:"お気に入り解除",status_change:"視聴状況変更",rating:"評価",review:"レビュー",review_like:"レビューへのいいね",progress:"進捗更新",follow:"フォロー"};
    el.innerHTML=(data||[]).map(x=>{const a=map.get(Number(x.anime_id));return '<div class="list-item"><div class="grow"><div class="title">'+esc(labels[x.activity_type]||x.activity_type)+(a?'：<a href="anime-detail.html?id='+a.id+'">'+esc(titleOf(a))+'</a>':"")+'</div><div class="meta">'+new Date(x.created_at).toLocaleString("ja-JP")+'</div></div></div>';}).join("")||'<div class="empty">活動履歴はありません。</div>';return;
   }
-  const {data,error}=await supabaseClient.from("watch_status").select("anime_id,status,progress,updated_at").eq("user_id",currentUser.id).eq("status",currentTab).order("updated_at",{ascending:false});if(error)throw error;
+  const {data,error}=await supabaseClient.from("user_anime_status").select("anime_id,status,progress,updated_at").eq("user_id",currentUser.id).eq("status",currentTab).order("updated_at",{ascending:false});if(error)throw error;
   const map=await getAnime((data||[]).map(x=>x.anime_id));const labels={watching:"視聴中",completed:"視聴完了",want_to_watch:"視聴予定",paused:"一時停止",dropped:"視聴中止"};renderAnimeList(data||[],map,x=>(labels[x.status]||x.status)+" ・ "+(x.progress||0)+"話");
  }catch(e){console.error("mypage tab error",e);el.innerHTML='<div class="error">この項目を読み込めませんでした。</div>';}
 }
