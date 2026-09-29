@@ -49,9 +49,9 @@ jobs:
                   return json.loads(r.read().decode("utf-8"))
 
           qs=urllib.parse.urlencode({
-              "select":"id,source_id",
+              "select":"id,source_id,genre",
               "source_provider":"eq.anilist",
-              "genre":"eq.その他",
+              "genres_synced_at":"is.null",
               "anime_verification_status":"eq.verified",
               "order":"id.asc",
               "limit":str(batch)
@@ -59,19 +59,27 @@ jobs:
           rows=request(base+"/rest/v1/anime?"+qs)
 
           query="query($id:Int!){Media(id:$id,type:ANIME){genres}}"
-          items=[]
+          genre_rows=request(base+"/rest/v1/genres?select=id,name&limit=100")
+          genre_ids={x["name"]:x["id"] for x in genre_rows}
+          genre_map={"Action":"アクション","Adventure":"冒険","Comedy":"コメディ","Drama":"ドラマ","Fantasy":"ファンタジー","Horror":"ホラー","Romance":"恋愛","Sci-Fi":"SF","Slice of Life":"日常","Sports":"スポーツ","School":"学園","Music":"音楽","Historical":"歴史","Military":"ミリタリー","Mecha":"メカ","Mystery":"推理","Thriller":"サスペンス","Isekai":"異世界","Magical Girl":"魔法少女"}
+
+          added=0
           for row in rows:
               try:
-                  media=request(os.environ["ANILIST_URL"],"POST",{"query":query,"variables":{"id":int(row["source_id"])}})
+                  media=request(os.environ["ANILIST_URL"],"POST,{"query":query,"variables":{"id":int(row["source_id"])}})
                   genres=((media.get("data") or {}).get("Media") or {}).get("genres") or []
-                  if genres:
-                      items.append({"anime_id":row["id"],"genres":genres})
+                  existing=request(base+"/rest/v1/anime_genres?select=genre_id&anime_id=eq."+str(row["id"]))
+                  existing_ids={x["genre_id"] for x in existing}
+                  for g in genres:
+                      gid=genre_ids.get(genre_map.get(g))
+                      if gid and gid not in existing_ids:
+                          request(base+"/rest/v1/anime_genres","POST",[{"anime_id":row["id"],"genre_id":gid}],{"Prefer":"return=minimal"})
+                          existing_ids.add(gid)
+                          added+=1
+                  request(base+"/rest/v1/anime","PATCH",{"genres_synced_at":"now()"},{"id":"eq."+str(row["id"])})
                   time.sleep(1)
               except Exception as e:
                   print("skip",row["id"],e)
 
-          if items:
-              print(request(base+"/rest/v1/rpc/resync_anime_genres_batch","POST",items))
-          else:
-              print("no genre updates")
+          print("genre links added:",added)
           PY
