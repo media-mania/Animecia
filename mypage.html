@@ -107,12 +107,7 @@ const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?
 let currentUser=null,currentTab="favorites";
 
 function isVerifiedUser(user){
-  return Boolean(
-    user &&
-    user.is_anonymous !== true &&
-    user.email &&
-    user.email_confirmed_at
-  );
+  return Boolean(user && user.is_anonymous !== true && user.email && (user.email_confirmed_at || user.confirmed_at));
 }
 
 function imageMarkup(url,alt=""){
@@ -142,27 +137,35 @@ function replaceImage(img){
 }
 
 async function authState(){
-  const {data:{user},error}=await supabaseClient.auth.getUser();
-  if(error)console.error(error);
   const name=document.getElementById("user-name");
   const btn=document.getElementById("auth-btn");
-  if(user){
-    name.textContent=user.email||"";
-    btn.textContent="ログアウト";
-    btn.onclick=async()=>{
-      await supabaseClient.auth.signOut();
-      location.reload();
-    };
-  }else{
+  try{
+    const {data,error}=await supabaseClient.auth.getSession();
+    if(error) throw error;
+    const user=data?.session?.user||null;
+    if(user){
+      name.textContent=user.email||"";
+      btn.textContent="ログアウト";
+      btn.onclick=async()=>{await supabaseClient.auth.signOut();location.reload();};
+    }else{
+      name.textContent="";
+      btn.textContent="ログイン";
+      btn.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);
+      return null;
+    }
+    if(!isVerifiedUser(user)){
+      btn.textContent="ログイン";
+      btn.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);
+      return null;
+    }
+    return user;
+  }catch(error){
+    console.error("Auth error:",error);
     name.textContent="";
     btn.textContent="ログイン";
-    btn.onclick=()=>location.href="index.html#login";
-  }
-  if(user && !isVerifiedUser(user)){
-    await supabaseClient.auth.signOut();
+    btn.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);
     return null;
   }
-  return user || null;
 }
 
 async function loadStats(){
@@ -469,26 +472,25 @@ document.getElementById("save-profile").addEventListener("click",saveProfile);
 
 window.addEventListener("error",event=>{
   console.error("Mypage error:",event.error||event.message);
-  const warning=document.getElementById("auth-warning");
-  if(warning){
-    warning.style.display="block";
-    warning.innerHTML='<div class="error">マイページの読み込み中にエラーが発生しました。ページを再読み込みしてください。</div>';
-  }
 });
+
 (async()=>{
+  const warning=document.getElementById("auth-warning");
+  const content=document.getElementById("content");
   try{
     currentUser=await authState();
     if(!currentUser){
-      document.getElementById("auth-warning").style.display="block";
+      warning.style.display="block";
       return;
     }
-    document.getElementById("content").style.display="block";
-    await Promise.all([loadStats(),loadProfile()]);
+    content.style.display="block";
+    await loadProfile();
+    await loadStats();
     await loadTab();
   }catch(error){
     console.error("Mypage initialization error:",error);
-    document.getElementById("content").style.display="block";
-    document.getElementById("list").innerHTML='<div class="error">マイページの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>';
+    content.style.display="block";
+    document.getElementById("list").innerHTML='<div class="error">マイページの読み込みに失敗しました。ページを再読み込みしてください。</div>';
   }
 })();
 </script>
