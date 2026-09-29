@@ -219,14 +219,15 @@ async function saveProfile(){
 }
 async function loadStats(){
  const el=document.getElementById("stats");
- const [fav,watch,ratings]=await Promise.all([
+ const [fav,watch,ratings,reviews]=await Promise.all([
   supabaseClient.from("favorites").select("anime_id",{count:"exact",head:true}).eq("user_id",currentUser.id),
   supabaseClient.from("user_anime_status").select("status").eq("user_id",currentUser.id),
-  supabaseClient.from("user_ratings").select("rating").eq("user_id",currentUser.id)
+  supabaseClient.from("user_ratings").select("rating").eq("user_id",currentUser.id),
+  supabaseClient.from("reviews").select("id",{count:"exact",head:true}).eq("user_id",currentUser.id)
  ]);
  const w=watch.data||[],r=(ratings.data||[]).map(x=>Number(x.rating)).filter(Number.isFinite);
  const avg=r.length?(r.reduce((a,b)=>a+b,0)/r.length).toFixed(1):"—";
- el.innerHTML=[["お気に入り",fav.count??0],["視聴中",w.filter(x=>x.status==="watching").length],["視聴完了",w.filter(x=>x.status==="completed").length],["平均評価",avg]].map(x=>'<div class="stat"><span class="stat-label">'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join("");
+ el.innerHTML=[["お気に入り",fav.count??0],["レビュー",reviews.count??0],["視聴完了",w.filter(x=>x.status==="completed").length],["平均評価",avg]].map(x=>'<div class="stat"><span class="stat-label">'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join("");
 }
 function renderAnimeList(rows,map,labelFn){
  const el=document.getElementById("list");
@@ -300,9 +301,21 @@ async function loadTab(){
    const map=await getAnime((data||[]).map(x=>x.anime_id));renderAnimeList(data||[],map,x=>"★ "+x.rating+"/10");return;
   }
   if(currentTab==="reviews"){
-   const {data,error}=await supabaseClient.from("reviews").select("anime_id,title,content,rating,spoiler,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});if(error)throw error;
-   const map=await getAnime((data||[]).map(x=>x.anime_id));
-   el.innerHTML=(data||[]).map(x=>{const a=map.get(Number(x.anime_id));if(!a)return "";return '<div class="list-item" style="align-items:flex-start">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><a class="title" href="anime-detail.html?id='+a.id+'">'+esc(titleOf(a))+'</a><div class="sub">'+esc(x.title||"レビュー")+(x.rating!=null?" ・ ★"+esc(x.rating):"")+(x.spoiler?" ・ ネタバレあり":"")+'</div><div class="sub">'+esc(x.content||"")+'</div></div></div>';}).join("")||'<div class="empty">レビューはありません。</div>';return;
+   el.innerHTML='<div class="loading">レビューを読み込んでいます…</div>';
+   const {data,error}=await supabaseClient.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at,updated_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);
+   if(error)throw error;
+   const rows=data||[];
+   const map=await getAnime(rows.map(x=>x.anime_id));
+   if(!rows.length){el.innerHTML='<div class="empty"><strong>まだレビューがありません。</strong><div class="sub">作品ページからレビューを投稿すると、ここに表示されます。</div></div>';return;}
+   el.innerHTML=rows.map(x=>{
+    const a=map.get(Number(x.anime_id));if(!a)return "";
+    const date=x.updated_at||x.created_at;
+    const score=x.rating!=null?'★ '+esc(x.rating)+' / 10':"";
+    const spoiler=x.spoiler?'<span class="pill">ネタバレあり</span>':"";
+    const likes=Number(x.likes_count||0)>0?'<span class="pill">いいね '+esc(x.likes_count)+'</span>':"";
+    return '<article class="list-item" style="align-items:flex-start">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><a class="title" href="anime-detail.html?id='+a.id+'">'+esc(titleOf(a))+'</a><div class="sub">'+esc(x.title||"レビュー")+(score?" ・ "+score:"")+'</div><div class="meta">'+spoiler+likes+(date?'<span>'+esc(new Date(date).toLocaleDateString("ja-JP"))+'</span>':"")+'</div><div class="sub" style="margin-top:10px;white-space:pre-wrap">'+esc(x.content||"")+'</div><div style="margin-top:10px"><a class="btn secondary" href="anime-detail.html?id='+a.id+'">作品ページで確認</a></div></div></article>';
+   }).join("");
+   return;
   }
   if(currentTab==="notifications"){
    const {data,error}=await supabaseClient.from("user_notifications").select("id,title,message,target_url,is_read,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);if(error)throw error;
