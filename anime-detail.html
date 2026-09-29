@@ -2843,86 +2843,25 @@
     ========================================= */
 
     function createRatingOptions() {
-
         const selects = [
-
-            document.getElementById(
-                "user-rating"
-            ),
-
-            document.getElementById(
-                "review-rating"
-            )
-
+            document.getElementById("user-rating"),
+            document.getElementById("review-rating")
         ];
-
-
-        selects.forEach(
-            select => {
-
-                if (!select) {
-                    return;
-                }
-
-
-                select.innerHTML =
-                    "";
-
-
-                const emptyOption =
-                    document.createElement(
-                        "option"
-                    );
-
-
-                emptyOption.value =
-                    "";
-
-
-                emptyOption.textContent =
-                    select.id ===
-                    "review-rating"
-
-                        ? "評価なし"
-
-                        : "評価を選択";
-
-
-                select.appendChild(
-                    emptyOption
-                );
-
-
-                for (
-                    let value = 10;
-                    value >= 1;
-                    value -= 0.5
-                ) {
-
-                    const option =
-                        document.createElement(
-                            "option"
-                        );
-
-
-                    option.value =
-                        value.toFixed(1);
-
-
-                    option.textContent =
-                        `${value.toFixed(1)} / 10`;
-
-
-                    select.appendChild(
-                        option
-                    );
-
-                }
-
+        selects.forEach(select => {
+            if (!select) return;
+            select.innerHTML = "";
+            const emptyOption = document.createElement("option");
+            emptyOption.value = "";
+            emptyOption.textContent = select.id === "review-rating" ? "評価なし" : "評価を選択";
+            select.appendChild(emptyOption);
+            for (let value = 10; value >= 1; value--) {
+                const option = document.createElement("option");
+                option.value = String(value);
+                option.textContent = `${value} / 10`;
+                select.appendChild(option);
             }
-        );
+        });
     }
-
 
     /* =========================================
        Error
@@ -5233,7 +5172,7 @@
 
     async function loadWatchStatus() {
 
-        if (!currentUser) {
+        if (!currentUser || !currentUser.email_confirmed_at) {
             return;
         }
 
@@ -5526,7 +5465,7 @@
 
     async function saveUserRating() {
 
-        if (!currentUser) {
+        if (!currentUser || !currentUser.email_confirmed_at) {
             return;
         }
 
@@ -5570,11 +5509,12 @@
         if (
             Number.isNaN(rating) ||
             rating < 1 ||
-            rating > 10
+            rating > 10 ||
+            !Number.isInteger(rating)
         ) {
 
             message.textContent =
-                "評価は1.0〜10.0の範囲で入力してください。";
+                "評価は1〜10点の整数で入力してください。";
 
 
             return;
