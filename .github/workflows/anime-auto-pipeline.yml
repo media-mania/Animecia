@@ -161,13 +161,43 @@ jobs:
                       return x["text"]
               return None
 
+          GENRE_MAP = {
+              "action":"アクション","アクション":"アクション",
+              "adventure":"冒険","adventure story":"冒険","冒険":"冒険",
+              "comedy":"コメディ","コメディ":"コメディ",
+              "drama":"ドラマ","ドラマ":"ドラマ",
+              "ecchi":"お色気","エッチ":"お色気","お色気":"お色気",
+              "fantasy":"ファンタジー","ファンタジー":"ファンタジー",
+              "horror":"ホラー","ホラー":"ホラー",
+              "mahou shoujo":"魔法少女","magical girl":"魔法少女","魔法少女":"魔法少女",
+              "mecha":"メカ","メカ":"メカ",
+              "music":"音楽","音楽":"音楽",
+              "mystery":"ミステリー","ミステリー":"ミステリー",
+              "psychological":"心理","psychology":"心理","心理":"心理",
+              "romance":"恋愛","恋愛":"恋愛",
+              "sci-fi":"SF","science fiction":"SF","sf":"SF","SF":"SF",
+              "slice of life":"日常","slice-of-life":"日常","日常":"日常",
+              "sports":"スポーツ","スポーツ":"スポーツ",
+              "supernatural":"超自然","超自然":"超自然",
+              "thriller":"スリラー","スリラー":"スリラー",
+              "school":"学園","school life":"学園","学園":"学園",
+              "isekai":"異世界","異世界":"異世界",
+              "historical":"歴史","history":"歴史","歴史":"歴史",
+              "space":"宇宙","宇宙":"宇宙",
+              "military":"ミリタリー","ミリタリー":"ミリタリー",
+              "game":"ゲーム","games":"ゲーム","ゲーム":"ゲーム",
+              "suspense":"サスペンス","サスペンス":"サスペンス"
+          }
+
           def genres(infos):
               x = find(infos, types={"genres"})
               if not x or not x["text"]: return []
               vals = []
-              for v in x["text"].split(","):
-                  v = clean(v)
-                  if v and v not in vals: vals.append(v)
+              for raw in x["text"].split(","):
+                  key = clean(raw).strip().lower()
+                  if not key: continue
+                  mapped = GENRE_MAP.get(key)
+                  if mapped and mapped not in vals: vals.append(mapped)
               return vals
 
           def studios(infos):
