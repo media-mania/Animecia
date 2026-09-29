@@ -81,6 +81,44 @@ async function load(){
    '<div class="stats"><div class="stat"><b>'+esc(reviewCount||0)+'</b>レビュー</div><div class="stat"><b>'+esc(followStats?.followers_count||0)+'</b>フォロワー</div><div class="stat"><b>'+esc(followStats?.following_count||0)+'</b>フォロー</div></div><div style="margin-top:16px"><button id="follow-button" type="button" style="border:0;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer;background:#5b5ce2;color:#fff;">'+(followStats?.is_following?"フォロー中":"フォロー")+'</button><span id="follow-message" class="muted" style="margin-left:10px"></span></div></div></section>'+
    '<section class="panel"><h2>フォロー</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"><button id="show-followers" class="pill" type="button">フォロワー</button><button id="show-following" class="pill" type="button">フォロー中</button></div><div id="follow-list" class="empty">フォロー関係を確認できます。</div></section><section class="panel"><h2>レビュー</h2>'+(reviewHtml||'<div class="empty">公開されているレビューはありません。</div>')+'</section>';
 }
+async function getCurrentUser(){
+ const {data}=await supabaseClient.auth.getUser();
+ return data?.user||null;
+}
+async function setupFollow(profileId){
+ const button=document.getElementById("follow-button");
+ const message=document.getElementById("follow-message");
+ if(!button)return;
+ const user=await getCurrentUser();
+ if(!user || !user.email_confirmed_at){button.textContent="ログインしてフォロー";button.onclick=()=>location.href="login.html?redirect="+encodeURIComponent(location.href);return;}
+ if(user.id===profileId){button.remove();return;}
+ button.onclick=async()=>{
+   button.disabled=true; message.textContent="";
+   const {data:existing,error:findError}=await supabaseClient.from("user_follows").select("follower_id").eq("follower_id",user.id).eq("following_id",profileId).maybeSingle();
+   if(findError){message.textContent="状態を確認できませんでした。";button.disabled=false;return;}
+   if(existing){
+     const {error}=await supabaseClient.from("user_follows").delete().eq("follower_id",user.id).eq("following_id",profileId);
+     if(error)message.textContent="フォロー解除に失敗しました。";else button.textContent="フォロー";
+   }else{
+     const {error}=await supabaseClient.from("user_follows").insert({follower_id:user.id,following_id:profileId});
+     if(error)message.textContent="フォローに失敗しました。";else button.textContent="フォロー中";
+   }
+   button.disabled=false;
+ };
+}
+async function loadFollowList(profileId,mode){
+ const el=document.getElementById("follow-list");
+ el.innerHTML='<div class="empty">読み込み中…</div>';
+ const col=mode==="followers"?"follower_id":"following_id";
+ const {data,error}=await supabaseClient.from("user_follows").select("follower_id,following_id,created_at").eq("following_id",mode==="followers"?profileId:undefined).eq("follower_id",mode==="following"?profileId:undefined).order("created_at",{ascending:false}).limit(100);
+ if(error){el.innerHTML='<div class="error">フォロー一覧を取得できませんでした。</div>';return;}
+ const rows=data||[]; const ids=rows.map(x=>mode==="followers"?x.follower_id:x.following_id);
+ if(!ids.length){el.innerHTML='<div class="empty">'+(mode==="followers"?"フォロワーはいません。":"フォロー中のユーザーはいません。")+'</div>';return;}
+ const {data:profiles}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio").in("id",ids);
+ const map=new Map((profiles||[]).map(p=>[p.id,p]));
+ el.innerHTML=ids.map(uid=>{const p=map.get(uid);if(!p)return"";const name=p.display_name||p.username||"Animeciaユーザー";return '<a href="profile.html?id='+encodeURIComponent(p.id)+'" class="list-item"><div class="grow"><div class="title">'+esc(name)+'</div><div class="sub">'+(p.username?'@'+esc(p.username):"")+'</div></div></a>';}).join("")||'<div class="empty">ユーザーはいません。</div>';
+}
+setupFollow(id); document.getElementById("show-followers")?.addEventListener("click",()=>loadFollowList(id,"followers")); document.getElementById("show-following")?.addEventListener("click",()=>loadFollowList(id,"following")); loadFollowList(id,"followers");
 load();
 </script>
 </body>
