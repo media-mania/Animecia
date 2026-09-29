@@ -30,7 +30,7 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      CLASSIFICATION_VERSION: "animecia-existing-genres-v7-25"
+      CLASSIFICATION_VERSION: "animecia-existing-genres-v8-24"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -100,7 +100,7 @@ jobs:
           ALL_NAMES = [
               "SF","アイドル","アクション","コメディ","サスペンス","ショート","スポーツ","ドラマ",
               "ファミリー","ファンタジー","ホラー","ミリタリー","メカ","冒険","学園",
-              "恋愛","戦争","戦記","推理","日常","歴史","異世界","青春","音楽","魔法少女"
+              "恋愛","戦争","推理","日常","歴史","異世界","青春","音楽","魔法少女"
           ]
 
           # AniListの一般ジャンル → Animeciaジャンル。
@@ -317,7 +317,7 @@ jobs:
                   ["ドラマ", "青春"],
                   ["ファミリー"],
                   ["ファンタジー"],
-                  ["戦争", "戦記", "ミリタリー"],
+                  ["戦争", "ミリタリー"],
                   ["ホラー", "サスペンス"],
               ]
 
