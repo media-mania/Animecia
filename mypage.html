@@ -249,7 +249,7 @@ async function uploadAvatar(){
  const cacheBusted=url+"?v="+Date.now();
  document.getElementById("avatar_url").value=cacheBusted;
  setAvatar("avatar-preview","avatar-preview-fallback",cacheBusted,document.getElementById("display_name").value.trim()||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",cacheBusted,document.getElementById("display_name").value.trim()||"Animeciaユーザー");
- const {error:saveError}=await supabaseClient.from("profiles").upsert({id:currentUser.id,avatar_url:cacheBusted,avatar_position_x:Number(document.getElementById("avatar-x")?.value||50),avatar_position_y:Number(document.getElementById("avatar-y")?.value||50),avatar_zoom:Number(document.getElementById("avatar-zoom")?.value||100),updated_at:new Date().toISOString()},{onConflict:"id"});
+ const {error:saveError}=await supabaseClient.from("profiles").update({avatar_url:cacheBusted,avatar_position_x:Number(document.getElementById("avatar-x")?.value||50),avatar_position_y:Number(document.getElementById("avatar-y")?.value||50),avatar_zoom:Number(document.getElementById("avatar-zoom")?.value||100),updated_at:new Date().toISOString()}).eq("id",currentUser.id);
  if(saveError){console.error(saveError);msg.textContent="画像は保存されましたがプロフィール更新に失敗しました。";button.disabled=false;return;}
  msg.textContent="プロフィール画像を更新しました。";
  button.disabled=false;
@@ -267,7 +267,7 @@ async function uploadBackground(){
  const {data}=supabaseClient.storage.from("profile-backgrounds").getPublicUrl(path),url=data?.publicUrl;
  if(!url){msg.textContent="背景画像URLを取得できませんでした。";button.disabled=false;return;}
  const cacheBusted=url+"?v="+Date.now();
- const {error:saveError}=await supabaseClient.from("profiles").upsert({id:currentUser.id,background_url:cacheBusted,background_position_x:Number(document.getElementById("background-x")?.value||50),background_position_y:Number(document.getElementById("background-y")?.value||50),background_zoom:Number(document.getElementById("background-zoom")?.value||100),updated_at:new Date().toISOString()},{onConflict:"id"});
+ const {error:saveError}=await supabaseClient.from("profiles").update({background_url:cacheBusted,background_position_x:Number(document.getElementById("background-x")?.value||50),background_position_y:Number(document.getElementById("background-y")?.value||50),background_zoom:Number(document.getElementById("background-zoom")?.value||100),updated_at:new Date().toISOString()},{onConflict:"id"});
  if(saveError){console.error(saveError);msg.textContent="画像は保存されましたがプロフィール更新に失敗しました。";button.disabled=false;return;}
  document.getElementById("profile-background-url").value=cacheBusted;
  const cover=document.getElementById("profile-cover");if(cover){cover.style.backgroundImage="url(\""+cacheBusted.replace(/"/g,"%22")+"\")";applyCoverStyle(cover,document.getElementById("background-x")?.value,document.getElementById("background-y")?.value,document.getElementById("background-zoom")?.value);} applyCropState("background",document.getElementById("background-x")?.value,document.getElementById("background-y")?.value,document.getElementById("background-zoom")?.value,cacheBusted);
