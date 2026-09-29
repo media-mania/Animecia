@@ -81,12 +81,18 @@ async function createThread(isGroup){
  if(!selectedUsers.length){alert("先にユーザーを選択してください。");return;}
  if(!isGroup&&selectedUsers.length!==1){alert("1対1では1人だけ選択してください。");return;}
  if(!isGroup){
-  const other=selectedUsers[0];const {data:mine}=await sb.from("message_members").select("thread_id").eq("user_id",currentUser.id);
-  for(const x of mine||[]){const {data:otherRow}=await sb.from("message_members").select("user_id").eq("thread_id",x.thread_id).eq("user_id",other).maybeSingle();if(otherRow){currentThread=x.thread_id;await openThread(x.thread_id);selectedUsers=[];return;}}
+  const other=selectedUsers[0];
+  const {data:mine,error:mineError}=await sb.from("message_members").select("thread_id").eq("user_id",currentUser.id);
+  if(mineError){console.error(mineError);alert("会話を確認できませんでした。");return;}
+  for(const x of mine||[]){
+   const {data:otherRow}=await sb.from("message_members").select("user_id").eq("thread_id",x.thread_id).eq("user_id",other).maybeSingle();
+   if(otherRow){currentThread=x.thread_id;await openThread(x.thread_id);selectedUsers=[];return;}
+  }
  }
- const {data:t,error}=await sb.from("message_threads").insert({title:isGroup?"新しいグループ":null,is_group:isGroup,created_by:currentUser.id}).select().single();if(error){console.error(error);alert("会話を作成できませんでした。");return;}
- const members=[currentUser.id,...selectedUsers].map(user_id=>({thread_id:t.id,user_id}));const {error:me}=await sb.from("message_members").insert(members);if(me){console.error(me);alert("メンバー追加に失敗しました。");return;}
- selectedUsers=[];document.getElementById("user-results").innerHTML="";await loadThreads();await openThread(t.id);
+ const {data:threadId,error}=await sb.rpc("create_message_thread",{p_member_ids:[currentUser.id,...selectedUsers],p_is_group:isGroup,p_title:isGroup?"新しいグループ":null});
+ if(error){console.error(error);alert("会話を作成できませんでした。");return;}
+ selectedUsers=[];document.getElementById("user-results").innerHTML="";
+ await loadThreads();await openThread(threadId);
 }
 async function start(){
  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);const {data}=await sb.auth.getSession();currentUser=data?.session?.user;
