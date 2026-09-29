@@ -139,10 +139,6 @@ jobs:
                   "ninja": 0.88, "delinquents": 0.86, "yakuza": 0.86,
                   "revenge": 0.78
               },
-              "バトル": {
-                  "battle": 1.00, "battle royale": 0.96, "combat": 0.94,
-                  "martial arts": 0.86, "swordplay": 0.84
-              },
               "コメディ": {
                   "comedy": 0.95, "parody": 0.92, "satire": 0.90
               },
@@ -227,10 +223,6 @@ jobs:
                   "mecha": 1.00, "real robot": 0.98,
                   "super robot": 0.98, "robots": 0.96
               },
-              "ロボット": {
-                  "robots": 1.00, "real robot": 1.00,
-                  "super robot": 1.00
-              }
           }
 
           def tag_score(tags, wanted):
