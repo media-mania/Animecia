@@ -1017,7 +1017,7 @@
     </style>
 
 <link rel="stylesheet" href="site-theme.css">
-<style>.user-anime-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.user-anime-actions button,.watch-select,.watch-progress{padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-weight:700}.user-anime-actions button.active{background:#222;color:#fff;border-color:#222}.watch-progress{width:80px}</style>
+<style>.user-anime-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.user-anime-actions button,.watch-select{padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-weight:700}.user-anime-actions button.active{background:#222;color:#fff;border-color:#222}</style>
 <style id="animecia-page-v4">
 /* Animecia page-level v4 polish */
 .page-shell{max-width:1240px;margin:auto}
@@ -3532,7 +3532,6 @@
                         <select class="watch-select" data-anime-id="${anime.id}" aria-label="視聴状態">
                             <option value="">視聴状態</option><option value="want_to_watch">見たい</option><option value="watching">視聴中</option><option value="completed">視聴済み</option><option value="paused">一時停止</option><option value="dropped">視聴中止</option>
                         </select>
-                        <input class="watch-progress" data-anime-id="${anime.id}" type="number" min="0" ${anime.episodes ? `max="${anime.episodes}"` : ""} placeholder="視聴進捗" aria-label="視聴進捗（話）">
                     </div>
 
                     <button
@@ -3577,17 +3576,16 @@
             const fb=box.querySelector(".favorite-toggle");
             const anime=animeData.find(x=>Number(x.id)===Number(animeId));
             const sel=box.querySelector(".watch-select");
-            const prog=box.querySelector(".watch-progress");
             try{
                 const {data,error}=await supabaseClient.rpc("get_my_anime_favorite",{p_anime_id:Number(animeId)});
                 if(error) throw error;
                 const active=data===true;
                 fb.classList.toggle("active",active);
                 fb.setAttribute("aria-pressed",String(active));
-                fb.textContent=active?"✓ お気に入り済み":"お気に入り";
+                fb.textContent=active?"お気に入り登録済み":"お気に入り";
             }catch(error){ console.error("お気に入り状態取得エラー:",error); }
             const w=watchMap.get(String(animeId));
-            if(w){sel.value=w.status||"";prog.value=w.progress??0;}
+            if(w){sel.value=w.status||"";}
             fb.onclick=async()=>{
                 fb.disabled=true;
                 try{
@@ -3596,21 +3594,20 @@
                     const active=data===true;
                     fb.classList.toggle("active",active);
                     fb.setAttribute("aria-pressed",String(active));
-                    fb.textContent=active?"✓ お気に入り済み":"お気に入り";
+                    fb.textContent=active?"お気に入り登録済み":"お気に入り";
                 }catch(error){ console.error("お気に入り更新エラー:",error); alert("お気に入りの更新に失敗しました。もう一度お試しください。"); }
                 finally{fb.disabled=false;}
             };
             const save=async()=>{
                 if(!sel.value)return;
                 const total=Number(anime?.episodes||0);
-                let progress=Math.max(0,Number(prog.value||0));
-                if(!Number.isInteger(progress)) progress=Math.floor(progress);
+                const savedProgress=Number(watchMap.get(String(animeId))?.progress||0);
+                let progress=Number.isFinite(savedProgress) ? Math.max(0,Math.floor(savedProgress)) : 0;
                 if(total>0) progress=Math.min(progress,total);
-                prog.value=progress;
                 const {error}=await supabaseClient.from("user_anime_status").upsert({user_id:user.id,anime_id:Number(animeId),status:sel.value,progress},{onConflict:"user_id,anime_id"});
                 if(error){console.error("視聴状況保存エラー:",error);alert("視聴状況の保存に失敗しました。");}
             };
-            sel.onchange=save; prog.onchange=save;
+            sel.onchange=save;
         }));
     }
 
