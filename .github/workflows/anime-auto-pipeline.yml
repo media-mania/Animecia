@@ -226,6 +226,17 @@ jobs:
                   title = clean(a.get("name")) or c["title"]
                   typ = (a.get("type") or c["type"]).upper()
                   if typ not in ALLOWED: continue
+                  raw_text = " ".join([
+                      title or "",
+                      clean(a.get("name")) or "",
+                      " ".join(x["text"] or "" for x in infos)
+                  ]).lower()
+                  folklore_pattern = re.compile(
+                      r"(日本昔ばなし|日本むかしばなし|まんが日本昔ばなし|昔話|むかし話|民話|童話|お伽話|おとぎ話|寓話|世界名作童話|世界名作|fairy tales?|folk tales?|folktales?|fairy tale|folktale)",
+                      re.IGNORECASE
+                  )
+                  if folklore_pattern.search(raw_text):
+                      continue
                   fmt = "OVA" if typ in {"OVA","OAV"} else "SPECIAL" if typ in {"SPECIAL","OMNIBUS"} else typ
                   jp = first_japanese(infos)
                   vint = find(infos, types={"vintage"})
