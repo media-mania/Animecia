@@ -24,40 +24,65 @@ const fmt=d=>new Date(d).toLocaleString("ja-JP",{year:"numeric",month:"numeric",
 function avatar(p,cls="avatar"){return p?.avatar_url?'<img class="'+cls+'" src="'+esc(p.avatar_url)+'" alt="">':'<div class="'+cls+' avatar-fallback">'+esc((p?.display_name||p?.username||"A").slice(0,1))+'</div>'}
 async function getProfiles(ids){const u=[...new Set(ids.filter(Boolean))];if(!u.length)return new Map();const {data,error}=await sb.from("profiles").select("id,username,display_name,avatar_url").in("id",u);if(error)throw error;return new Map((data||[]).map(p=>[p.id,p]))}
 async function loadFeed(){
- const el=document.getElementById("feed");el.innerHTML='<div class="loading">読み込み中…</div>';
+ const el=document.getElementById("feed");
+ el.innerHTML='<div class="loading">読み込み中…</div>';
  try{
   let rows=[];
   if(currentMode==="bookmarks"){
    if(!currentUser){el.innerHTML='<div class="empty">ログインするとブックマークを利用できます。</div>';return}
-   const {data:b,error}=await sb.from("social_post_bookmarks").select("post_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(80);if(error)throw error;
-   const ids=(b||[]).map(x=>x.post_id);if(!ids.length){el.innerHTML='<div class="empty">ブックマークはありません。</div>';return}
-   const {data:p,error:pe}=await sb.from("social_posts").select("id,author_id,body,attachment_url,attachment_path,attachment_type,reply_to_id,quote_post_id,created_at,updated_at").in("id",ids).is("deleted_at",null);if(pe)throw pe;rows=p||[];
+   const r=await sb.from("social_post_bookmarks").select("post_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(80);
+   if(r.error)throw r.error;
+   const ids=(r.data||[]).map(x=>x.post_id);
+   if(!ids.length){el.innerHTML='<div class="empty">ブックマークはありません。</div>';return}
+   const r2=await sb.from("social_posts").select("id,author_id,body,attachment_url,attachment_path,attachment_type,reply_to_id,quote_post_id,created_at,updated_at").in("id",ids).is("deleted_at",null);
+   if(r2.error)throw r2.error;
+   rows=r2.data||[];
   }else{
-   const {data:p,error}=await sb.from("social_posts").select("id,author_id,body,attachment_url,attachment_path,attachment_type,reply_to_id,quote_post_id,created_at,updated_at").is("deleted_at",null).is("reply_to_id",null).order("created_at",{ascending:false}).limit(80);if(error)throw error;rows=p||[];
-   if(currentMode==="following"&&currentUser){const {data:f,error:fe}=await sb.from("user_follows").select("following_id").eq("follower_id",currentUser.id);if(fe)throw fe;const ids=new Set((f||[]).map(x=>x.following_id));rows=rows.filter(x=>ids.has(x.author_id)||x.author_id===currentUser.id)}
+   const r=await sb.from("social_posts").select("id,author_id,body,attachment_url,attachment_path,attachment_type,reply_to_id,quote_post_id,created_at,updated_at").is("deleted_at",null).is("reply_to_id",null).order("created_at",{ascending:false}).limit(80);
+   if(r.error)throw r.error;
+   rows=r.data||[];
+   if(currentMode==="following"&&currentUser){
+    try{
+     const f=await sb.from("user_follows").select("following_id").eq("follower_id",currentUser.id);
+     if(!f.error){const ids=new Set((f.data||[]).map(x=>x.following_id));rows=rows.filter(x=>ids.has(x.author_id)||x.author_id===currentUser.id)}
+    }catch(_){}
+   }
   }
   if(!rows.length){el.innerHTML='<div class="empty">まだ投稿がありません。</div>';return}
   postsCache=new Map(rows.map(x=>[x.id,x]));
+
+  let authors=new Map();
+  try{authors=await getProfiles(rows.map(x=>x.author_id))}catch(e){console.warn("プロフィール取得をスキップ",e)}
+
   const mediaMap=new Map();
-  if(rows.length){
-   const mediaRes=await sb.from("social_post_media").select("id,post_id,public_url,mime_type,sort_order").in("post_id",rows.map(x=>x.id)).order("sort_order",{ascending:true});
-   if(mediaRes.error)throw mediaRes.error;
-   (mediaRes.data||[]).forEach(x=>{if(!mediaMap.has(x.post_id))mediaMap.set(x.post_id,[]);mediaMap.get(x.post_id).push(x)});
-  }
-  const authors=await getProfiles(rows.map(x=>x.author_id)),ids=rows.map(x=>x.id);
-  const [likes,reposts,bookmarks]=await Promise.all([
-   sb.from("social_post_likes").select("post_id,user_id").in("post_id",ids),
-   sb.from("social_post_reposts").select("post_id,user_id").in("post_id",ids),
-   currentUser?sb.from("social_post_bookmarks").select("post_id,user_id").eq("user_id",currentUser.id).in("post_id",ids):Promise.resolve({data:[]})
-  ]);
-  if(likes.error)throw likes.error;if(reposts.error)throw reposts.error;if(bookmarks.error)throw bookmarks.error;
+  try{
+   const r=await sb.from("social_post_media").select("id,post_id,public_url,mime_type,sort_order").in("post_id",rows.map(x=>x.id)).order("sort_order",{ascending:true});
+   if(!r.error)(r.data||[]).forEach(x=>{if(!mediaMap.has(x.post_id))mediaMap.set(x.post_id,[]);mediaMap.get(x.post_id).push(x)});
+  }catch(e){console.warn("投稿写真取得をスキップ",e)}
+
+  const ids=rows.map(x=>x.id);
   const lc=new Map(),rc=new Map(),liked=new Set(),reposted=new Set(),saved=new Set();
-  (likes.data||[]).forEach(x=>{lc.set(x.post_id,(lc.get(x.post_id)||0)+1);if(x.user_id===currentUser?.id)liked.add(x.post_id)});
-  (reposts.data||[]).forEach(x=>{rc.set(x.post_id,(rc.get(x.post_id)||0)+1);if(x.user_id===currentUser?.id)reposted.add(x.post_id)});
-  (bookmarks.data||[]).forEach(x=>saved.add(x.post_id));
+  try{
+   const r=await sb.from("social_post_likes").select("post_id,user_id").in("post_id",ids);
+   if(!r.error)(r.data||[]).forEach(x=>{lc.set(x.post_id,(lc.get(x.post_id)||0)+1);if(x.user_id===currentUser?.id)liked.add(x.post_id)});
+  }catch(e){console.warn("いいね情報取得をスキップ",e)}
+  try{
+   const r=await sb.from("social_post_reposts").select("post_id,user_id").in("post_id",ids);
+   if(!r.error)(r.data||[]).forEach(x=>{rc.set(x.post_id,(rc.get(x.post_id)||0)+1);if(x.user_id===currentUser?.id)reposted.add(x.post_id)});
+  }catch(e){console.warn("リポスト情報取得をスキップ",e)}
+  if(currentUser){
+   try{
+    const r=await sb.from("social_post_bookmarks").select("post_id,user_id").eq("user_id",currentUser.id).in("post_id",ids);
+    if(!r.error)(r.data||[]).forEach(x=>saved.add(x.post_id));
+   }catch(e){console.warn("ブックマーク情報取得をスキップ",e)}
+  }
+
   el.innerHTML=rows.map(p=>renderPost(p,authors.get(p.author_id),mediaMap.get(p.id)||[],lc.get(p.id)||0,rc.get(p.id)||0,liked.has(p.id),reposted.has(p.id),saved.has(p.id))).join("");
   bindActions();
- }catch(e){console.error("コミュニティ読み込みエラー",e);el.innerHTML='<div class="error">コミュニティを読み込めませんでした。<br><small>'+esc(e.message||"データ取得エラー")+'</small></div>'}
+ }catch(e){
+  console.error("コミュニティ読み込みエラー",e);
+  el.innerHTML='<div class="error">コミュニティを読み込めませんでした。<br><small>'+esc(e.message||"データ取得エラー")+'</small><br><button type="button" class="btn secondary" onclick="loadFeed()">再読み込み</button></div>';
+ }
 }
 function renderPost(p,author,media,lc,rc,isLiked,isReposted,isSaved){
  const name=author?.display_name||author?.username||"Animeciaユーザー",handle=author?.username?"@"+String(author.username).replace(/^@/,""):"";
