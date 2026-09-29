@@ -1,4 +1,5 @@
 # Animecia genre classifier: keep taxonomy and overlap normalization active.
+# Scheduled repair continues until every verified work has 3-5 evidence-based genres.
 name: Animecia Genre Resync
 
 on:
