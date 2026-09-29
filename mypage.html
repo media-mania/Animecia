@@ -40,7 +40,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 .side-title{font-size:12px;color:#737373;font-weight:850;margin:0 0 10px}.side-link{display:block;padding:11px 10px;border-radius:9px;color:#252a31;text-decoration:none;font-size:13px;font-weight:750}.side-link:hover{background:#f7f8fa}.side-link span{float:right;color:#9a9da3}.empty,.loading,.error{padding:34px 12px;text-align:center;color:#737373}.error{color:#b42318}
 @media(max-width:850px){.page-shell{grid-template-columns:1fr}.profile-card{margin-bottom:14px}.side-panel{display:none}}
 @media(max-width:600px){main{padding:16px 10px 50px}.profile-cover{height:120px}.profile-main{padding:0 16px 17px}.profile-actions{position:static;margin-top:10px;justify-content:flex-start}.profile-name{font-size:22px}.quick-actions{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}.panel{padding:16px}.tabs{margin:-16px -16px 0}.tab{padding:14px 11px;font-size:11px}}
-</style></style>
+.visibility-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.visibility-grid label{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid #e5e7eb;border-radius:9px;background:#f8f9fb;font-size:13px;font-weight:700}.visibility-grid input{accent-color:#d9002b;width:17px;height:17px}@media(max-width:600px){.visibility-grid{grid-template-columns:1fr}}</style></style>
 </head>
 <body>
 <header><div class="wrap head">
@@ -114,7 +114,20 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 </div>
 <button id="save-profile" class="btn" type="button">プロフィールを保存</button><span id="profile-msg" class="message"></span>
 </div>
-</section>
+<section class="panel">
+<h2>公開範囲の設定</h2>
+<p class="sub">ユーザーホームで他のユーザーに表示する項目を個別に設定できます。オフにした項目は自分以外のユーザーには表示されません。</p>
+<div class="visibility-grid">
+<label><input type="checkbox" id="show-favorites"> お気に入り</label>
+<label><input type="checkbox" id="show-anime_follows"> 作品フォロー</label>
+<label><input type="checkbox" id="show-watch_status"> 視聴状況</label>
+<label><input type="checkbox" id="show-ratings"> 評価</label>
+<label><input type="checkbox" id="show-reviews"> レビュー</label>
+<label><input type="checkbox" id="show-user_follows"> フォロー・フォロワー</label>
+<label><input type="checkbox" id="show-ranking"> マイアニメランキング</label>
+</div>
+<button id="save-visibility" class="btn" type="button" style="margin-top:14px">公開範囲を保存</button>
+</section></section>
 </div>
 <aside>
 <section class="panel side-panel">
@@ -164,7 +177,7 @@ function setAvatar(targetId,fallbackId,url,name){
  else{img.style.display="none";fallback.textContent=(name||"Animeciaユーザー").slice(0,1).toUpperCase();fallback.style.display="grid";}
 }
 async function loadProfile(){
- const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,bio").eq("id",currentUser.id).maybeSingle();
+ const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking").eq("id",currentUser.id).maybeSingle();
  if(error){console.error(error);return;}
  const p=data||{};
  const username=String(p.username||"").replace(/^@/,"");
@@ -173,6 +186,8 @@ async function loadProfile(){
  document.getElementById("display_name").value=p.display_name||"";
  document.getElementById("avatar_url").value=p.avatar_url||"";
  document.getElementById("bio").value=p.bio||"";
+ const visibility={favorites:p.show_favorites!==false,anime_follows:p.show_anime_follows!==false,watch_status:p.show_watch_status!==false,ratings:p.show_ratings!==false,reviews:p.show_reviews!==false,user_follows:p.show_user_follows!==false,ranking:p.show_ranking!==false};
+ Object.entries(visibility).forEach(([key,value])=>{const el=document.getElementById("show-"+key);if(el)el.checked=value;});
  document.getElementById("profile-display-name").textContent=displayName;
  document.getElementById("profile-handle").textContent=username?"@"+username:"@ユーザー名未設定";
  document.getElementById("profile-bio").textContent=p.bio||"";
@@ -211,12 +226,21 @@ async function uploadAvatar(){
 async function saveProfile(){
  const msg=document.getElementById("profile-msg"),username=document.getElementById("username").value.trim().replace(/^@+/,"");
  if(username&&!/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){msg.textContent="ユーザー名は2〜30文字で入力してください。";return;}
- const payload={id:currentUser.id,username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,updated_at:new Date().toISOString()};
+ const payload={id:currentUser.id,username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,show_favorites:document.getElementById("show-favorites")?.checked!==false,show_anime_follows:document.getElementById("show-anime_follows")?.checked!==false,show_watch_status:document.getElementById("show-watch_status")?.checked!==false,show_ratings:document.getElementById("show-ratings")?.checked!==false,show_reviews:document.getElementById("show-reviews")?.checked!==false,show_user_follows:document.getElementById("show-user_follows")?.checked!==false,show_ranking:document.getElementById("show-ranking")?.checked!==false,updated_at:new Date().toISOString()};
  const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
  if(error){console.error(error);msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";return;}
  setAvatar("avatar-preview","avatar-preview-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",payload.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");document.getElementById("profile-display-name").textContent=payload.display_name||payload.username||"Animeciaユーザー";document.getElementById("profile-handle").textContent=payload.username?"@"+payload.username.replace(/^@/,""):"@ユーザー名未設定";document.getElementById("profile-bio").textContent=payload.bio||"";
  msg.textContent="プロフィールを保存しました。";
 }
+
+async function saveVisibility(){
+ const msg=document.getElementById("profile-msg");
+ const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_ranking:document.getElementById("show-ranking").checked,updated_at:new Date().toISOString()};
+ const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
+ if(error){console.error(error);msg.textContent="公開範囲を保存できませんでした。";return;}
+ msg.textContent="公開範囲を保存しました。";
+}
+
 async function loadStats(){
  const el=document.getElementById("stats");
  const [fav,watch,ratings,reviews]=await Promise.all([
@@ -363,6 +387,7 @@ async function start(){
 document.addEventListener("DOMContentLoaded",()=>{
  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;await loadTab();if(currentTab==="notifications")await updateNotificationBadge();}));
  document.getElementById("save-profile").addEventListener("click",saveProfile);
+document.getElementById("save-visibility")?.addEventListener("click",saveVisibility);
  document.getElementById("upload-avatar").addEventListener("click",uploadAvatar);
  document.getElementById("notification-side-link")?.addEventListener("click",async e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="notifications"]');if(b)b.click();document.getElementById("list")?.scrollIntoView({behavior:"smooth",block:"start"});});
  document.getElementById("followers-link")?.addEventListener("click",e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="user_followers"]');if(b)b.click();});
