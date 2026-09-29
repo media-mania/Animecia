@@ -1480,3 +1480,42 @@ footer{background:#15171b!important;border-top:1px solid #292c32!important}
   .home-v4 .home-section-head,.home-v4 .section-head{align-items:start!important}
   .home-v4 .home-section-head a,.home-v4 .more{white-space:nowrap!important}
 }
+
+
+/* Animecia anime cards: dark information body for high-contrast white titles */
+.anime-card .anime-card-body{
+  background:#10151d!important;
+  color:#fff!important;
+}
+.anime-card .anime-card-title,
+.anime-card .anime-card-title a{
+  color:#fff!important;
+}
+.anime-card .anime-card-title a:hover{
+  color:#fff!important;
+  text-decoration:underline;
+}
+.anime-card .anime-card-subtitle{
+  color:#bfc5ce!important;
+}
+.anime-card .meta-tag{
+  background:rgba(255,255,255,.10)!important;
+  color:#e7eaf0!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+}
+.anime-card .genre-tag{
+  background:rgba(230,0,45,.18)!important;
+  color:#ffb5c3!important;
+}
+.anime-card .anime-description{
+  color:#cbd0d7!important;
+}
+.anime-card .anime-stat{
+  background:rgba(255,255,255,.07)!important;
+}
+.anime-card .anime-stat-label{
+  color:#9da5b0!important;
+}
+.anime-card .anime-stat-value{
+  color:#fff!important;
+}
