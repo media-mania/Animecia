@@ -187,7 +187,7 @@ jobs:
 
           # Phase 1: fill missing genre data.
           rows=sb("/rest/v1/anime","GET",None,{
-            "select":"id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,source_provider,source_id,genre,official_url",
+            "select":"id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,source_provider,source_id,genre,official_url,synopsis,synopsis",
             "anime_verification_status":"eq.verified",
             "start_date":"gte.1963-01-01",
             "or":"(genre.is.null,genre.eq.)",
@@ -294,6 +294,11 @@ jobs:
             if osrc and not r.get("original_source"): patch["original_source"]=osrc
             if otitle and not r.get("original_title"): patch["original_title"]=otitle
             if oauth and not r.get("original_authors"): patch["original_authors"]=oauth
+            desc=media.get("description") or ""
+            if (not r.get("synopsis")) and desc.strip():
+              patch["synopsis"]=re.sub(r"\\s+"," ",desc).strip()
+              patch["synopsis_source"]="AniList"
+              patch["synopsis_updated_at"]="now()"
             if (not r.get("genre")) and gs:
               patch["genre"]=", ".join(gs)
             if (not r.get("official_url")):
