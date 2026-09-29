@@ -82,6 +82,7 @@ jobs:
               site=(x.get("site") or "").lower()
               lang=(x.get("language") or "").lower()
               typ=(x.get("type") or "").lower()
+              if typ == "streaming": return False,0,url
               score=0
               if "official" in typ or "official" in site: score+=50
               if lang in ("ja","japanese"): score+=45
@@ -115,7 +116,7 @@ jobs:
               "select":"id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,source_provider,source_id,official_url",
               "anime_verification_status":"eq.verified",
               "start_date":"gte.1963-01-01",
-              "or":"(official_url.is.null,official_url.ilike.*anilist.co*,official_url.ilike.*animenewsnetwork.com*)",
+              "or":"(official_url.is.null,official_url.ilike.*anilist.co*,official_url.ilike.*animenewsnetwork.com*,official_url.ilike.*twitter.com*,official_url.ilike.*x.com*,official_url.ilike.*instagram.com*,official_url.ilike.*facebook.com*,official_url.ilike.*youtube.com*,official_url.ilike.*wikipedia.org*,official_url.ilike.*crunchyroll.com*)",
               "order":"id.asc","limit":str(BATCH)
           })
 
