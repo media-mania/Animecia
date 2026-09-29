@@ -83,7 +83,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 <button class="tab" data-tab="follows" type="button">フォロー中</button>
 <button class="tab" data-tab="watching" type="button">視聴中</button>
 <button class="tab" data-tab="completed" type="button">視聴完了</button>
-<button class="tab" data-tab="plan_to_watch" type="button">視聴予定</button>
+<button class="tab" data-tab="want_to_watch" type="button">視聴予定</button>
 <button class="tab" data-tab="paused" type="button">一時停止</button>
 <button class="tab" data-tab="dropped" type="button">視聴中止</button>
 <button class="tab" data-tab="ratings" type="button">評価</button>
@@ -395,7 +395,7 @@ async function loadTab(){
     return;
   }
 
-  const {data,error}=await supabaseClient.from("user_anime_status")
+  const {data,error}=await supabaseClient.from("watch_status")
     .select("anime_id,status,progress,updated_at")
     .eq("user_id",currentUser.id)
     .eq("status",currentTab)
@@ -404,7 +404,7 @@ async function loadTab(){
   if(error){el.innerHTML='<div class="error">視聴状況を読み込めませんでした。</div>';return;}
 
   const map=await getAnime((data||[]).map(x=>x.anime_id));
-  const statusLabels={watching:"視聴中",completed:"視聴完了",plan_to_watch:"視聴予定",paused:"一時停止",dropped:"視聴中止"};
+  const statusLabels={watching:"視聴中",completed:"視聴完了",want_to_watch:"視聴予定",paused:"一時停止",dropped:"視聴中止"};
   el.innerHTML=(data||[]).map(x=>{
     const a=map.get(Number(x.anime_id));
     if(!a)return"";
