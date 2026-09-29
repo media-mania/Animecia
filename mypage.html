@@ -8,23 +8,39 @@
 <link rel="canonical" href="https://media-mania.github.io/Animecia/mypage.html">
 <link rel="stylesheet" href="site-theme.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
-.hero{margin-bottom:24px}.hero h1{margin:0 0 7px;font-size:32px;letter-spacing:-.02em}.hero p{margin:0;color:#737373}
-.panel{padding:24px;margin-bottom:18px;border-radius:14px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{padding:18px;background:#f7f7f8;border:1px solid #e8e8ea;border-radius:12px}.stat-label{display:block;color:#737373;font-size:12px}.stat b{display:block;margin-top:5px;font-size:28px;line-height:1.2}
-.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}.field label{font-size:13px;color:#555;font-weight:700}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.tab{border:0;border-radius:8px;padding:10px 13px;font-weight:700;cursor:pointer}
-.list{display:grid;gap:10px}.list-item{display:flex;gap:13px;align-items:center;padding:13px;border:1px solid #e7e7e9;border-radius:11px}
-.thumb{width:62px;height:82px;object-fit:cover;border-radius:7px;background:#e5e7eb;flex:none}
-.grow{flex:1;min-width:0}.title{font-weight:800;line-height:1.5}.sub{color:#737373;font-size:13px;margin-top:4px}.meta{display:flex;gap:8px;flex-wrap:wrap;color:#737373;font-size:12px;margin-top:8px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f0f0f2;color:#333;font-size:12px;font-weight:700}
-.empty,.loading,.error{padding:34px 12px;text-align:center;color:#737373}.error{color:#b42318}
-.avatar{width:68px;height:68px;border-radius:50%;object-fit:cover;background:#e5e7eb;border:1px solid #e5e5e7}.avatar-picker{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.avatar-picker input[type=file]{max-width:100%}.avatar-help{font-size:12px;color:#737373}.username-input{display:flex;align-items:center;border:1px solid #d9d9dd;border-radius:9px;background:#fff;overflow:hidden}.username-input>span{padding-left:12px;font-weight:700;color:#737373}.username-input input{border:0!important;border-radius:0!important;flex:1;min-width:0}
-.profile-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-.message{min-height:22px;margin-top:12px;font-size:13px;color:#737373}
-@media(max-width:800px){.stats{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}.hero h1{font-size:27px}nav{display:none}}
-@media(max-width:520px){main{padding:26px 13px 50px}.panel{padding:18px}.tabs{gap:6px}.tab{padding:9px 11px}.thumb{width:54px;height:72px}}
-</style>
+<style><style>
+main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
+.page-shell{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.profile-card{background:#fff;border:1px solid #e3e6ea;border-radius:16px;overflow:hidden;box-shadow:0 8px 26px rgba(17,24,39,.06);margin-bottom:16px}
+.profile-cover{height:150px;background:linear-gradient(135deg,#11151d 0%,#252b36 55%,#d9002b 180%);position:relative}
+.profile-cover:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 82% 25%,rgba(255,255,255,.16),transparent 28%)}
+.profile-main{padding:0 22px 20px;position:relative}
+.profile-avatar-wrap{position:relative;margin-top:-42px;width:88px;height:88px}
+.profile-avatar{width:88px;height:88px;border-radius:50%;object-fit:cover;background:#e8eaed;border:4px solid #fff;display:block}
+.profile-avatar-fallback{display:grid;place-items:center;font-size:30px;font-weight:900;color:#555}
+.profile-actions{position:absolute;right:20px;top:16px;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.profile-name{margin:12px 0 1px;font-size:25px;font-weight:950;letter-spacing:-.04em}
+.profile-handle{font-size:13px;color:#70757d}
+.profile-bio{margin:14px 0 16px;color:#343940;line-height:1.65;white-space:pre-wrap}
+.profile-stats{display:flex;gap:20px;flex-wrap:wrap}
+.profile-stat{font-size:13px;color:#666;text-decoration:none}
+.profile-stat strong{color:#17191d;font-size:16px;margin-right:3px}
+.profile-stat:hover strong{color:#d9002b}
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:17px}
+.quick-action{display:flex;align-items:center;justify-content:center;min-height:43px;padding:9px 10px;border:1px solid #e0e3e7;border-radius:9px;background:#f7f8fa;color:#252a31;text-decoration:none;font-size:12px;font-weight:850}
+.quick-action:hover{background:#fff0f3;border-color:#f0a8b6;color:#b90024}
+.panel{background:#fff;border:1px solid #e3e6ea;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 8px 26px rgba(17,24,39,.05)}
+.panel h2{margin:0 0 14px;font-size:18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.stat{padding:14px;background:#f7f8fa;border:1px solid #e8eaed;border-radius:10px}.stat-label{display:block;color:#737373;font-size:11px}.stat b{display:block;margin-top:4px;font-size:22px}
+.tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid #e3e6ea;margin:-20px -20px 0;padding:0 8px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:0;border-bottom:3px solid transparent;border-radius:0!important;padding:15px 13px;background:transparent!important;color:#70757d!important;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}.tab:hover{background:#f7f8fa!important;color:#17191d!important}.tab.active{border-bottom-color:#d9002b!important;color:#17191d!important;background:#fff!important}
+.list{display:grid;gap:9px;margin-top:18px}.list-item{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #e7e9ec;border-radius:11px;background:#fff;text-decoration:none;color:inherit}.list-item:hover{border-color:#ccd1d7;background:#fafafa}
+.thumb{width:58px;height:78px;object-fit:cover;border-radius:7px;background:#e5e7eb;flex:none}.grow{flex:1;min-width:0}.title{font-weight:850;line-height:1.5;color:#17191d;text-decoration:none}.sub{color:#737373;font-size:12px;margin-top:4px}.meta{display:flex;gap:7px;flex-wrap:wrap;color:#737373;font-size:11px;margin-top:7px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f0f1f3;color:#444;font-size:11px;font-weight:750}
+.profile-editor{border-top:1px solid #e5e7eb;margin-top:20px;padding-top:20px}.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}.field label{font-size:12px;color:#555;font-weight:800}.profile-head{display:flex;align-items:center;gap:13px;margin-bottom:14px}.avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:#e5e7eb;border:1px solid #e5e7e7}.avatar-picker{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.avatar-picker input[type=file]{max-width:100%}.avatar-help{font-size:11px;color:#737373}.username-input{display:flex;align-items:center;border:1px solid #d9d9dd;border-radius:8px;background:#fff;overflow:hidden}.username-input>span{padding-left:10px;font-weight:700;color:#737373}.username-input input{border:0!important;border-radius:0!important;flex:1;min-width:0}.message{min-height:20px;margin-left:8px;font-size:12px;color:#737373}
+.side-title{font-size:12px;color:#737373;font-weight:850;margin:0 0 10px}.side-link{display:block;padding:11px 10px;border-radius:9px;color:#252a31;text-decoration:none;font-size:13px;font-weight:750}.side-link:hover{background:#f7f8fa}.side-link span{float:right;color:#9a9da3}.empty,.loading,.error{padding:34px 12px;text-align:center;color:#737373}.error{color:#b42318}
+@media(max-width:850px){.page-shell{grid-template-columns:1fr}.profile-card{margin-bottom:14px}.side-panel{display:none}}
+@media(max-width:600px){main{padding:16px 10px 50px}.profile-cover{height:120px}.profile-main{padding:0 16px 17px}.profile-actions{position:static;margin-top:10px;justify-content:flex-start}.profile-name{font-size:22px}.quick-actions{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}.panel{padding:16px}.tabs{margin:-16px -16px 0}.tab{padding:14px 11px;font-size:11px}}
+</style></style>
 </head>
 <body>
 <header><div class="wrap head">
@@ -38,36 +54,83 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 <div class="userbar"><span id="user-name"></span><button id="auth-btn" class="btn secondary" type="button">ログイン</button></div>
 </div></header>
 <main>
-<section class="hero"><h1>マイページ</h1><p>お気に入り、視聴状況、評価、レビュー、通知、活動履歴を管理できます。</p><p style="margin-top:12px"><a class="btn secondary" href="user-search.html">ユーザーを検索</a> <a class="btn secondary" href="messages.html">メッセージ</a> <a class="btn" href="my-ranking.html">マイアニメランキング</a></p></section>
 <div id="auth-warning" class="panel" style="display:none"><div class="empty"><h2>ログインが必要です</h2><p>マイページの機能を利用するにはログインしてください。</p><p><a class="btn" href="login.html?redirect=mypage.html">ログインする</a> <a class="btn secondary" href="signup.html">新規登録</a></p></div></div>
 <div id="content" style="display:none">
-<section class="panel"><h2>アカウント統計</h2><div id="stats" class="stats"></div></section>
-<section class="panel">
-<h2>プロフィール</h2>
-<div class="profile-head"><img id="avatar-preview" class="avatar" alt="プロフィール画像"><div><div class="sub">公開プロフィールに表示されます。</div><div class="avatar-picker" style="margin-top:10px"><input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button id="upload-avatar" class="btn secondary" type="button">画像をアップロード</button></div><div class="avatar-help">JPG / PNG / WebP / GIF、2MB以下。アップロードした画像はプロフィール画像として公開されます。</div></div></div>
-<div class="profile-grid">
-<div><div class="field"><label for="username">ユーザー名</label><div class="username-input"><span>@</span><input id="username" maxlength="30"></div></div>
-<div class="field"><label for="display_name">表示名</label><input id="display_name" maxlength="50"></div>
-<div class="field"><label for="avatar_url">画像URL（任意）</label><input id="avatar_url" type="url" placeholder="外部画像URLを使う場合のみ"></div></div>
-<div class="field"><label for="bio">自己紹介</label><textarea id="bio" maxlength="500" style="min-height:150px"></textarea></div>
+<div class="page-shell">
+<div>
+<section class="profile-card">
+<div class="profile-cover"></div>
+<div class="profile-main">
+<div class="profile-avatar-wrap" id="profile-avatar-wrap"><div id="profile-avatar-fallback" class="profile-avatar profile-avatar-fallback">A</div><img id="profile-avatar-large" class="profile-avatar" alt="" style="display:none"></div>
+<div class="profile-actions">
+<a class="btn secondary" href="messages.html">メッセージ</a>
+<a class="btn" href="my-ranking.html">マイアニメランキング</a>
 </div>
-<button id="save-profile" class="btn" type="button">プロフィールを保存</button><span id="profile-msg" class="message"></span>
+<h1 id="profile-display-name" class="profile-name">Animeciaユーザー</h1>
+<div id="profile-handle" class="profile-handle">@ユーザー名未設定</div>
+<div id="profile-bio" class="profile-bio"></div>
+<div class="profile-stats">
+<a id="followers-link" class="profile-stat" href="#followers"><strong id="followers-count">0</strong>フォロワー</a>
+<a id="following-link" class="profile-stat" href="#following"><strong id="following-count">0</strong>フォロー中</a>
+</div>
+<div class="quick-actions">
+<a class="quick-action" href="user-search.html">ユーザーを探す</a>
+<a class="quick-action" href="messages.html">メッセージ</a>
+<a class="quick-action" href="my-ranking.html">ランキング</a>
+</div>
+</div>
 </section>
-<section class="panel"><div class="tabs">
+
+<section class="panel">
+<div class="tabs">
 <button class="tab active" data-tab="favorites" type="button">お気に入り</button>
-<button class="tab" data-tab="follows" type="button">作品フォロー中</button>
-<button class="tab" data-tab="user_following" type="button">ユーザーのフォロー中</button>
-<button class="tab" data-tab="user_followers" type="button">フォロワー</button>
+<button class="tab" data-tab="follows" type="button">作品フォロー</button>
 <button class="tab" data-tab="watching" type="button">視聴中</button>
 <button class="tab" data-tab="completed" type="button">視聴完了</button>
 <button class="tab" data-tab="want_to_watch" type="button">視聴予定</button>
-<button class="tab" data-tab="paused" type="button">一時停止</button>
-<button class="tab" data-tab="dropped" type="button">視聴中止</button>
 <button class="tab" data-tab="ratings" type="button">評価</button>
 <button class="tab" data-tab="reviews" type="button">レビュー</button>
+<button class="tab" data-tab="user_following" type="button">フォロー</button>
+<button class="tab" data-tab="user_followers" type="button">フォロワー</button>
 <button class="tab" data-tab="notifications" type="button">通知 <span id="notification-badge" style="display:none"></span></button>
-<button class="tab" data-tab="activity" type="button">活動履歴</button>
-</div><div id="list" class="list"></div></section>
+<button class="tab" data-tab="activity" type="button">活動</button>
+<button class="tab" data-tab="paused" type="button">一時停止</button>
+<button class="tab" data-tab="dropped" type="button">視聴中止</button>
+</div>
+<div id="list" class="list"></div>
+</section>
+
+<section class="panel">
+<h2>プロフィールを編集</h2>
+<div class="profile-head"><div id="avatar-preview-wrap"><div id="avatar-preview-fallback" class="avatar" style="display:grid;place-items:center;font-weight:900;color:#888">A</div><img id="avatar-preview" class="avatar" alt="" style="display:none"></div><div><div class="sub">公開プロフィールに表示されます。</div><div class="avatar-picker" style="margin-top:7px"><input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button id="upload-avatar" class="btn secondary" type="button">画像をアップロード</button></div><div class="avatar-help">JPG / PNG / WebP / GIF、2MB以下。</div></div></div>
+<div class="profile-editor">
+<div class="profile-grid">
+<div>
+<div class="field"><label for="username">ユーザー名</label><div class="username-input"><span>@</span><input id="username" maxlength="30"></div></div>
+<div class="field"><label for="display_name">表示名</label><input id="display_name" maxlength="50"></div>
+<div class="field"><label for="avatar_url">画像URL（任意）</label><input id="avatar_url" type="url" placeholder="外部画像URLを使う場合のみ"></div>
+</div>
+<div class="field"><label for="bio">自己紹介</label><textarea id="bio" maxlength="500" style="min-height:130px"></textarea></div>
+</div>
+<button id="save-profile" class="btn" type="button">プロフィールを保存</button><span id="profile-msg" class="message"></span>
+</div>
+</section>
+</div>
+<aside>
+<section class="panel side-panel">
+<div class="side-title">マイページ</div>
+<a class="side-link" href="my-ranking.html">マイアニメランキング <span>›</span></a>
+<a class="side-link" href="compare.html">作品を比較 <span>›</span></a>
+<a class="side-link" href="messages.html">メッセージ <span>›</span></a>
+<a class="side-link" href="user-search.html">ユーザー検索 <span>›</span></a>
+<a class="side-link" href="notifications.html" id="notification-side-link">通知 <span id="side-notification-count"></span></a>
+</section>
+<section class="panel side-panel">
+<div class="side-title">アカウント統計</div>
+<div id="stats" class="stats" style="grid-template-columns:1fr 1fr"></div>
+</section>
+</aside>
+</div>
 </div>
 </main>
 <script>
