@@ -1,0 +1,178 @@
+name: Animecia Episode Count Backfill
+
+on:
+  schedule:
+    - cron: '20 * * * *'
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: "1回に処理する作品数"
+        required: false
+        default: "300"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: animecia-episode-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      BATCH_SIZE: ${{ inputs.batch_size || '300' }}
+
+    steps:
+      - name: Backfill episode counts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json, os, time, urllib.error, urllib.parse, urllib.request
+
+          SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
+          SECRET = os.environ["SUPABASE_SECRET_KEY"]
+          BATCH = max(50, min(500, int(os.environ.get("BATCH_SIZE", "300"))))
+          UA = "Animecia-EpisodeBackfill/1.0"
+
+          def request(url, method="GET", body=None, headers=None, timeout=120):
+              h = {"User-Agent": UA, "Accept": "application/json,*/*"}
+              if headers: h.update(headers)
+              data = None if body is None else json.dumps(body, ensure_ascii=False).encode()
+              req = urllib.request.Request(url, data=data, method=method, headers=h)
+              for attempt in range(5):
+                  try:
+                      with urllib.request.urlopen(req, timeout=timeout) as r:
+                          return r.read()
+                  except urllib.error.HTTPError as e:
+                      if e.code in (429,500,502,503,504) and attempt < 4:
+                          time.sleep(2 ** attempt)
+                          continue
+                      raise
+
+          def sb(path, method="GET", body=None, params=None):
+              url = SUPABASE_URL + path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params, doseq=True)
+              headers = {
+                  "apikey": SECRET,
+                  "Authorization": "Bearer " + SECRET,
+                  "Content-Type": "application/json",
+                  "Accept": "application/json"
+              }
+              raw = request(url, method, body, headers)
+              return json.loads(raw.decode()) if raw else []
+
+          def anilist(ids):
+              if not ids: return {}
+              query = """query($ids:[Int!]!){
+                Page(page:1,perPage:50){
+                  media(id_in:$ids,type:ANIME){
+                    id
+                    episodes
+                  }
+                }
+              }"""
+              raw = request(
+                  "https://graphql.anilist.co",
+                  "POST",
+                  {"query":query,"variables":{"ids":ids}},
+                  {"Content-Type":"application/json","Accept":"application/json"}
+              )
+              data = json.loads(raw.decode())
+              return {int(x["id"]):x.get("episodes") for x in data.get("data",{}).get("Page",{}).get("media",[])}
+
+          def ann(ids):
+              if not ids: return {}
+              q = urllib.parse.urlencode({"anime":"/".join(map(str,ids))})
+              raw = request(
+                  "https://cdn.animenewsnetwork.com/encyclopedia/api.xml?" + q,
+                  headers={"Accept":"application/xml,text/xml"}
+              )
+              import xml.etree.ElementTree as ET, re
+              root = ET.fromstring(raw)
+              out = {}
+              for a in root.iter():
+                  if a.tag.lower() != "anime": continue
+                  aid = a.get("id")
+                  if not aid or not aid.isdigit(): continue
+                  value = None
+                  for e in a.iter():
+                      if e.tag.lower() == "info" and "episode" in (e.get("type") or "").lower():
+                          m = re.search(r"\d+", " ".join(e.itertext()))
+                          if m:
+                              value = int(m.group())
+                              break
+                  if value is not None and 1 <= value <= 10000:
+                      out[int(aid)] = value
+              return out
+
+          rows = []
+          offset = 0
+          while len(rows) < BATCH:
+              page = sb("/rest/v1/anime", params={
+                  "select":"id,source_provider,source_id,episodes",
+                  "episodes":"is.null",
+                  "order":"id.asc",
+                  "offset":str(offset),
+                  "limit":str(min(1000,BATCH-len(rows)))
+              })
+              if not page: break
+              rows.extend(page)
+              if len(page) < min(1000,BATCH-len(rows)): break
+              offset += len(page)
+
+          updates = []
+          ani_ids = []
+          ann_ids = []
+          for r in rows:
+              sid = str(r.get("source_id") or "")
+              provider = (r.get("source_provider") or "").lower()
+              if provider == "anilist" and sid.isdigit() and int(sid) < 2000000000:
+                  ani_ids.append((int(sid), int(r["id"])))
+              elif provider == "ann" and sid.isdigit():
+                  ann_ids.append((int(sid), int(r["id"])))
+
+          ani_values = {}
+          for i in range(0,len(ani_ids),50):
+              chunk = ani_ids[i:i+50]
+              ani_values.update(anilist([x[0] for x in chunk]))
+              time.sleep(0.7)
+
+          ann_values = {}
+          for i in range(0,len(ann_ids),50):
+              chunk = ann_ids[i:i+50]
+              ann_values.update(ann([x[0] for x in chunk]))
+              time.sleep(0.25)
+
+          for sid, dbid in ani_ids:
+              ep = ani_values.get(sid)
+              if isinstance(ep,int) and 1 <= ep <= 10000:
+                  updates.append({"id":dbid,"episodes":ep})
+
+          for sid, dbid in ann_ids:
+              ep = ann_values.get(sid)
+              if isinstance(ep,int) and 1 <= ep <= 10000:
+                  updates.append({"id":dbid,"episodes":ep})
+
+          updated = 0
+          for i in range(0,len(updates),500):
+              payload = {"p_updates": updates[i:i+500]}
+              result = sb("/rest/v1/rpc/bulk_update_anime_episodes","POST",payload)
+              if isinstance(result,list) and result:
+                  updated += int(result[0].get("bulk_update_anime_episodes",0) or 0)
+              elif isinstance(result,dict):
+                  updated += int(result.get("bulk_update_anime_episodes",0) or 0)
+
+          print(json.dumps({
+              "candidates":len(rows),
+              "anilist_candidates":len(ani_ids),
+              "ann_candidates":len(ann_ids),
+              "resolved":len(updates),
+              "updated":updated
+          },ensure_ascii=False))
+          PY
