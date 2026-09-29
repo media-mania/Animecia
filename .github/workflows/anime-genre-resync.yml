@@ -32,7 +32,7 @@ jobs:
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
       MAL_API: https://api.jikan.moe/v4
-      CLASSIFICATION_VERSION: "animecia-cross-source-v14-source-first"
+      CLASSIFICATION_VERSION: "animecia-cross-source-v15-source-first-precision"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -140,7 +140,7 @@ jobs:
               "異世界": {"isekai": 1.00},
               "冒険": {
                   "adventure": 0.95, "journey": 0.82, "travel": 0.78, "pirates": 0.90, "treasure": 0.90,
-                  "treasure hunt": 0.90, "survival": 0.72
+                  "treasure hunt": 0.90
               },
               "アクション": {
                   "action": 0.92, "martial arts": 0.92, "swordplay": 0.88,
@@ -195,8 +195,7 @@ jobs:
                   "coming of age": 0.70, "workplace": 0.64
               },
               "青春": {
-                  "coming of age": 0.98, "school": 0.62,
-                  "school life": 0.64
+                  "coming of age": 0.98
               },
               "音楽": {
                   "music": 1.00, "musical": 0.96,
