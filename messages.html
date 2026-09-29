@@ -100,6 +100,12 @@ async function start(){
  document.getElementById("app").style.display="grid";document.getElementById("user-name").textContent=currentUser.email;
  document.getElementById("auth-btn").onclick=async()=>{await sb.auth.signOut();location.href="login.html"};
  await loadThreads();
+ const params=new URLSearchParams(location.search);
+ const threadFromUrl=params.get("thread");
+ if(threadFromUrl){
+  const {data:memberRow}=await sb.from("message_members").select("thread_id").eq("thread_id",threadFromUrl).eq("user_id",currentUser.id).maybeSingle();
+  if(memberRow) await openThread(threadFromUrl);
+ }
 }
 document.addEventListener("DOMContentLoaded",()=>{document.getElementById("member-search").addEventListener("input",searchUsers);document.getElementById("start-dm").onclick=()=>createThread(false);document.getElementById("start-group").onclick=()=>createThread(true);document.getElementById("send").onclick=send;document.getElementById("message-input").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}});start();});
 </script>
