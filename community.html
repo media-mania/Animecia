@@ -107,10 +107,9 @@ async function createPost(){const body=document.getElementById("post-body").valu
 function updatePhotoPreview(){
  const input=document.getElementById("post-image"),files=[...(input.files||[])],preview=document.getElementById("photo-preview");
  if(files.length>4){alert("写真は4枚までです。");input.value="";preview.innerHTML="";document.getElementById("photo-count").textContent="最大4枚・各10MB以下";return}
- preview.innerHTML=files.map((f,i)=>'<div class="photo-preview-item"><img src="'+URL.createObjectURL(f)+'" alt=""><button type="button" class="photo-remove" data-photo-index="'+i+'" aria-label="この写真を解除">×</button></div>').join("")+(files.length>1?'<button type="button" class="photo-clear" id="photo-clear">すべて解除</button>':"");
+ preview.innerHTML=files.map((f,i)=>'<div class="photo-preview-item"><img src="'+URL.createObjectURL(f)+'" alt=""><button type="button" class="photo-remove" data-photo-index="'+i+'" aria-label="この写真を解除">×</button></div>').join("");
  document.getElementById("photo-count").textContent=files.length?files.length+"枚を選択中":"最大4枚・各10MB以下";
  preview.querySelectorAll(".photo-remove").forEach(btn=>btn.onclick=()=>removePostPhoto(Number(btn.dataset.photoIndex)));
- const clear=document.getElementById("photo-clear");if(clear)clear.onclick=clearPostPhotos;
 }
 function setPostFiles(files){const dt=new DataTransfer();files.slice(0,4).forEach(f=>dt.items.add(f));document.getElementById("post-image").files=dt.files;updatePhotoPreview()}
 function removePostPhoto(index){const input=document.getElementById("post-image");setPostFiles([...(input.files||[])].filter((_,i)=>i!==index))}
