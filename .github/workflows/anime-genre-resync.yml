@@ -30,7 +30,7 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      CLASSIFICATION_VERSION: "animecia-existing-genres-v4"
+      CLASSIFICATION_VERSION: "animecia-existing-genres-v5-28"
 
     steps:
       - name: Classify anime using evidence scoring
