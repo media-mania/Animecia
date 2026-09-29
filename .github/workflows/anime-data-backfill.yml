@@ -165,7 +165,7 @@ def genres_for(media):
             candidates.sort(reverse=True)
             return candidates[0][1] if candidates and candidates[0][0]>=40 else None
 
-          # Prioritize missing genre, then missing official URL.
+          # Phase 1: fill missing genre data.
           rows=sb("/rest/v1/anime","GET",None,{
             "select":"id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,source_provider,source_id,genre,official_url",
             "anime_verification_status":"eq.verified",
@@ -174,8 +174,9 @@ def genres_for(media):
             "order":"id.asc",
             "limit":str(BATCH)
           })
+          phase="genre"
 
-          # If the first query is exhausted, process missing official URLs.
+          # Phase 2: fill missing Japanese official websites.
           if not rows:
             rows=sb("/rest/v1/anime","GET",None,{
               "select":"id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,source_provider,source_id,genre,official_url",
@@ -185,6 +186,19 @@ def genres_for(media):
               "order":"id.asc",
               "limit":str(BATCH)
             })
+            phase="official"
+
+          # Phase 3: audit existing official URLs conservatively.
+          if not rows:
+            rows=sb("/rest/v1/anime","GET",None,{
+              "select":"id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,source_provider,source_id,genre,official_url",
+              "anime_verification_status":"eq.verified",
+              "start_date":"gte.1963-01-01",
+              "official_url":"not.is.null",
+              "order":"id.asc",
+              "limit":str(BATCH)
+            })
+            phase="audit"
 
           anilist_ids=[]
           for r in rows:
@@ -214,6 +228,22 @@ def genres_for(media):
             if (not r.get("official_url")):
               url=official(media)
               if url and japanese_official(url,title): patch["official_url"]=url
+
+            if phase=="audit" and r.get("official_url"):
+              try:
+                host=(urllib.parse.urlparse(r["official_url"]).hostname or "").lower()
+                if any(bad in host for bad in ("twitter.com","x.com","facebook.com","instagram.com","youtube.com","wikipedia.org","myanimelist.net","anilist.co","animenewsnetwork.com")):
+                  patch["official_url"]=None
+                else:
+                  raw,_=request(r["official_url"],"GET",None,{"Accept":"text/html,application/xhtml+xml"},15)
+                  html=raw.decode("utf-8","ignore")[:100000]
+                  if not re.search(r"[ぁ-んァ-ヶ一-龠]",html) and not (host.endswith(".jp") or ".co.jp" in host):
+                    patch["official_url"]=None
+              except urllib.error.HTTPError as e:
+                if e.code in (404,410):
+                  patch["official_url"]=None
+              except Exception:
+                pass
 
             if patch:
               update(r["id"],patch)
