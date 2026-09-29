@@ -30,7 +30,7 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      CLASSIFICATION_VERSION: "animecia-existing-genres-v9-24-min3"
+      CLASSIFICATION_VERSION: "animecia-existing-genres-v10-24-min3-full-audit"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -422,39 +422,20 @@ jobs:
 
               return [name for name, _ in selected], round(confidence, 4), flat_reasons
 
-          # 未分類または分類バージョンが古い作品だけ取得。
-          # neqはNULLを拾わないので、NULLと旧versionを別取得して結合する。
+          # 全公開作品を自動監査する。
+          # 旧バージョンの作品、ジャンル3個未満の作品をDB側のRPCで抽出する。
+          # 一度修正された作品は次回以降スキップされるため、15分ごとの実行で
+          # 全作品を段階的に再構成し、将来ジャンルが欠落した場合も自動修復する。
           def fetch_candidates():
-              base_params = {
-                  "select": "id,source_provider,source_id,format",
-                  "anime_verification_status": "eq.verified",
-                  "order": "id.asc",
-                  "limit": str(BATCH)
-              }
-
-              rows = sb(
-                  "/rest/v1/anime",
-                  params={
-                      **base_params,
-                      "genre_classification_version": "neq." + VERSION
+              return sb(
+                  "/rest/v1/rpc/get_anime_genre_repair_batch",
+                  "POST",
+                  {
+                      "p_version": VERSION,
+                      "p_limit": BATCH
                   }
               )
-              seen = {int(r["id"]) for r in rows}
 
-              if len(rows) < BATCH:
-                  more = sb(
-                      "/rest/v1/anime",
-                      params={
-                          **base_params,
-                          "genre_classification_version": "is.null",
-                          "limit": str(BATCH - len(rows))
-                      }
-                  )
-                  for r in more:
-                      if int(r["id"]) not in seen:
-                          rows.append(r)
-                          seen.add(int(r["id"]))
-              return rows[:BATCH]
 
           rows = fetch_candidates()
           if not rows:
@@ -475,12 +456,36 @@ jobs:
           for er in existing_rows:
               EXISTING.setdefault(int(er["anime_id"]), []).append(int(er["genre_id"]))
 
-          # AniListを一括取得。AniList APIはPage.mediaのperPage最大50。
-          ani_rows = [
-              r for r in rows
-              if r.get("source_provider") == "anilist"
-              and str(r.get("source_id") or "").isdigit()
-          ]
+          # AniListを一括取得。
+          # 新規登録時は source_id が「2000000000 + AniList ID」に正規化される
+          # ケースがあるため、必ず実IDへ戻して問い合わせる。
+          def resolve_anilist_id(row):
+              provider = (row.get("source_provider") or "").lower()
+              candidates = []
+              if str(row.get("source_id") or "").isdigit():
+                  candidates.append(int(row["source_id"]))
+              if row.get("external_id") is not None and str(row.get("external_id")).isdigit():
+                  candidates.append(int(row["external_id"]))
+              for value in candidates:
+                  if provider == "anilist" and value > 2000000000:
+                      return value - 2000000000
+                  if provider == "anilist":
+                      return value
+                  if provider == "":
+                      # 旧データは external_id にAniList IDを保持している。
+                      if value > 2000000000:
+                          return value - 2000000000
+                      if 0 < value < 2000000000:
+                          return value
+              return None
+
+          ani_rows = []
+          for r in rows:
+              aid = resolve_anilist_id(r)
+              if aid:
+                  r["_anilist_id"] = aid
+                  ani_rows.append(r)
+
 
           query = """
           query($ids:[Int],$page:Int,$perPage:Int){
@@ -502,7 +507,7 @@ jobs:
           media_by_id = {}
           for start in range(0, len(ani_rows), 50):
               chunk = ani_rows[start:start+50]
-              ids = [int(r["source_id"]) for r in chunk]
+              ids = [int(r["_anilist_id"]) for r in chunk]
               response = http(
                   ANI,
                   "POST",
@@ -523,8 +528,7 @@ jobs:
           now = datetime.now(timezone.utc).isoformat()
 
           for row in rows:
-              source_id = str(row.get("source_id") or "")
-              media = media_by_id.get(int(source_id)) if source_id.isdigit() else None
+              media = media_by_id.get(int(row["_anilist_id"])) if row.get("_anilist_id") else None
 
               if media is None:
                   # AniListで取得不能な作品は、既存ジャンルを推測で上書きしない。
