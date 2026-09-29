@@ -146,11 +146,6 @@ jobs:
                   "romance": 0.96, "love triangle": 0.92,
                   "love interest": 0.88, "tsundere": 0.72
               },
-              "ラブコメ": {
-                  "romance": 0.55, "comedy": 0.55,
-                  "love triangle": 0.80, "tsundere": 0.78,
-                  "harem": 0.74, "reverse harem": 0.74
-              },
               "日常": {
                   "slice of life": 0.98, "school club": 0.70,
                   "workplace": 0.66, "episodic": 0.58
@@ -292,7 +287,6 @@ jobs:
                   "学園": ["学園", "高校", "中学", "大学", "school"],
                   "異世界": ["異世界", "iseka"],
                   "恋愛": ["恋愛", "恋人", "romance"],
-                  "魔法": ["魔法", "wizard", "witch", "magic"],
                   "SF": ["sf", "science fiction", "未来", "宇宙"],
                   "スポーツ": ["野球", "サッカー", "バスケット", "テニス", "スポーツ"],
                   "音楽": ["音楽", "バンド", "歌", "musical"],
