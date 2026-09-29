@@ -27,7 +27,7 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-      BATCH_SIZE: ${{ inputs.batch_size || '300' }}
+      BATCH_SIZE: ${{ inputs.batch_size || '500' }}
 
     steps:
       - name: Backfill episode counts
