@@ -1369,3 +1369,114 @@ header .nav .brand{
     grid-template-columns:1fr 1fr!important;
   }
 }
+
+
+/* =========================================================
+   Animecia v5 — MAKI × MAL inspired information architecture
+   Clean Japanese editorial UI, dense discovery, mobile first.
+   ========================================================= */
+:root{
+  --ac-red:#e00032;
+  --ac-red-dark:#b90029;
+  --ac-black:#111317;
+  --ac-ink:#1b1d21;
+  --ac-muted:#6f747d;
+  --ac-line:#e3e5e8;
+  --ac-bg:#f5f6f8;
+  --ac-surface:#fff;
+  --ac-soft:#f8f9fb;
+  --ac-radius:12px;
+  --ac-shadow:0 5px 20px rgba(18,22,28,.055);
+}
+html{background:var(--ac-bg)!important}
+body{background:var(--ac-bg)!important;color:var(--ac-ink)!important;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif!important}
+header,.site-header{height:64px!important;background:rgba(17,19,23,.97)!important;box-shadow:0 2px 14px rgba(0,0,0,.12)!important}
+.wrap.head,.header-inner{min-height:64px!important;height:64px!important;max-width:1320px!important;padding:0 18px!important;gap:20px!important}
+.logo{font-size:23px!important;line-height:1!important;letter-spacing:-.045em!important;color:#fff!important}
+.main-nav,.site-nav,header nav,nav{gap:2px!important}
+.main-nav a,.site-nav a,header nav a,nav a{font-size:12px!important;font-weight:750!important;padding:8px 10px!important;color:#cfd2d7!important;border-radius:7px!important}
+.main-nav a:hover,.site-nav a:hover,header nav a:hover,nav a:hover{background:#26292f!important;color:#fff!important}
+.userbar{margin-left:auto!important}
+main{width:min(1320px,100%)!important;padding:0 18px!important}
+.page-header,.hero{box-shadow:none!important}
+.page-header{border:1px solid var(--ac-line)!important;background:#fff!important;color:var(--ac-ink)!important;border-radius:12px!important;padding:22px 24px!important}
+.page-header p{color:var(--ac-muted)!important}
+.panel,.card,.profile-card,.list-item,.review-item,.filter-area,.filter-panel,.anime-card,.feature-card,.genre-card{border:1px solid var(--ac-line)!important;box-shadow:var(--ac-shadow)!important;border-radius:12px!important;background:#fff!important}
+button,.btn{border-radius:8px!important;font-weight:750!important}
+.btn:not(.secondary):not(.ghost),button.primary{background:var(--ac-red)!important;border-color:var(--ac-red)!important;color:#fff!important}
+.btn:not(.secondary):not(.ghost):hover,button.primary:hover{background:var(--ac-red-dark)!important}
+input,textarea,select{border-radius:8px!important;border:1px solid #d7d9de!important;min-height:42px!important}
+input:focus,textarea:focus,select:focus{border-color:var(--ac-red)!important;box-shadow:0 0 0 3px rgba(224,0,50,.10)!important}
+.badge,.pill,.chip{border-radius:999px!important}
+
+/* Home */
+.home-v4 .hero{border-radius:14px!important;margin-top:20px!important;background:linear-gradient(135deg,#15171b,#24272d)!important;box-shadow:0 14px 34px rgba(10,12,16,.14)!important}
+.home-v4 .hero-inner{padding:42px 42px 38px!important;grid-template-columns:minmax(0,1.65fr) minmax(260px,.65fr)!important;gap:34px!important}
+.home-v4 .hero h1{font-size:clamp(31px,4.6vw,55px)!important;line-height:1.08!important}
+.home-v4 .hero-side{background:rgba(255,255,255,.055)!important;border-color:rgba(255,255,255,.12)!important}
+.home-v4 .quick{grid-template-columns:repeat(4,1fr)!important;gap:10px!important;margin-bottom:30px!important}
+.home-v4 .quick a{border-radius:10px!important;box-shadow:none!important;padding:15px!important}
+.home-v4 .quick a:hover{border-color:#cfd2d8!important}
+.home-v4 .section{margin:34px 0!important}
+.home-v4 .section-title{font-size:20px!important}
+.home-v4 .cards{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:10px!important}
+.home-v4 .card{box-shadow:none!important;border-radius:10px!important}
+.home-v4 .card:hover{transform:translateY(-2px)!important;box-shadow:0 10px 24px rgba(15,18,22,.09)!important}
+.home-v4 .card-body{padding:10px!important}
+.home-v4 .card-title{font-size:12px!important}
+.home-v4 .rank-layout{grid-template-columns:1.3fr .7fr!important;gap:12px!important}
+.home-v4 .rank-item{padding:8px 10px!important;border-bottom:1px solid #f0f1f3!important;border-radius:0!important}
+.home-v4 .rank-item:last-child{border-bottom:0!important}
+.home-v4 .rank-no{font-size:15px!important}
+.home-v4 .rank-score{color:var(--ac-red)!important}
+.home-v4 .genre-grid{grid-template-columns:repeat(8,1fr)!important;gap:7px!important}
+.home-v4 .genre{padding:10px 7px!important;font-size:11px!important;border-radius:8px!important}
+.home-v4 .discover-card{min-height:130px!important;padding:22px!important}
+.home-v4 .features{gap:10px!important}
+.home-v4 .feature{padding:18px!important}
+
+/* Discovery/search pages */
+.anime-page,.season-page,.ranking-page,.discover-page{max-width:1320px!important}
+.anime-search-area{top:64px!important;padding:8px 0!important}
+.anime-search-area .search-box{border-radius:10px!important;box-shadow:0 5px 16px rgba(15,18,22,.06)!important}
+.anime-search-area .search-button{background:var(--ac-red)!important;border-radius:8px!important}
+.filter-area{box-shadow:none!important}
+.anime-grid,.cards{align-items:start!important}
+
+/* Detail pages */
+.hero-detail,.anime-hero,.detail-hero{border-radius:14px!important}
+.hero-info h1{color:#fff!important;text-shadow:0 2px 4px rgba(0,0,0,.95),0 5px 18px rgba(0,0,0,.8)!important}
+.genre-list .pill,.genre-list .chip{background:#fff!important;color:#222!important;border:1px solid rgba(255,255,255,.4)!important}
+
+/* Tables/lists */
+table{border-collapse:separate!important;border-spacing:0!important;overflow:hidden!important;border:1px solid var(--ac-line)!important;border-radius:10px!important;background:#fff!important}
+th{background:#f7f8fa!important;font-size:12px!important}
+td{border-top:1px solid #eef0f2!important;font-size:12px!important}
+
+/* Footer */
+footer{background:#15171b!important;border-top:1px solid #292c32!important}
+
+/* Mobile: keep navigation usable instead of disappearing */
+@media(max-width:900px){
+  header,.site-header{height:auto!important;min-height:58px!important}
+  .wrap.head,.header-inner{height:58px!important;min-height:58px!important;padding:0 12px!important;gap:10px!important}
+  .logo{font-size:20px!important}
+  main{padding:0 12px!important}
+  .main-nav,.site-nav,header nav,nav{display:flex!important;flex:1!important;overflow-x:auto!important;min-width:0!important;scrollbar-width:none!important}
+  .main-nav::-webkit-scrollbar,.site-nav::-webkit-scrollbar,header nav::-webkit-scrollbar,nav::-webkit-scrollbar{display:none!important}
+  .main-nav a,.site-nav a,header nav a,nav a{font-size:11px!important;padding:7px 8px!important}
+  .userbar{display:none!important}
+  .home-v4 .hero-inner{grid-template-columns:1fr!important;padding:28px 22px 24px!important}
+  .home-v4 .hero-side{display:none!important}
+  .home-v4 .quick{grid-template-columns:repeat(2,1fr)!important}
+  .home-v4 .cards{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .home-v4 .genre-grid{grid-template-columns:repeat(4,1fr)!important}
+}
+@media(max-width:560px){
+  .home-v4 .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .home-v4 .genre-grid{grid-template-columns:repeat(3,1fr)!important}
+  .home-v4 .hero h1{font-size:34px!important}
+  .home-v4 .section{margin:27px 0!important}
+  .home-v4 .home-section-head,.home-v4 .section-head{align-items:start!important}
+  .home-v4 .home-section-head a,.home-v4 .more{white-space:nowrap!important}
+}
