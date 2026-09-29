@@ -361,7 +361,7 @@ jobs:
               selected.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
 
               # 最大5ジャンル。主要ジャンルを落とさず、弱い補助ジャンルの過剰付与を防止。
-              selected = selected[:6]
+              selected = selected[:5]
 
               top = selected[0][1] if selected else 0.0
               if top < 0.78:
