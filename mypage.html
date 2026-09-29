@@ -160,22 +160,37 @@ async function authState(){
   }
   if(user && !isVerifiedUser(user)){
     await supabaseClient.auth.signOut();
+    return null;
   }
-  return isVerifiedUser(user) ? user : null;
+  return user || null;
 }
 
 async function loadStats(){
-  const {data,error}=await supabaseClient.rpc("get_my_anime_stats");
-  if(error){console.error("Stats error:",error);return;}
-  const s=data?.[0]||data||{};
-  document.getElementById("stats").innerHTML=[
-    ["favorite_count","お気に入り"],
-    ["watching_count","視聴中"],
-    ["completed_count","視聴完了"],
-    ["average_rating","平均評価"]
-  ].map(([k,l])=>'<div class="stat"><span class="stat-label">'+l+'</span><b>'+esc(s[k]??0)+'</b></div>').join("");
+  const stats=document.getElementById("stats");
+  stats.innerHTML='<div class="loading" style="grid-column:1/-1">統計を読み込み中…</div>';
+  try{
+    const [fav,watch,rating]=await Promise.all([
+      supabaseClient.from("favorites").select("anime_id",{count:"exact",head:true}).eq("user_id",currentUser.id),
+      supabaseClient.from("watch_status").select("status",{count:"exact",head:true}).eq("user_id",currentUser.id),
+      supabaseClient.from("user_ratings").select("rating",{count:"exact"}).eq("user_id",currentUser.id)
+    ]);
+    const errors=[fav.error,watch.error,rating.error].filter(Boolean);
+    if(errors.length) console.error("Stats errors:",errors);
+    const watchingCount=watch.data?.filter(x=>x.status==="watching").length||0;
+    const completedCount=watch.data?.filter(x=>x.status==="completed").length||0;
+    const ratings=(rating.data||[]).map(x=>Number(x.rating)).filter(Number.isFinite);
+    const average=ratings.length?(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1):"—";
+    stats.innerHTML=[
+      ["favorite_count","お気に入り",fav.count??0],
+      ["watching_count","視聴中",watchingCount],
+      ["completed_count","視聴完了",completedCount],
+      ["average_rating","平均評価",average]
+    ].map(([k,l,v])=>'<div class="stat"><span class="stat-label">'+l+'</span><b>'+esc(v)+'</b></div>').join("");
+  }catch(error){
+    console.error("Stats error:",error);
+    stats.innerHTML='<div class="error" style="grid-column:1/-1">統計を読み込めませんでした。</div>';
+  }
 }
-
 async function loadProfile(){
   const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,bio").eq("id",currentUser.id).maybeSingle();
   if(error){console.error("Profile error:",error);return;}
