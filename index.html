@@ -178,9 +178,9 @@ async function load(){
  const season=month<=3?"WINTER":month<=6?"SPRING":month<=9?"SUMMER":"FALL";
  const [count,seasonRes,rankRes,newRes,genreRes]=await Promise.all([
    sb.from("anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").gte("start_date","1963-01-01"),
-   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,average_score,anime_verification_status,season,season_year").eq("anime_verification_status","verified").gte("start_date","1963-01-01").eq("season_year",year).eq("season",season).order("average_score",{ascending:false,nullsFirst:false}).limit(10),
+   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,average_score,anime_verification_status,season,season_year,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").eq("season_year",year).eq("season",season).order("average_score",{ascending:false,nullsFirst:false}).limit(10),
    sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").not("average_score","is",null).order("average_score",{ascending:false}).limit(10),
-   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date").eq("anime_verification_status","verified").gte("start_date","1963-01-01").order("id",{ascending:false}).limit(10),
+   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").order("created_at",{ascending:false}).limit(10),
    sb.rpc("get_catalog_genres")
  ]);
  document.getElementById("database-count").textContent=count.count?Number(count.count).toLocaleString("ja-JP")+"作品":"—";
@@ -193,6 +193,7 @@ async function load(){
  rank.innerHTML=rankRows.length?rankRows.map((a,i)=>'<a class="rank-item" href="anime-detail.html?id='+a.id+'"><div class="rank-no">'+(i+1)+'</div><div>'+ (a.cover_image?'<img class="rank-thumb" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-thumb"></div>')+'</div><div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+" · "+esc(a.format||"")+'</div></div><div class="rank-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<span>評価</span></div></a>').join(""):'<div class="empty">評価データが集まるとランキングが表示されます。</div>';
  const genres=genreRes.data||[];
  const ge=document.getElementById("genre-grid");
+ document.getElementById("genre-count").textContent=genres.length||33;
  ge.innerHTML=genres.slice(0,33).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンルを読み込めませんでした。</div>';
 }
 document.getElementById("search-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("search-input").value.trim();if(q)location.href="anime.html?search="+encodeURIComponent(q);});
