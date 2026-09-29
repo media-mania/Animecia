@@ -113,7 +113,23 @@ jobs:
               if score>=82 and (best is None or score>best[0]): best=(score,x)
             return best[1] if best else None
 
-          def genres_for(media):
+          def japanese_official(url,title):
+  try:
+    host=(urllib.parse.urlparse(url).hostname or "").lower()
+    if any(bad in host for bad in ("twitter.com","x.com","facebook.com","instagram.com","youtube.com","wikipedia.org","myanimelist.net","anilist.co","animenewsnetwork.com","crunchyroll.com")):
+      return False
+    raw,_=request(url,"GET",None,{"Accept":"text/html,application/xhtml+xml"},20)
+    html=raw.decode("utf-8","ignore")[:120000]
+    if not re.search(r"[ぁ-んァ-ヶ一-龠]",html):
+      return False
+    low=html.lower()
+    if any(x in low for x in ("privacy policy","cookie settings","javascript is required")) and not re.search(r"(アニメ|公式|作品|放送|劇場|キャラクター|スタッフ)",html):
+      return False
+    return True
+  except Exception:
+    return False
+
+def genres_for(media):
             vals=[]
             for raw in media.get("genres") or []:
               key=str(raw).strip().lower()
@@ -147,7 +163,7 @@ jobs:
               if "公式" in site: score+=40
               candidates.append((score,url))
             candidates.sort(reverse=True)
-            return candidates[0][1] if candidates and candidates[0][0]>=20 else None
+            return candidates[0][1] if candidates and candidates[0][0]>=40 else None
 
           # Prioritize missing genre, then missing official URL.
           rows=sb("/rest/v1/anime","GET",None,{
@@ -197,7 +213,7 @@ jobs:
               patch["genre"]=", ".join(gs)
             if (not r.get("official_url")):
               url=official(media)
-              if url: patch["official_url"]=url
+              if url and japanese_official(url,title): patch["official_url"]=url
 
             if patch:
               update(r["id"],patch)
