@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       batch_size:
-        description: "一度に再分類する作品数（最大500）"
+        description: "一度に分類する作品数（最大500）"
         required: false
         default: "500"
 
@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  resync:
+  classify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -29,15 +29,23 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      CLASSIFICATION_VERSION: "danime-niconico-v2"
+      CLASSIFICATION_VERSION: "animecia-existing-genres-v3"
 
     steps:
-      - name: Classify all anime genres
+      - name: Classify anime using evidence scoring
         shell: bash
         run: |
           set -euo pipefail
           python3 <<'PY'
-          import json, os, re, time, urllib.error, urllib.request, urllib.parse
+          import json
+          import math
+          import os
+          import re
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from datetime import datetime, timezone
 
           BASE = os.environ["SUPABASE_URL"].rstrip("/")
           KEY = os.environ["SUPABASE_SECRET_KEY"]
@@ -45,30 +53,18 @@ jobs:
           VERSION = os.environ["CLASSIFICATION_VERSION"]
           BATCH = max(50, min(500, int(os.environ.get("BATCH_SIZE", "500"))))
 
-          CATEGORIES = [
-              "SF/ファンタジー",
-              "ロボット/メカ",
-              "アクション/バトル",
-              "コメディ/ギャグ",
-              "恋愛/ラブコメ",
-              "日常/ほのぼの",
-              "スポーツ/競技",
-              "ホラー/サスペンス/推理",
-              "歴史/戦記",
-              "戦争/ミリタリー",
-              "ドラマ/青春",
-              "キッズ/ファミリー",
-              "ショート",
-          ]
-
-          def http(url, method="GET", body=None, retries=4):
+          # IMPORTANT:
+          # このプログラムは genres テーブルへ新しいジャンルを作成しない。
+          # DBに現在存在するジャンルだけを取得して、そのIDへ分類する。
+          # したがって分類プログラム側からジャンル体系を変更しない。
+          def http(url, method="GET", body=None, retries=5):
               data = None if body is None else json.dumps(body, ensure_ascii=False).encode()
               headers = {
                   "apikey": KEY,
                   "Authorization": "Bearer " + KEY,
                   "Content-Type": "application/json",
                   "Accept": "application/json",
-                  "User-Agent": "Animecia-GenreClassifier/2.0"
+                  "User-Agent": "Animecia-GenreClassifier/3.0"
               }
               for attempt in range(retries):
                   try:
@@ -77,8 +73,8 @@ jobs:
                           raw = r.read()
                           return json.loads(raw.decode("utf-8")) if raw else []
                   except urllib.error.HTTPError as e:
-                      if e.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
-                          time.sleep(2 ** attempt)
+                      if e.code in (408, 425, 429, 500, 502, 503, 504) and attempt < retries - 1:
+                          time.sleep(min(30, 2 ** attempt))
                           continue
                       raise
 
@@ -88,113 +84,335 @@ jobs:
                   url += "?" + urllib.parse.urlencode(params, doseq=True)
               return http(url, method, body)
 
-          def norm(s):
-              return re.sub(r"\\s+", " ", (s or "").strip()).lower()
+          def norm(value):
+              return re.sub(r"\\s+", " ", str(value or "").strip().lower())
 
-          # dアニメストアの分類体系を基準にする。
-          # Adventure / Isekai / Supernatural 等は独立ジャンルにせず、
-          # dアニメストアの「SF/ファンタジー」等へ内容上の位置付けを行う。
+          # 既存DBのジャンルのみ。ここでは名称の追加・削除・変更をしない。
+          genre_rows = sb(
+              "/rest/v1/genres",
+              params={"select": "id,name", "order": "id.asc"}
+          )
+          GENRE_ID = {str(r["name"]): int(r["id"]) for r in genre_rows}
+
+          # Animeciaで現在使われているジャンル名。
+          # DBに存在しない名前は自動的に無視するため、分類器が新ジャンルを作ることはない。
+          ALL_NAMES = [
+              "学園","異世界","冒険","アクション","コメディ","スポーツ","ファンタジー","SF",
+              "ドラマ","魔法少女","ホラー","恋愛","日常","メカ","音楽","ミリタリー","歴史",
+              "サスペンス","ショート","ロボット","バトル","ギャグ","ラブコメ","ほのぼの",
+              "競技","推理","戦記","戦争","青春","アイドル","魔法","キッズ","ファミリー"
+          ]
+
+          # AniListの一般ジャンル → Animeciaジャンル。
+          # 強い根拠ほど高得点。単なる単語一致より公式ジャンルを優先する。
+          SOURCE_GENRE = {
+              "action": [("アクション", 1.00)],
+              "adventure": [("冒険", 1.00)],
+              "comedy": [("コメディ", 1.00)],
+              "drama": [("ドラマ", 1.00)],
+              "fantasy": [("ファンタジー", 1.00)],
+              "horror": [("ホラー", 1.00)],
+              "mahou shoujo": [("魔法少女", 1.00)],
+              "mecha": [("メカ", 1.00), ("ロボット", 0.82)],
+              "music": [("音楽", 1.00)],
+              "mystery": [("推理", 1.00)],
+              "romance": [("恋愛", 1.00)],
+              "sci-fi": [("SF", 1.00)],
+              "slice of life": [("日常", 1.00)],
+              "sports": [("スポーツ", 1.00)],
+              "thriller": [("サスペンス", 1.00)],
+          }
+
+          # タグはrankが高いほど強い。ただし「spoiler」タグは除外する。
+          TAG_RULES = {
+              "学園": {
+                  "school": 0.98, "school club": 0.95, "college": 0.90,
+                  "high school": 0.98, "middle school": 0.98
+              },
+              "異世界": {"isekai": 1.00},
+              "冒険": {
+                  "adventure": 0.95, "pirates": 0.90, "treasure": 0.90
+              },
+              "アクション": {
+                  "action": 0.92, "martial arts": 0.92, "swordplay": 0.88,
+                  "super power": 0.84, "superhero": 0.88, "assassins": 0.90,
+                  "ninja": 0.88, "delinquents": 0.86, "yakuza": 0.86,
+                  "revenge": 0.78
+              },
+              "バトル": {
+                  "battle": 1.00, "battle royale": 0.96, "combat": 0.94,
+                  "martial arts": 0.86, "swordplay": 0.84
+              },
+              "コメディ": {
+                  "comedy": 0.95, "parody": 0.92, "satire": 0.90
+              },
+              "ギャグ": {
+                  "slapstick": 0.96, "parody": 0.88, "satire": 0.84,
+                  "surreal comedy": 0.90
+              },
+              "恋愛": {
+                  "romance": 0.96, "love triangle": 0.92,
+                  "love interest": 0.88, "tsundere": 0.72
+              },
+              "ラブコメ": {
+                  "romance": 0.55, "comedy": 0.55,
+                  "love triangle": 0.80, "tsundere": 0.78,
+                  "harem": 0.74, "reverse harem": 0.74
+              },
+              "日常": {
+                  "slice of life": 0.98, "school club": 0.70,
+                  "workplace": 0.66, "episodic": 0.58
+              },
+              "ほのぼの": {
+                  "iyashikei": 1.00, "healing": 0.98,
+                  "cute girls doing cute things": 0.90,
+                  "family life": 0.72
+              },
+              "スポーツ": {
+                  "sports": 0.96, "athletics": 0.90
+              },
+              "競技": {
+                  "competition": 0.96, "tournament": 0.92,
+                  "card battle": 0.90, "shogi": 0.92, "mahjong": 0.90,
+                  "poker": 0.88, "karuta": 0.92
+              },
+              "ホラー": {
+                  "horror": 0.98, "gore": 0.84, "vampire": 0.72,
+                  "zombie": 0.88, "ghost": 0.80
+              },
+              "サスペンス": {
+                  "thriller": 0.98, "psychological": 0.92,
+                  "survival": 0.90, "crime": 0.90, "conspiracy": 0.90,
+                  "noir": 0.86, "espionage": 0.86, "revenge": 0.70
+              },
+              "推理": {
+                  "mystery": 0.98, "detective": 0.98, "police": 0.78,
+                  "crime": 0.70
+              },
+              "歴史": {
+                  "historical": 1.00, "samurai": 0.88,
+                  "edo period": 0.96, "sengoku period": 0.96,
+                  "ancient china": 0.96, "ancient japan": 0.96
+              },
+              "戦記": {
+                  "war": 0.74, "military": 0.60, "samurai": 0.58,
+                  "politics": 0.70, "strategy": 0.84
+              },
+              "戦争": {
+                  "war": 1.00, "warfare": 0.96,
+                  "military conflict": 0.96
+              },
+              "ミリタリー": {
+                  "military": 1.00, "tanks": 0.96, "guns": 0.78,
+                  "aviation": 0.82, "espionage": 0.72
+              },
+              "ドラマ": {
+                  "drama": 0.94, "family life": 0.70,
+                  "coming of age": 0.70, "workplace": 0.64
+              },
+              "青春": {
+                  "coming of age": 0.98, "school": 0.62,
+                  "school life": 0.64
+              },
+              "音楽": {
+                  "music": 1.00, "musical": 0.96,
+                  "dancing": 0.74
+              },
+              "アイドル": {"idol": 1.00},
+              "魔法": {
+                  "magic": 0.98, "witch": 0.92,
+                  "urban fantasy": 0.50
+              },
+              "キッズ": {
+                  "kids": 1.00, "primarily child cast": 0.92,
+                  "educational": 0.84
+              },
+              "ファミリー": {
+                  "family": 0.90, "family life": 0.88,
+                  "kids": 0.72
+              },
+              "SF": {
+                  "sci-fi": 1.00, "cyberpunk": 0.98, "space": 0.92,
+                  "space opera": 0.96, "aliens": 0.84,
+                  "artificial intelligence": 0.94, "augmented reality": 0.86,
+                  "virtual world": 0.84, "time manipulation": 0.78,
+                  "post-apocalyptic": 0.80, "steampunk": 0.84
+              },
+              "ファンタジー": {
+                  "fantasy": 1.00, "fairy tale": 0.94, "mythology": 0.90,
+                  "demons": 0.78, "vampire": 0.72, "youkai": 0.82,
+                  "supernatural": 0.70, "alchemy": 0.76,
+                  "urban fantasy": 0.88, "high fantasy": 0.98,
+                  "dark fantasy": 0.98
+              },
+              "メカ": {
+                  "mecha": 1.00, "real robot": 0.98,
+                  "super robot": 0.98, "robots": 0.96
+              },
+              "ロボット": {
+                  "robots": 1.00, "real robot": 1.00,
+                  "super robot": 1.00
+              }
+          }
+
+          def tag_score(tags, wanted):
+              best = 0.0
+              for tag in tags:
+                  name = norm(tag.get("name"))
+                  rank = tag.get("rank")
+                  if rank is None:
+                      rank_factor = 0.75
+                  else:
+                      rank_factor = max(0.50, min(1.0, float(rank) / 100.0))
+                  for key, weight in wanted.items():
+                      if name == key:
+                          best = max(best, weight * rank_factor)
+              return best
+
+          def text_score(text, words):
+              for w in words:
+                  if w in text:
+                      return 0.52
+              return 0.0
+
           def classify(media):
-              genres = {norm(x) for x in (media.get("genres") or [])}
-              tags = {norm((x or {}).get("name")) for x in (media.get("tags") or [])}
-              fmt = norm(media.get("format"))
-              duration = media.get("duration")
+              genres = {norm(x) for x in media.get("genres") or []}
+              tags = [
+                  t for t in (media.get("tags") or [])
+                  if not t.get("isMediaSpoiler") and not t.get("isGeneralSpoiler")
+              ]
               text = norm(" ".join([
-                  ((media.get("title") or {}).get("native") or ""),
-                  ((media.get("title") or {}).get("romaji") or ""),
-                  ((media.get("title") or {}).get("english") or ""),
+                  (media.get("title") or {}).get("native") or "",
+                  (media.get("title") or {}).get("romaji") or "",
+                  (media.get("title") or {}).get("english") or "",
                   media.get("description") or ""
               ]))
 
-              out = []
+              scores = {name: 0.0 for name in ALL_NAMES if name in GENRE_ID}
+              reasons = {name: [] for name in scores}
 
-              def has(*values):
-                  return bool(genres.intersection(values) or tags.intersection(values))
+              # 1. AniListの公式genre。最も強い根拠。
+              for source, targets in SOURCE_GENRE.items():
+                  if source in genres:
+                      for name, score in targets:
+                          if name in scores:
+                              scores[name] = max(scores[name], score)
+                              reasons[name].append("AniList genre: " + source)
 
-              # 明確な形式分類。dアニメストアの「ショート」に対応。
-              if fmt == "tv_short" or (isinstance(duration, int) and 0 < duration < 15):
-                  out.append("ショート")
+              # 2. AniList tag。rankを重みとして利用。
+              for name, rules in TAG_RULES.items():
+                  if name not in scores:
+                      continue
+                  s = tag_score(tags, rules)
+                  if s > scores[name]:
+                      scores[name] = s
+                      reasons[name].append("AniList tag evidence")
 
-              if has("mecha", "robots", "robot"):
-                  out.append("ロボット/メカ")
+              # 3. 形式はショートの強い根拠。ただし通常作品を短いから勝手に別ジャンル化しない。
+              fmt = norm(media.get("format")).upper()
+              duration = media.get("duration")
+              if "ショート" in scores and (
+                  fmt == "TV_SHORT" or (isinstance(duration, int) and 0 < duration < 15)
+              ):
+                  scores["ショート"] = 1.0
+                  reasons["ショート"].append("format/duration")
 
-              if has("sports", "sport"):
-                  out.append("スポーツ/競技")
+              # 4. 高確信の日本語/英語キーワードは補助根拠のみ。
+              text_rules = {
+                  "学園": ["学園", "高校", "中学", "大学", "school"],
+                  "異世界": ["異世界", "iseka"],
+                  "恋愛": ["恋愛", "恋人", "romance"],
+                  "魔法": ["魔法", "wizard", "witch", "magic"],
+                  "SF": ["sf", "science fiction", "未来", "宇宙"],
+                  "スポーツ": ["野球", "サッカー", "バスケット", "テニス", "スポーツ"],
+                  "音楽": ["音楽", "バンド", "歌", "musical"],
+                  "アイドル": ["アイドル", "idol"],
+                  "推理": ["探偵", "推理", "謎解き", "mystery"],
+                  "ホラー": ["ホラー", "恐怖", "怪談", "horror"],
+                  "日常": ["日常系", "日常", "slice of life"]
+              }
+              for name, words in text_rules.items():
+                  if name in scores:
+                      ts = text_score(text, words)
+                      if ts > scores[name]:
+                          scores[name] = ts
+                          reasons[name].append("title/description keyword")
 
-              if has("military", "war", "warfare", "military technology"):
-                  out.append("戦争/ミリタリー")
+              # 5. 排他的・弱い根拠の抑制。
+              # 「恋愛+コメディ」の両方が強いときだけラブコメを付与。
+              if "ラブコメ" in scores:
+                  if scores.get("恋愛", 0) >= 0.90 and scores.get("コメディ", 0) >= 0.90:
+                      scores["ラブコメ"] = max(scores["ラブコメ"], 0.95)
+                      reasons["ラブコメ"].append("romance + comedy")
+                  else:
+                      scores["ラブコメ"] *= 0.72
 
-              if has("historical", "history", "samurai", "edo period", "sengoku period", "ancient china", "ancient japan"):
-                  out.append("歴史/戦記")
+              # 「ロボット」と「メカ」は両方が明示された場合のみ両方を許す。
+              # Mechaだけの場合はメカを優先し、ロボットはtagが強い場合のみ。
+              if scores.get("メカ", 0) >= 0.95 and scores.get("ロボット", 0) < 0.95:
+                  scores["ロボット"] *= 0.75
 
-              if has("horror", "mystery", "thriller", "psychological", "detective", "crime", "survival", "conspiracy", "gore", "serial killer"):
-                  out.append("ホラー/サスペンス/推理")
+              # 6. 信頼度閾値。
+              # 0.78以上を採用。複数ジャンルは各ジャンルが独立して閾値を満たした場合のみ。
+              selected = [
+                  (name, score) for name, score in scores.items()
+                  if score >= 0.78
+              ]
+              selected.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
 
-              if has("action", "martial arts", "swordplay", "combat", "super power", "superhero", "assassins", "delinquents", "gang", "yakuza"):
-                  out.append("アクション/バトル")
+              # 最大6ジャンル。主要ジャンルを落とさず、弱い補助ジャンルの過剰付与を防止。
+              selected = selected[:6]
 
-              if has("comedy", "parody", "satire", "slapstick"):
-                  out.append("コメディ/ギャグ")
+              top = selected[0][1] if selected else 0.0
+              if top < 0.78:
+                  selected = []
 
-              if has("romance", "love triangle", "harem", "female harem", "male harem", "love interest"):
-                  out.append("恋愛/ラブコメ")
+              # confidenceは「採用ジャンルの平均」を基礎に、根拠数を少し加味する。
+              if selected:
+                  avg = sum(s for _, s in selected) / len(selected)
+                  confidence = min(0.99, avg + min(0.05, 0.01 * len(selected)))
+              else:
+                  confidence = 0.0
 
-              if has("slice of life", "iyashikei", "healing", "school club", "workplace"):
-                  out.append("日常/ほのぼの")
+              flat_reasons = []
+              for name, score in selected:
+                  for reason in reasons[name][:2]:
+                      flat_reasons.append(f"{name}: {reason} ({score:.2f})")
 
-              if has("sci-fi", "fantasy", "supernatural", "magic", "isekai", "mythology", "vampires", "demons", "youkai", "youkai", "time travel", "space", "aliens", "post-apocalyptic", "urban fantasy", "high fantasy", "dark fantasy", "alchemy", "artificial intelligence"):
-                  out.append("SF/ファンタジー")
+              return [name for name, _ in selected], round(confidence, 4), flat_reasons
 
-              # dアニメストアの「ドラマ/青春」は人間関係・成長・学園青春を中心に扱う。
-              if has("drama", "coming of age", "school", "school life", "primarily adult cast", "family life", "workplace drama"):
-                  out.append("ドラマ/青春")
-
-              if has("kids", "family friendly", "educational", "primarily child cast") or "children" in text or "kids" in text:
-                  out.append("キッズ/ファミリー")
-
-              # 一般的なアニメ作品について、分類不能の作品を「ドラマ/青春」に
-              # 自動で押し込まない。元データが薄い場合は空欄を許容し、
-              # 次回のメタデータ更新で再判定する。
-              # ただし有効なジャンルが一つもない場合のみ、タイトル/説明から
-              # 明確なキーワードを追加判定する。
-              if not out:
-                  if re.search(r"(sport|soccer|football|baseball|basketball|tennis|競技|野球|サッカー|バスケ|テニス)", text):
-                      out.append("スポーツ/競技")
-                  elif re.search(r"(school|青春|高校|中学|大学|学生)", text):
-                      out.append("ドラマ/青春")
-                  elif re.search(r"(romance|恋愛|ラブコメ|恋)", text):
-                      out.append("恋愛/ラブコメ")
-                  elif re.search(r"(comedy|コメディ|ギャグ)", text):
-                      out.append("コメディ/ギャグ")
-                  elif re.search(r"(fantasy|魔法|異世界|妖怪|吸血鬼|悪魔)", text):
-                      out.append("SF/ファンタジー")
-
-              # 同一作品に付けるジャンル数は最大5。重複除去と固定順で再現性を確保。
-              rank = {name:i for i,name in enumerate(CATEGORIES)}
-              out = list(dict.fromkeys(out))
-              out.sort(key=lambda x: rank[x])
-              return out[:5]
-
+          # 未分類または分類バージョンが古い作品だけ取得。
+          # neqはNULLを拾わないので、NULLと旧versionを別取得して結合する。
           def fetch_candidates():
-              params = {
+              base_params = {
                   "select": "id,source_provider,source_id,format",
                   "anime_verification_status": "eq.verified",
-                  "genre_classification_version": "neq." + VERSION,
                   "order": "id.asc",
                   "limit": str(BATCH)
               }
-              # PostgREST の neq は NULL を拾わないため、未分類は別取得。
-              rows = sb("/rest/v1/anime", params=params)
-              if len(rows) < BATCH:
-                  remaining = BATCH - len(rows)
-                  p2 = {
-                      "select": "id,source_provider,source_id,format",
-                      "anime_verification_status": "eq.verified",
-                      "genre_classification_version": "is.null",
-                      "order": "id.asc",
-                      "limit": str(remaining)
+
+              rows = sb(
+                  "/rest/v1/anime",
+                  params={
+                      **base_params,
+                      "genre_classification_version": "neq." + VERSION
                   }
-                  rows += sb("/rest/v1/anime", params=p2)
+              )
+              seen = {int(r["id"]) for r in rows}
+
+              if len(rows) < BATCH:
+                  more = sb(
+                      "/rest/v1/anime",
+                      params={
+                          **base_params,
+                          "genre_classification_version": "is.null",
+                          "limit": str(BATCH - len(rows))
+                      }
+                  )
+                  for r in more:
+                      if int(r["id"]) not in seen:
+                          rows.append(r)
+                          seen.add(int(r["id"]))
               return rows[:BATCH]
 
           rows = fetch_candidates()
@@ -202,8 +420,12 @@ jobs:
               print("No anime remain to classify.")
               raise SystemExit(0)
 
-          anilist = [r for r in rows if r.get("source_provider") == "anilist" and str(r.get("source_id") or "").isdigit()]
-          updates = []
+          # AniListを一括取得。AniList APIはPage.mediaのperPage最大50。
+          ani_rows = [
+              r for r in rows
+              if r.get("source_provider") == "anilist"
+              and str(r.get("source_id") or "").isdigit()
+          ]
 
           query = """
           query($ids:[Int],$page:Int,$perPage:Int){
@@ -216,50 +438,77 @@ jobs:
                 title { native romaji english userPreferred }
                 description(asHtml:false)
                 genres
-                tags { name rank isMediaSpoiler }
+                tags { name rank isMediaSpoiler isGeneralSpoiler category }
               }
             }
           }
           """
 
-          for start in range(0, len(anilist), 50):
-              chunk = anilist[start:start+50]
+          media_by_id = {}
+          for start in range(0, len(ani_rows), 50):
+              chunk = ani_rows[start:start+50]
               ids = [int(r["source_id"]) for r in chunk]
-              data = http(ANI, "POST", {"query":query,"variables":{"ids":ids,"page":1,"perPage":50}})
-              media_rows = ((data.get("data") or {}).get("Page") or {}).get("media") or []
-              by_id = {int(m["id"]):m for m in media_rows}
-              for row in chunk:
-                  media = by_id.get(int(row["source_id"]))
-                  if media is None:
-                      # 取得できなかった作品も未処理のままにせず、空分類として
-                      # バージョンだけ記録し、次回の定期更新で再評価できるようにする。
-                      genres = ""
-                  else:
-                      genres = ", ".join(classify(media))
-                  updates.append((int(row["id"]), genres))
-              time.sleep(0.5)
-
-          # ANN 等、AniList IDを持たない作品は既存のジャンルを信用せず、
-          # 次回のANN分類処理を追加できるよう今回は再分類対象から外す。
-          # ただし現在のAniList作品は全件この処理で再分類する。
-          success = 0
-          for anime_id, genre in updates:
-              sb(
-                  "/rest/v1/anime",
-                  "PATCH",
+              response = http(
+                  ANI,
+                  "POST",
                   {
-                      "genre": genre,
-                      "genre_classified_at": "now()",
-                      "genre_classification_version": VERSION
-                  },
-                  {"id": "eq." + str(anime_id)}
+                      "query": query,
+                      "variables": {"ids": ids, "page": 1, "perPage": 50}
+                  }
               )
-              success += 1
+              media = ((response.get("data") or {}).get("Page") or {}).get("media") or []
+              for m in media:
+                  media_by_id[int(m["id"])] = m
+              time.sleep(0.4)
+
+          updates = []
+          skipped_source = 0
+          no_evidence = 0
+
+          now = datetime.now(timezone.utc).isoformat()
+
+          for row in rows:
+              source_id = str(row.get("source_id") or "")
+              media = media_by_id.get(int(source_id)) if source_id.isdigit() else None
+
+              if media is None:
+                  # AniListで取得不能な作品は、既存ジャンルを推測で上書きしない。
+                  # 「取得不能」という事実だけを記録し、次回の更新対象として残す。
+                  skipped_source += 1
+                  continue
+
+              names, confidence, reasons = classify(media)
+              genre_ids = [GENRE_ID[n] for n in names if n in GENRE_ID]
+
+              if not genre_ids:
+                  no_evidence += 1
+
+              updates.append({
+                  "anime_id": int(row["id"]),
+                  "genre_ids": genre_ids,
+                  "confidence": confidence,
+                  "reasons": reasons,
+                  "version": VERSION,
+                  "classified_at": now
+              })
+
+          if updates:
+              changed = sb(
+                  "/rest/v1/rpc/bulk_replace_anime_genres",
+                  "POST",
+                  updates
+              )
+          else:
+              changed = 0
 
           print(json.dumps({
-              "candidates": len(rows),
-              "anilist_candidates": len(anilist),
-              "classified": success,
+              "candidate_count": len(rows),
+              "anilist_records": len(ani_rows),
+              "classified_records": len(updates),
+              "db_changed": changed,
+              "no_evidence": no_evidence,
+              "source_unavailable": skipped_source,
+              "genre_count_in_db": len(GENRE_ID),
               "version": VERSION
           }, ensure_ascii=False))
           PY
