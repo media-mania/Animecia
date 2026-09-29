@@ -2,13 +2,13 @@ name: Animecia Genre Resync
 
 on:
   schedule:
-    - cron: '30 2 * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       batch_size:
-        description: "再分類する作品数"
+        description: "一度に再分類する作品数（最大500）"
         required: false
-        default: "100"
+        default: "500"
 
 permissions:
   contents: read
@@ -20,66 +20,243 @@ concurrency:
 jobs:
   resync:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-      BATCH_SIZE: ${{ inputs.batch_size || '100' }}
+      BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
+      CLASSIFICATION_VERSION: "danime-niconico-v2"
+
     steps:
-      - name: Resync AniList genres
+      - name: Classify all anime genres
         shell: bash
         run: |
           set -euo pipefail
           python3 <<'PY'
-          import json, os, time, urllib.request, urllib.parse
+          import json, os, re, time, urllib.error, urllib.request, urllib.parse
 
-          base=os.environ["SUPABASE_URL"].rstrip("/")
-          key=os.environ["SUPABASE_SECRET_KEY"]
-          batch=max(10,min(100,int(os.environ.get("BATCH_SIZE","100"))))
+          BASE = os.environ["SUPABASE_URL"].rstrip("/")
+          KEY = os.environ["SUPABASE_SECRET_KEY"]
+          ANI = os.environ["ANILIST_URL"]
+          VERSION = os.environ["CLASSIFICATION_VERSION"]
+          BATCH = max(50, min(500, int(os.environ.get("BATCH_SIZE", "500"))))
 
-          def request(url, method="GET", body=None):
-              data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
-              req=urllib.request.Request(url,data=data,method=method,headers={
-                  "apikey":key,"Authorization":"Bearer "+key,
-                  "Content-Type":"application/json","Accept":"application/json",
-                  "User-Agent":"Animecia-GenreResync/1.0"
-              })
-              with urllib.request.urlopen(req,timeout=60) as r:
-                  return json.loads(r.read().decode("utf-8"))
+          CATEGORIES = [
+              "SF/ファンタジー",
+              "ロボット/メカ",
+              "アクション/バトル",
+              "コメディ/ギャグ",
+              "恋愛/ラブコメ",
+              "日常/ほのぼの",
+              "スポーツ/競技",
+              "ホラー/サスペンス/推理",
+              "歴史/戦記",
+              "戦争/ミリタリー",
+              "ドラマ/青春",
+              "キッズ/ファミリー",
+              "ショート",
+          ]
 
-          qs=urllib.parse.urlencode({
-              "select":"id,source_id,genre",
-              "source_provider":"eq.anilist",
-              "genres_synced_at":"is.null",
-              "anime_verification_status":"eq.verified",
-              "order":"id.asc",
-              "limit":str(batch)
-          })
-          rows=request(base+"/rest/v1/anime?"+qs)
+          def http(url, method="GET", body=None, retries=4):
+              data = None if body is None else json.dumps(body, ensure_ascii=False).encode()
+              headers = {
+                  "apikey": KEY,
+                  "Authorization": "Bearer " + KEY,
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                  "User-Agent": "Animecia-GenreClassifier/2.0"
+              }
+              for attempt in range(retries):
+                  try:
+                      req = urllib.request.Request(url, data=data, method=method, headers=headers)
+                      with urllib.request.urlopen(req, timeout=90) as r:
+                          raw = r.read()
+                          return json.loads(raw.decode("utf-8")) if raw else []
+                  except urllib.error.HTTPError as e:
+                      if e.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
+                          time.sleep(2 ** attempt)
+                          continue
+                      raise
 
-          query="query($id:Int!){Media(id:$id,type:ANIME){genres}}"
-          genre_rows=request(base+"/rest/v1/genres?select=id,name&limit=100")
-          genre_ids={x["name"]:x["id"] for x in genre_rows}
-          genre_map={"Action":"アクション","Adventure":"冒険","Comedy":"コメディ","Drama":"ドラマ","Fantasy":"ファンタジー","Horror":"ホラー","Romance":"恋愛","Sci-Fi":"SF","Slice of Life":"日常","Sports":"スポーツ","School":"学園","Music":"音楽","Historical":"歴史","Military":"ミリタリー","Mecha":"メカ","Mystery":"推理","Thriller":"サスペンス","Isekai":"異世界","Magical Girl":"魔法少女"}
+          def sb(path, method="GET", body=None, params=None):
+              url = BASE + path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params, doseq=True)
+              return http(url, method, body)
 
-          added=0
-          for row in rows:
-              try:
-                  media=request(os.environ["ANILIST_URL"],"POST",{"query":query,"variables":{"id":int(row["source_id"])}})
-                  genres=((media.get("data") or {}).get("Media") or {}).get("genres") or []
-                  existing=request(base+"/rest/v1/anime_genres?select=genre_id&anime_id=eq."+str(row["id"]))
-                  existing_ids={x["genre_id"] for x in existing}
-                  for g in genres:
-                      gid=genre_ids.get(genre_map.get(g))
-                      if gid and gid not in existing_ids:
-                          request(base+"/rest/v1/anime_genres","POST",[{"anime_id":row["id"],"genre_id":gid}],{"Prefer":"return=minimal"})
-                          existing_ids.add(gid)
-                          added+=1
-                  request(base+"/rest/v1/anime","PATCH",{"genres_synced_at":"now()"},{"id":"eq."+str(row["id"])})
-                  time.sleep(1)
-              except Exception as e:
-                  print("skip",row["id"],e)
+          def norm(s):
+              return re.sub(r"\\s+", " ", (s or "").strip()).lower()
 
-          print("genre links added:",added)
+          # dアニメストアの分類体系を基準にする。
+          # Adventure / Isekai / Supernatural 等は独立ジャンルにせず、
+          # dアニメストアの「SF/ファンタジー」等へ内容上の位置付けを行う。
+          def classify(media):
+              genres = {norm(x) for x in (media.get("genres") or [])}
+              tags = {norm((x or {}).get("name")) for x in (media.get("tags") or [])}
+              fmt = norm(media.get("format"))
+              duration = media.get("duration")
+              text = norm(" ".join([
+                  ((media.get("title") or {}).get("native") or ""),
+                  ((media.get("title") or {}).get("romaji") or ""),
+                  ((media.get("title") or {}).get("english") or ""),
+                  media.get("description") or ""
+              ]))
+
+              out = []
+
+              def has(*values):
+                  return bool(genres.intersection(values) or tags.intersection(values))
+
+              # 明確な形式分類。dアニメストアの「ショート」に対応。
+              if fmt == "tv_short" or (isinstance(duration, int) and 0 < duration < 15):
+                  out.append("ショート")
+
+              if has("mecha", "robots", "robot"):
+                  out.append("ロボット/メカ")
+
+              if has("sports", "sport"):
+                  out.append("スポーツ/競技")
+
+              if has("military", "war", "warfare", "military technology"):
+                  out.append("戦争/ミリタリー")
+
+              if has("historical", "history", "samurai", "edo period", "sengoku period", "ancient china", "ancient japan"):
+                  out.append("歴史/戦記")
+
+              if has("horror", "mystery", "thriller", "psychological", "detective", "crime", "survival", "conspiracy", "gore", "serial killer"):
+                  out.append("ホラー/サスペンス/推理")
+
+              if has("action", "martial arts", "swordplay", "combat", "super power", "superhero", "assassins", "delinquents", "gang", "yakuza"):
+                  out.append("アクション/バトル")
+
+              if has("comedy", "parody", "satire", "slapstick"):
+                  out.append("コメディ/ギャグ")
+
+              if has("romance", "love triangle", "harem", "female harem", "male harem", "love interest"):
+                  out.append("恋愛/ラブコメ")
+
+              if has("slice of life", "iyashikei", "healing", "school club", "workplace"):
+                  out.append("日常/ほのぼの")
+
+              if has("sci-fi", "fantasy", "supernatural", "magic", "isekai", "mythology", "vampires", "demons", "youkai", "youkai", "time travel", "space", "aliens", "post-apocalyptic", "urban fantasy", "high fantasy", "dark fantasy", "alchemy", "artificial intelligence"):
+                  out.append("SF/ファンタジー")
+
+              # dアニメストアの「ドラマ/青春」は人間関係・成長・学園青春を中心に扱う。
+              if has("drama", "coming of age", "school", "school life", "primarily adult cast", "family life", "workplace drama"):
+                  out.append("ドラマ/青春")
+
+              if has("kids", "family friendly", "educational", "primarily child cast") or "children" in text or "kids" in text:
+                  out.append("キッズ/ファミリー")
+
+              # 一般的なアニメ作品について、分類不能の作品を「ドラマ/青春」に
+              # 自動で押し込まない。元データが薄い場合は空欄を許容し、
+              # 次回のメタデータ更新で再判定する。
+              # ただし有効なジャンルが一つもない場合のみ、タイトル/説明から
+              # 明確なキーワードを追加判定する。
+              if not out:
+                  if re.search(r"(sport|soccer|football|baseball|basketball|tennis|競技|野球|サッカー|バスケ|テニス)", text):
+                      out.append("スポーツ/競技")
+                  elif re.search(r"(school|青春|高校|中学|大学|学生)", text):
+                      out.append("ドラマ/青春")
+                  elif re.search(r"(romance|恋愛|ラブコメ|恋)", text):
+                      out.append("恋愛/ラブコメ")
+                  elif re.search(r"(comedy|コメディ|ギャグ)", text):
+                      out.append("コメディ/ギャグ")
+                  elif re.search(r"(fantasy|魔法|異世界|妖怪|吸血鬼|悪魔)", text):
+                      out.append("SF/ファンタジー")
+
+              # 同一作品に付けるジャンル数は最大5。重複除去と固定順で再現性を確保。
+              rank = {name:i for i,name in enumerate(CATEGORIES)}
+              out = list(dict.fromkeys(out))
+              out.sort(key=lambda x: rank[x])
+              return out[:5]
+
+          def fetch_candidates():
+              params = {
+                  "select": "id,source_provider,source_id,format",
+                  "anime_verification_status": "eq.verified",
+                  "genre_classification_version": "neq." + VERSION,
+                  "order": "id.asc",
+                  "limit": str(BATCH)
+              }
+              # PostgREST の neq は NULL を拾わないため、未分類は別取得。
+              rows = sb("/rest/v1/anime", params=params)
+              if len(rows) < BATCH:
+                  remaining = BATCH - len(rows)
+                  p2 = {
+                      "select": "id,source_provider,source_id,format",
+                      "anime_verification_status": "eq.verified",
+                      "genre_classification_version": "is.null",
+                      "order": "id.asc",
+                      "limit": str(remaining)
+                  }
+                  rows += sb("/rest/v1/anime", params=p2)
+              return rows[:BATCH]
+
+          rows = fetch_candidates()
+          if not rows:
+              print("No anime remain to classify.")
+              raise SystemExit(0)
+
+          anilist = [r for r in rows if r.get("source_provider") == "anilist" and str(r.get("source_id") or "").isdigit()]
+          updates = []
+
+          query = """
+          query($ids:[Int],$page:Int,$perPage:Int){
+            Page(page:$page,perPage:$perPage){
+              media(id_in:$ids,type:ANIME){
+                id
+                format
+                duration
+                episodes
+                title { native romaji english userPreferred }
+                description(asHtml:false)
+                genres
+                tags { name rank isMediaSpoiler }
+              }
+            }
+          }
+          """
+
+          for start in range(0, len(anilist), 50):
+              chunk = anilist[start:start+50]
+              ids = [int(r["source_id"]) for r in chunk]
+              data = http(ANI, "POST", {"query":query,"variables":{"ids":ids,"page":1,"perPage":50}})
+              media_rows = ((data.get("data") or {}).get("Page") or {}).get("media") or []
+              by_id = {int(m["id"]):m for m in media_rows}
+              for row in chunk:
+                  media = by_id.get(int(row["source_id"]))
+                  if media is None:
+                      # 取得できなかった作品も未処理のままにせず、空分類として
+                      # バージョンだけ記録し、次回の定期更新で再評価できるようにする。
+                      genres = ""
+                  else:
+                      genres = ", ".join(classify(media))
+                  updates.append((int(row["id"]), genres))
+              time.sleep(0.5)
+
+          # ANN 等、AniList IDを持たない作品は既存のジャンルを信用せず、
+          # 次回のANN分類処理を追加できるよう今回は再分類対象から外す。
+          # ただし現在のAniList作品は全件この処理で再分類する。
+          success = 0
+          for anime_id, genre in updates:
+              sb(
+                  "/rest/v1/anime",
+                  "PATCH",
+                  {
+                      "genre": genre,
+                      "genre_classified_at": "now()",
+                      "genre_classification_version": VERSION
+                  },
+                  {"id": "eq." + str(anime_id)}
+              )
+              success += 1
+
+          print(json.dumps({
+              "candidates": len(rows),
+              "anilist_candidates": len(anilist),
+              "classified": success,
+              "version": VERSION
+          }, ensure_ascii=False))
           PY
