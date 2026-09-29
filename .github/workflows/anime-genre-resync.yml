@@ -1,0 +1,77 @@
+name: Animecia Genre Resync
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: "再分類する作品数"
+        required: false
+        default: "100"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: animecia-genre-resync
+  cancel-in-progress: false
+
+jobs:
+  resync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      BATCH_SIZE: ${{ inputs.batch_size || '100' }}
+      ANILIST_URL: https://graphql.anilist.co
+    steps:
+      - name: Resync AniList genres
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json, os, time, urllib.request, urllib.parse
+
+          base=os.environ["SUPABASE_URL"].rstrip("/")
+          key=os.environ["SUPABASE_SECRET_KEY"]
+          batch=max(10,min(100,int(os.environ.get("BATCH_SIZE","100"))))
+
+          def request(url, method="GET", body=None):
+              data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
+              req=urllib.request.Request(url,data=data,method=method,headers={
+                  "apikey":key,"Authorization":"Bearer "+key,
+                  "Content-Type":"application/json","Accept":"application/json",
+                  "User-Agent":"Animecia-GenreResync/1.0"
+              })
+              with urllib.request.urlopen(req,timeout=60) as r:
+                  return json.loads(r.read().decode("utf-8"))
+
+          qs=urllib.parse.urlencode({
+              "select":"id,source_id",
+              "source_provider":"eq.anilist",
+              "genre":"eq.その他",
+              "anime_verification_status":"eq.verified",
+              "order":"id.asc",
+              "limit":str(batch)
+          })
+          rows=request(base+"/rest/v1/anime?"+qs)
+
+          query="query($id:Int!){Media(id:$id,type:ANIME){genres}}"
+          items=[]
+          for row in rows:
+              try:
+                  media=request(os.environ["ANILIST_URL"],"POST",{"query":query,"variables":{"id":int(row["source_id"])}})
+                  genres=((media.get("data") or {}).get("Media") or {}).get("genres") or []
+                  if genres:
+                      items.append({"anime_id":row["id"],"genres":genres})
+                  time.sleep(1)
+              except Exception as e:
+                  print("skip",row["id"],e)
+
+          if items:
+              print(request(base+"/rest/v1/rpc/resync_anime_genres_batch","POST",items))
+          else:
+              print("no genre updates")
+          PY
