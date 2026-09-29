@@ -65,13 +65,36 @@ async function openThread(id){
  document.getElementById("composer").style.display="flex";
  await loadMessages();
  if(channel)sb.removeChannel(channel);
- channel=sb.channel("thread-"+id).on("postgres_changes",{event:"INSERT",schema:"public",table:"thread_messages",filter:"thread_id=eq."+id},async()=>await loadMessages()).subscribe();
+ channel=sb.channel("thread-"+id)
+  .on("postgres_changes",{event:"INSERT",schema:"public",table:"thread_messages",filter:"thread_id=eq."+id},async()=>await loadMessages())
+  .on("postgres_changes",{event:"UPDATE",schema:"public",table:"message_members",filter:"thread_id=eq."+id},async(payload)=>{if(payload.new?.user_id!==currentUser.id)await loadMessages();})
+  .subscribe();
 }
 async function loadMessages(){
- if(!currentThread)return;const {data,error}=await sb.from("thread_messages").select("id,sender_id,body,created_at").eq("thread_id",currentThread).order("created_at",{ascending:true}).limit(200);if(error)throw error;
+ if(!currentThread)return;
+ const {data,error}=await sb.from("thread_messages").select("id,sender_id,body,created_at").eq("thread_id",currentThread).order("created_at",{ascending:true}).limit(200);
+ if(error)throw error;
+ const {data:members,error:memberError}=await sb.from("message_members").select("user_id,last_read_at").eq("thread_id",currentThread);
+ if(memberError)throw memberError;
+ const otherMembers=(members||[]).filter(m=>m.user_id!==currentUser.id);
  const map=await profiles([...new Set((data||[]).map(x=>x.sender_id))]);
- document.getElementById("messages").innerHTML=(data||[]).map(x=>{const mine=x.sender_id===currentUser.id,p=map.get(x.sender_id),name=p?.display_name||p?.username||"ユーザー";return '<div class="bubble '+(mine?'mine':'')+'"><div>'+esc(x.body).replace(/\n/g,"<br>")+'</div><div class="read">'+esc(name)+" ・ "+new Date(x.created_at).toLocaleString("ja-JP")+(mine?' ・ 送信済み <button class=\"delete-msg\" type=\"button\" data-message-id=\"'+x.id+'\">削除</button>':" ・ 既読")+'</div></div>';}).join("")||'<div class="empty">メッセージはありません。</div>';
- const {error:re}=await sb.from("message_members").update({last_read_at:new Date().toISOString()}).eq("thread_id",currentThread).eq("user_id",currentUser.id);if(re)console.error(re);
+ const readCountFor=(createdAt)=>{
+   const t=new Date(createdAt).getTime();
+   return otherMembers.filter(m=>m.last_read_at&&new Date(m.last_read_at).getTime()>=t).length;
+ };
+ document.getElementById("messages").innerHTML=(data||[]).map(x=>{
+   const mine=x.sender_id===currentUser.id;
+   const p=map.get(x.sender_id),name=p?.display_name||p?.username||"ユーザー";
+   let status="";
+   if(mine){
+     const readCount=readCountFor(x.created_at);
+     const total=otherMembers.length;
+     status=total===0?"送信済み":(readCount===total?"既読":readCount>0?"既読 "+readCount+"/"+total:"送信済み");
+   }
+   return '<div class="bubble '+(mine?'mine':'')+'"><div>'+esc(x.body).replace(/\n/g,"<br>")+'</div><div class="read">'+esc(name)+" ・ "+new Date(x.created_at).toLocaleString("ja-JP")+(mine?' ・ '+status+' <button class="delete-msg" type="button" data-message-id="'+x.id+'">削除</button>':"")+'</div></div>';
+ }).join("")||'<div class="empty">メッセージはありません。</div>';
+ const {error:re}=await sb.from("message_members").update({last_read_at:new Date().toISOString()}).eq("thread_id",currentThread).eq("user_id",currentUser.id);
+ if(re)console.error(re);
  document.querySelectorAll(".delete-msg").forEach(btn=>btn.onclick=()=>deleteMessage(btn.dataset.messageId));
  document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
 }
