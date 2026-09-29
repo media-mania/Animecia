@@ -149,6 +149,21 @@ function renderAnimeList(rows,map,labelFn){
  const html=rows.map(x=>{const a=map.get(Number(x.anime_id));if(!a)return "";return '<a class="list-item" href="anime-detail.html?id='+a.id+'">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="meta"><span class="pill">'+esc(labelFn(x))+'</span></div></div></a>';}).join("");
  el.innerHTML=html||'<div class="empty">該当する作品はありません。</div>';
 }
+async function updateNotificationBadge(){
+ const {count,error}=await supabaseClient.from("user_notifications").select("id",{count:"exact",head:true}).eq("user_id",currentUser.id).eq("is_read",false);
+ if(error){console.error("notification badge error",error);return;}
+ const badge=document.getElementById("notification-badge");
+ badge.textContent=count?String(count):"";
+ badge.style.display=count?"inline-block":"none";
+}
+function subscribeNotifications(){
+ supabaseClient.channel("user-notifications-"+currentUser.id)
+  .on("postgres_changes",{event:"INSERT",schema:"public",table:"user_notifications",filter:"user_id=eq."+currentUser.id},async()=>{
+    await updateNotificationBadge();
+    if(currentTab==="notifications") await loadTab();
+  })
+  .subscribe();
+}
 async function loadTab(){
  const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';
  try{
@@ -171,8 +186,15 @@ async function loadTab(){
   }
   if(currentTab==="notifications"){
    const {data,error}=await supabaseClient.from("user_notifications").select("id,title,message,target_url,is_read,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);if(error)throw error;
-   const rows=data||[],unread=rows.filter(x=>!x.is_read).length;document.getElementById("notification-badge").textContent=unread?String(unread):"";document.getElementById("notification-badge").style.display=unread?"inline-block":"none";
-   el.innerHTML=rows.map(x=>'<div class="list-item"><div class="grow"><div class="title">'+esc(x.title||"通知")+'</div><div class="sub">'+esc(x.message||"")+'</div><div class="meta">'+new Date(x.created_at).toLocaleString("ja-JP")+(x.is_read?"":" ・ 未読")+'</div>'+(x.target_url?'<a class="btn secondary" href="'+esc(x.target_url)+'">開く</a>':"")+'</div></div>').join("")||'<div class="empty">通知はありません。</div>';return;
+   const rows=data||[];
+   el.innerHTML=rows.map(x=>'<div class="list-item"><div class="grow"><div class="title">'+esc(x.title||"通知")+'</div><div class="sub">'+esc(x.message||"")+'</div><div class="meta">'+new Date(x.created_at).toLocaleString("ja-JP")+(x.is_read?"":" ・ 未読")+'</div>'+(x.target_url?'<a class="btn secondary" href="'+esc(x.target_url)+'">開く</a>':"")+'</div></div>').join("")||'<div class="empty">通知はありません。</div>';
+   const unreadIds=rows.filter(x=>!x.is_read).map(x=>x.id);
+   if(unreadIds.length){
+    const {error:readError}=await supabaseClient.from("user_notifications").update({is_read:true}).in("id",unreadIds).eq("user_id",currentUser.id);
+    if(readError) console.error("notification read error",readError);
+   }
+   await updateNotificationBadge();
+   return;
   }
   if(currentTab==="activity"){
    const {data,error}=await supabaseClient.from("user_activity").select("anime_id,activity_type,metadata,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);if(error)throw error;
@@ -199,7 +221,8 @@ async function start(){
   document.getElementById("content").style.display="block";
   document.getElementById("auth-btn").textContent="ログアウト";
   document.getElementById("auth-btn").onclick=async()=>{await supabaseClient.auth.signOut();location.href="mypage.html";};
-  await Promise.all([loadProfile(),loadStats()]);
+  await Promise.all([loadProfile(),loadStats(),updateNotificationBadge()]);
+  subscribeNotifications();
   await loadTab();
  }catch(e){console.error("mypage start error",e);document.getElementById("auth-warning").style.display="block";document.getElementById("auth-warning").innerHTML='<div class="error">マイページを読み込めませんでした。ページを再読み込みしてください。</div>';}
 }
