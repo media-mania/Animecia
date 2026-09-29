@@ -32,7 +32,7 @@ jobs:
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
       MAL_API: https://api.jikan.moe/v4
-      CLASSIFICATION_VERSION: "animecia-cross-source-v11-24-min3-full-audit"
+      CLASSIFICATION_VERSION: "animecia-cross-source-v12-evidence-first-min3"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -260,13 +260,6 @@ jobs:
               scores = {name: 0.0 for name in ALL_NAMES if name in GENRE_ID}
               reasons = {name: [] for name in scores}
 
-              # 0. 既存分類は弱い補助根拠として保持。AniListの最新情報があれば上書きされる。
-              for gid in existing_ids or []:
-                  name = next((n for n, i in GENRE_ID.items() if i == gid), None)
-                  if name in scores:
-                      scores[name] = max(scores[name], 0.72)
-                      reasons[name].append("existing catalog genre")
-
               # 1. AniListの公式genre。最も強い根拠。
               for source, targets in SOURCE_GENRE.items():
                   if source in genres:
@@ -331,83 +324,37 @@ jobs:
                           scores[name] = ts
                           reasons[name].append("description keyword")
 
-              # 5. ジャンル間の重複を正規化。
-
-              # 6. 意味が近いジャンルの重複を正規化。
-              # ジャンル体系は現在24種類。
-              # 同一作品へほぼ同義のジャンルを同時付与しない。
-              # ジャンル同士を排他的にしない。
-              # 実際の作品は「アクション＋ファンタジー」「戦争＋ミリタリー」など
-              # 複数ジャンルを同時に持つため、根拠の強いジャンルを独立して評価する。
-
-              # 7. 作品名だけでジャンルを決めない。
-              # タイトル由来のキーワードは使用せず、AniListのgenre/tag、
-              # あらすじ(description)、format/durationだけを根拠にする。
-              # まず強い根拠(0.78+)を採用し、不足分は独立した補助根拠(0.55+)
-              # が存在するときだけ補う。
-              strong = [
-                  (name, score) for name, score in scores.items()
-                  if score >= 0.78
-              ]
+              # 5. Evidence-first selection.
+              # 根拠のないジャンルを「3個にするためだけ」に補完しない。
+              # AniList genre > MAL genre > AniList tag > description keyword の順で評価し、
+              # 独立した根拠があるものだけを採用する。
+              strong = [(name, score) for name, score in scores.items() if score >= 0.78]
               strong.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
 
-              secondary = [
-                  (name, score) for name, score in scores.items()
-                  if 0.55 <= score < 0.78
-              ]
+              secondary = [(name, score) for name, score in scores.items() if 0.55 <= score < 0.78]
               secondary.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
 
               selected = strong[:5]
-
-              # 最低3ジャンル。
-              # 強い根拠→補助根拠→既存カタログの共起順で補完し、根拠のない
-              # 固定ジャンルを一律付与することはしない。
               chosen = {x[0] for x in selected}
+
               for candidate in secondary:
+                  if candidate[0] not in chosen:
+                      selected.append(candidate)
+                      chosen.add(candidate[0])
+                  if len(selected) >= 5:
+                      break
+
+              tertiary = [(name, score) for name, score in scores.items() if 0.35 <= score < 0.55]
+              tertiary.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
+              for candidate in tertiary:
                   if candidate[0] not in chosen:
                       selected.append(candidate)
                       chosen.add(candidate[0])
                   if len(selected) >= 3:
                       break
 
-              # それでも不足する場合は、現在の作品説明から得られる補助候補を再評価。
-              if len(selected) < 3:
-                  # 根拠が3つに満たない場合も、作品の主軸に応じた近接ジャンルから補完する。
-                  # 全作品へ同じ3ジャンルを付ける固定フォールバックは使用しない。
-                  primary = selected[0][0] if selected else None
-                  fallback_map = {
-                      "SF": ["メカ", "冒険", "ドラマ"],
-                      "ファンタジー": ["冒険", "アクション", "ドラマ"],
-                      "冒険": ["ファンタジー", "アクション", "ドラマ"],
-                      "アクション": ["冒険", "ファンタジー", "ドラマ"],
-                      "コメディ": ["日常", "ドラマ", "恋愛"],
-                      "ドラマ": ["青春", "恋愛", "日常"],
-                      "恋愛": ["青春", "ドラマ", "コメディ"],
-                      "青春": ["学園", "恋愛", "ドラマ"],
-                      "学園": ["青春", "日常", "恋愛"],
-                      "日常": ["コメディ", "青春", "ドラマ"],
-                      "スポーツ": ["青春", "学園", "ドラマ"],
-                      "音楽": ["青春", "ドラマ", "アイドル"],
-                      "アイドル": ["音楽", "青春", "ドラマ"],
-                      "ホラー": ["サスペンス", "推理", "ドラマ"],
-                      "サスペンス": ["推理", "ドラマ", "ホラー"],
-                      "推理": ["サスペンス", "ドラマ", "冒険"],
-                      "歴史": ["戦争", "ドラマ", "冒険"],
-                      "戦争": ["ミリタリー", "歴史", "ドラマ"],
-                      "ミリタリー": ["戦争", "メカ", "アクション"],
-                      "メカ": ["SF", "アクション", "戦争"],
-                      "魔法少女": ["ファンタジー", "アクション", "青春"],
-                      "異世界": ["ファンタジー", "冒険", "アクション"],
-                      "ファミリー": ["日常", "コメディ", "ドラマ"],
-                      "ショート": ["コメディ", "日常", "ファミリー"]
-                  }
-                  for name in fallback_map.get(primary, ["ドラマ", "コメディ", "冒険"]):
-                      if name in scores and name not in chosen:
-                          selected.append((name, 0.30))
-                          reasons[name].append("primary-genre semantic fallback")
-                          chosen.add(name)
-                      if len(selected) >= 3:
-                          break
+              # それでも3件未満なら、根拠のない固定ジャンルは付与しない。
+              # 次回の監査対象に残し、外部ソース更新後に再分類する。
 
               selected = selected[:5]
 
@@ -500,6 +447,7 @@ jobs:
                 title { native romaji english userPreferred }
                 description(asHtml:false)
                 genres
+                idMal
                 tags { name rank isMediaSpoiler isGeneralSpoiler category }
               }
             }
