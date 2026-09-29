@@ -5068,7 +5068,7 @@
 
     async function toggleFavorite() {
 
-        if (!currentUser) {
+        if (!currentUser || !currentUser.email_confirmed_at) {
 
             window.location.href = "index.html#login";
             return;
@@ -5121,8 +5121,6 @@
 
             if (data) {
 
-                await logActivity("favorite", { action: "unfavorite" });
-
                 const {
                     error:
                         deleteError
@@ -5149,6 +5147,7 @@
                 if (deleteError) {
                     throw deleteError;
                 }
+                await logActivity("favorite", { action: "unfavorite" });
 
             } else {
 
@@ -5178,6 +5177,7 @@
                 if (insertError) {
                     throw insertError;
                 }
+                await logActivity("favorite", { action: "favorite" });
             }
 
 
