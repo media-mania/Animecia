@@ -82,7 +82,7 @@ async function renderSelected(){
  const el=document.getElementById("selected-users");
  if(!selectedUsers.length){el.innerHTML=selectionMode==="group"?'<div class="selection-hint">グループ作成中：検索結果から複数人を選択してください。</div>':"";return}
  const map=await getProfiles(selectedUsers);
- el.innerHTML='<div class="selection-hint">'+(selectionMode==="group"?"選択中のメンバー（"+selectedUsers.length+"人）":"選択中のユーザー")+'</div>'+selectedUsers.map(id=>{const p=map.get(id);return '<span class="chip">'+esc(p?.display_name||p?.username||"選択済み")+'<button type="button" class="chip-remove" data-remove-user="'+esc(id)+'" aria-label="選択を解除">×</button></span>'}).join("");
+ el.innerHTML='<div class="selection-hint">'+(selectionMode==="group"?"選択中のメンバー（"+selectedUsers.length+"人）":selectionMode==="add"?"追加するメンバー（"+selectedUsers.length+"人）":"選択中のユーザー")+'</div>'+selectedUsers.map(id=>{const p=map.get(id);return '<span class="chip">'+esc(p?.display_name||p?.username||"選択済み")+'<button type="button" class="chip-remove" data-remove-user="'+esc(id)+'" aria-label="選択を解除">×</button></span>'}).join("");
  el.querySelectorAll("[data-remove-user]").forEach(b=>b.onclick=()=>{selectedUsers=selectedUsers.filter(id=>id!==b.dataset.removeUser);renderSelected()});
 }
 async function createThread(group){
