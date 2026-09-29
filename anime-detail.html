@@ -2073,7 +2073,7 @@
 
                         <select id="watch-status">
 
-                            <option value="plan_to_watch">
+                            <option value="want_to_watch">
                                 視聴予定
                             </option>
 
@@ -4923,7 +4923,7 @@
             );
 
 
-        if (!currentUser) {
+        if (!currentUser || !currentUser.email_confirmed_at) {
 
             statusLoginMessage.style.display =
                 "block";
@@ -5007,7 +5007,7 @@
             );
 
 
-        if (!currentUser) {
+        if (!currentUser || !currentUser.email_confirmed_at) {
 
             button.classList.remove(
                 "active"
@@ -5246,7 +5246,7 @@
             } =
                 await supabaseClient
 
-                    .from("user_anime_status")
+                    .from("watch_status")
 
                     .select(
                         "status,progress"
