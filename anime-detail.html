@@ -4964,112 +4964,70 @@
 
     async function loadFavorite() {
 
-        const button =
-            document.getElementById(
-                "favorite-button"
-            );
-
+        const button = document.getElementById("favorite-button");
 
         if (!currentUser || !currentUser.email_confirmed_at) {
-
-            button.classList.remove(
-                "active"
-            );
-            button.setAttribute("aria-pressed","false");
-
-
-            button.textContent =
-                "お気に入り";
-
-
+            button.classList.remove("active");
+            button.setAttribute("aria-pressed", "false");
+            button.textContent = "お気に入り";
             return;
         }
 
-
         try {
+            const { data, error } = await supabaseClient.rpc(
+                "get_my_anime_favorite",
+                { p_anime_id: Number(currentAnimeId) }
+            );
 
-            const {
-                data,
-                error
-            } =
-                await supabaseClient
+            if (error) throw error;
 
-                    .from("favorites")
-
-                    .select(
-                        "anime_id"
-                    )
-
-                    .eq(
-                        "user_id",
-                        currentUser.id
-                    )
-
-                    .eq(
-                        "anime_id",
-                        Number(
-                            currentAnimeId
-                        )
-                    )
-
-                    .maybeSingle();
-
-
-            if (error) {
-                throw error;
-            }
-
-
-            if (data) {
-
-                button.classList.add(
-                    "active"
-                );
-                button.setAttribute("aria-pressed","true");
-
-
-                button.textContent =
-                    "✓ お気に入り済み";
-
-            } else {
-
-                button.classList.remove(
-                    "active"
-                );
-                button.setAttribute("aria-pressed","false");
-
-
-                button.textContent =
-                    "お気に入り";
-            }
-
+            const isFavorite = data === true;
+            button.classList.toggle("active", isFavorite);
+            button.setAttribute("aria-pressed", String(isFavorite));
+            button.textContent = isFavorite
+                ? "✓ お気に入り済み"
+                : "お気に入り";
 
         } catch (error) {
-
-            console.error(
-                "お気に入り取得エラー:",
-                error
-            );
+            console.error("お気に入り取得エラー:", error);
+            button.classList.remove("active");
+            button.setAttribute("aria-pressed", "false");
+            button.textContent = "お気に入り";
         }
     }
-
 
     async function toggleFavorite() {
         if (!currentUser || !currentUser.email_confirmed_at) {
             window.location.href = "index.html#login";
             return;
         }
+
         const button = document.getElementById("favorite-button");
         button.disabled = true;
+
         try {
-            const { data, error } = await supabaseClient.rpc("toggle_my_anime_favorite", {
-                p_anime_id: Number(currentAnimeId)
-            });
+            const { data, error } = await supabaseClient.rpc(
+                "toggle_my_anime_favorite",
+                { p_anime_id: Number(currentAnimeId) }
+            );
+
             if (error) throw error;
-            await logActivity("favorite", { action: data ? "favorite" : "unfavorite" });
-            await loadFavorite();
+
+            const isFavorite = data === true;
+            button.classList.toggle("active", isFavorite);
+            button.setAttribute("aria-pressed", String(isFavorite));
+            button.textContent = isFavorite
+                ? "✓ お気に入り済み"
+                : "お気に入り";
+
+            await logActivity(
+                isFavorite ? "favorite" : "unfavorite",
+                { action: isFavorite ? "favorite" : "unfavorite" }
+            );
+
         } catch (error) {
             console.error("お気に入り更新エラー:", error);
+            await loadFavorite();
             alert("お気に入りの更新に失敗しました。もう一度お試しください。");
         } finally {
             button.disabled = false;
