@@ -4820,37 +4820,25 @@
 
     async function toggleFollow() {
         if (!currentUser || !currentUser.email_confirmed_at) {
-            alert("メールアドレスを確認したアカウントでログインするとフォローできます。");
+            window.location.href = "index.html#login";
             return;
         }
         const button = document.getElementById("follow-button");
         const message = document.getElementById("follow-message");
         button.disabled = true;
         try {
-            const { data, error } = await supabaseClient
-                .from("user_anime_follows")
-                .select("anime_id")
-                .eq("user_id", currentUser.id)
-                .eq("anime_id", Number(currentAnimeId))
-                .maybeSingle();
+            const { data, error } = await supabaseClient.rpc("toggle_my_anime_follow", {
+                p_anime_id: Number(currentAnimeId),
+                p_notify_new_episode: document.getElementById("notify-episode").checked,
+                p_notify_new_info: document.getElementById("notify-info").checked
+            });
             if (error) throw error;
-            if (data) {
-                const { error: deleteError } = await supabaseClient
-                    .from("user_anime_follows")
-                    .delete()
-                    .eq("user_id", currentUser.id)
-                    .eq("anime_id", Number(currentAnimeId));
-                if (deleteError) throw deleteError;
-                await logActivity("follow", { action: "unfollow" });
-                message.textContent = "フォローを解除しました。";
-            } else {
-                await saveFollowPreferences();
-                return;
-            }
+            await logActivity("follow", { action: data ? "follow" : "unfollow" });
+            message.textContent = data ? "作品をフォローしました。" : "フォローを解除しました。";
             await loadFollow();
         } catch (error) {
             console.error("フォロー更新エラー:", error);
-            message.textContent = "フォローの更新に失敗しました。";
+            message.textContent = "フォローの更新に失敗しました。もう一度お試しください。";
         } finally {
             button.disabled = false;
         }
@@ -5067,143 +5055,26 @@
 
 
     async function toggleFavorite() {
-
         if (!currentUser || !currentUser.email_confirmed_at) {
-
             window.location.href = "index.html#login";
             return;
         }
-
-
-        const button =
-            document.getElementById(
-                "favorite-button"
-            );
-
-
-        button.disabled =
-            true;
-
-
+        const button = document.getElementById("favorite-button");
+        button.disabled = true;
         try {
-
-            const {
-                data,
-                error
-            } =
-                await supabaseClient
-
-                    .from("favorites")
-
-                    .select(
-                        "anime_id"
-                    )
-
-                    .eq(
-                        "user_id",
-                        currentUser.id
-                    )
-
-                    .eq(
-                        "anime_id",
-                        Number(
-                            currentAnimeId
-                        )
-                    )
-
-                    .maybeSingle();
-
-
-            if (error) {
-                throw error;
-            }
-
-
-            if (data) {
-
-                const {
-                    error:
-                        deleteError
-                } =
-                    await supabaseClient
-
-                        .from("favorites")
-
-                        .delete()
-
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        )
-
-                        .eq(
-                            "anime_id",
-                            Number(
-                                currentAnimeId
-                            )
-                        );
-
-
-                if (deleteError) {
-                    throw deleteError;
-                }
-                await logActivity("favorite", { action: "unfavorite" });
-
-            } else {
-
-                await logActivity("favorite", { action: "favorite" });
-
-                const {
-                    error:
-                        insertError
-                } =
-                    await supabaseClient
-
-                        .from("favorites")
-
-                        .insert({
-
-                            user_id:
-                                currentUser.id,
-
-                            anime_id:
-                                Number(
-                                    currentAnimeId
-                                )
-
-                        });
-
-
-                if (insertError) {
-                    throw insertError;
-                }
-                await logActivity("favorite", { action: "favorite" });
-            }
-
-
+            const { data, error } = await supabaseClient.rpc("toggle_my_anime_favorite", {
+                p_anime_id: Number(currentAnimeId)
+            });
+            if (error) throw error;
+            await logActivity("favorite", { action: data ? "favorite" : "unfavorite" });
             await loadFavorite();
-
-
         } catch (error) {
-
-            console.error(
-                "お気に入り更新エラー:",
-                error
-            );
-
-
-            alert(
-                "お気に入りの更新に失敗しました。"
-            );
-
-
+            console.error("お気に入り更新エラー:", error);
+            alert("お気に入りの更新に失敗しました。もう一度お試しください。");
         } finally {
-
-            button.disabled =
-                false;
+            button.disabled = false;
         }
     }
-
 
     /* =========================================
        Watch status
