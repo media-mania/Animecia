@@ -3456,10 +3456,16 @@
         const names =
             relationGenres
                 .map(
-                    genre =>
-                        genre.name
+                    genre => ({
+                        id: genre.id,
+                        name: genre.name
+                    })
                 )
-                .filter(Boolean);
+                .filter(
+                    genre =>
+                        genre.id &&
+                        genre.name
+                );
 
 
         if (
@@ -3473,31 +3479,32 @@
                 )
                     .split(",")
                     .map(
-                        item =>
-                            item.trim()
+                        item => ({
+                            id: null,
+                            name: item.trim()
+                        })
                     )
-                    .filter(Boolean)
+                    .filter(item => item.name)
             );
         }
 
 
         const uniqueNames =
-            [
-                ...new Set(
-                    names
-                )
-            ];
+            names.filter(
+                (genre, index, array) =>
+                    array.findIndex(
+                        item => item.name === genre.name
+                    ) === index
+            );
 
 
         container.innerHTML =
             uniqueNames
                 .map(
-                    name =>
-                        `<span class="genre-tag">
-                            ${escapeHTML(
-                                name
-                            )}
-                        </span>`
+                    genre =>
+                        genre.id
+                            ? `<a class="genre-tag" href="discover.html?genre=${encodeURIComponent(genre.id)}">${escapeHTML(genre.name)}</a>`
+                            : `<span class="genre-tag">${escapeHTML(genre.name)}</span>`
                 )
                 .join("");
     }
