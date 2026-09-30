@@ -35,7 +35,7 @@ jobs:
 
           U=os.environ["SUPABASE_URL"].rstrip("/")
           KEY=os.environ["SUPABASE_SECRET_KEY"]
-          BATCH=max(20,min(150,int(os.environ.get("BATCH","100"))))
+          BATCH=max(20,min(50,int(os.environ.get("BATCH","50"))))
           UA="Animecia-DataBackfill/1.0"
           # Official URL policy: never expose AniList/ANN/social/profile pages as an Animecia official site.
 
