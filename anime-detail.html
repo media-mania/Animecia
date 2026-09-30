@@ -4481,229 +4481,160 @@
 
     async function loadRelatedAnime() {
 
-        const section =
-            document.getElementById(
-                "related-section"
-            );
-
-
-        const list =
-            document.getElementById(
-                "related-list"
-            );
-
+        const section = document.getElementById("related-section");
+        const list = document.getElementById("related-list");
+        const currentId = Number(currentAnimeId);
 
         try {
-
-            const {
-                data,
-                error
-            } =
+            const { data: relationRowsRaw, error: relationError } =
                 await supabaseClient
-
                     .from("anime_relations")
+                    .select("anime_id, related_anime_id, relation_type")
+                    .eq("anime_id", currentId);
 
-                    .select(`
-                        anime_id,
-                        related_anime_id,
-                        relation_type
-                    `)
+            if (relationError) throw relationError;
 
-                    .eq(
-                        "anime_id",
-                        Number(
-                            currentAnimeId
-                        )
-                    );
+            const relationRows = (relationRowsRaw || []).filter(row =>
+                row?.related_anime_id !== null &&
+                row?.related_anime_id !== undefined &&
+                Number.isInteger(Number(row.related_anime_id)) &&
+                Number(row.related_anime_id) !== currentId
+            );
 
+            const explicitIds = [...new Set(relationRows.map(row => Number(row.related_anime_id)))];
+            let explicitRelations = [];
 
-            if (error) {
-                throw error;
+            if (explicitIds.length > 0) {
+                const { data: relatedAnime, error: relatedError } =
+                    await supabaseClient
+                        .from("anime")
+                        .select("id,title,title_romaji,title_english,title_native,title_japanese,english_title,cover_image")
+                        .in("id", explicitIds);
+
+                if (relatedError) throw relatedError;
+
+                const animeMap = new Map((relatedAnime || []).map(anime => [String(anime.id), anime]));
+                explicitRelations = relationRows
+                    .map(relation => ({
+                        relation: relation,
+                        anime: animeMap.get(String(relation.related_anime_id))
+                    }))
+                    .filter(item => item.anime);
             }
 
+            const usedIds = new Set(explicitRelations.map(item => Number(item.anime.id)));
+            let fallbackRelations = [];
 
-            const relationRows =
-                (data || [])
-                    .filter(
-                        row =>
-                            row?.related_anime_id !== null &&
-                            row?.related_anime_id !== undefined
-                    );
+            const genreIds = [...new Set(
+                (currentAnime?.anime_genres || [])
+                    .map(row => Number(row?.genre_id ?? row?.genres?.id))
+                    .filter(Number.isInteger)
+            )];
 
+            if (genreIds.length > 0 && explicitRelations.length < 8) {
+                const { data: genreRows, error: genreError } =
+                    await supabaseClient
+                        .from("anime_genres")
+                        .select("anime_id,genre_id")
+                        .in("genre_id", genreIds)
+                        .neq("anime_id", currentId)
+                        .limit(1200);
 
-            if (
-                relationRows.length === 0
-            ) {
+                if (genreError) throw genreError;
 
-                hideSection(
-                    "related-section"
-                );
+                const sharedGenreCount = new Map();
+                (genreRows || []).forEach(row => {
+                    const animeId = Number(row?.anime_id);
+                    if (!Number.isInteger(animeId) || usedIds.has(animeId)) return;
+                    sharedGenreCount.set(animeId, (sharedGenreCount.get(animeId) || 0) + 1);
+                });
 
-                return;
-            }
+                const candidateIds = [...sharedGenreCount.entries()]
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 80)
+                    .map(([id]) => id);
 
+                if (candidateIds.length > 0) {
+                    const { data: candidates, error: candidateError } =
+                        await supabaseClient
+                            .from("anime")
+                            .select("id,title,title_romaji,title_english,title_native,title_japanese,english_title,cover_image,average_score,popularity,season_year,status")
+                            .in("id", candidateIds);
 
-            const relatedIds =
-                [
-                    ...new Set(
-                        relationRows.map(
-                            row =>
-                                Number(
-                                    row.related_anime_id
-                                )
-                        )
-                    )
-                ];
+                    if (candidateError) throw candidateError;
 
-
-            const {
-                data: relatedAnime,
-                error: relatedError
-            } =
-                await supabaseClient
-
-                    .from("anime")
-
-                    .select(`
-                        id,
-                        title,
-                        title_romaji,
-                        title_english,
-                        title_native,
-                        title_japanese,
-                        english_title,
-                        cover_image
-                    `)
-
-                    .in(
-                        "id",
-                        relatedIds
-                    );
-
-
-            if (relatedError) {
-                throw relatedError;
-            }
-
-
-            const animeMap =
-                new Map(
-                    (relatedAnime || [])
-                        .map(
-                            anime =>
-                                [
-                                    String(
-                                        anime.id
-                                    ),
-                                    anime
-                                ]
-                        )
-                );
-
-
-            const relations =
-                relationRows
-                    .map(
-                        relation => ({
-
-                            relation:
-                                relation,
-
-                            anime:
-                                animeMap.get(
-                                    String(
-                                        relation.related_anime_id
-                                    )
-                                )
-
+                    const candidateMap = new Map((candidates || []).map(anime => [Number(anime.id), anime]));
+                    fallbackRelations = candidateIds
+                        .map(id => ({ anime: candidateMap.get(id), sharedGenres: sharedGenreCount.get(id) || 0 }))
+                        .filter(item => item.anime && !usedIds.has(Number(item.anime.id)))
+                        .sort((a, b) => {
+                            if (b.sharedGenres !== a.sharedGenres) return b.sharedGenres - a.sharedGenres;
+                            const bp = Number(b.anime.popularity) || 0;
+                            const ap = Number(a.anime.popularity) || 0;
+                            if (bp !== ap) return bp - ap;
+                            return (Number(b.anime.average_score) || 0) - (Number(a.anime.average_score) || 0);
                         })
-                    )
-                    .filter(
-                        item =>
-                            item.anime
-                    );
+                        .slice(0, Math.max(0, 8 - explicitRelations.length));
+                }
+            }
 
+            const items = [
+                ...explicitRelations.map(item => ({ anime: item.anime, label: relationLabel(item.relation.relation_type) })),
+                ...fallbackRelations.map(item => ({
+                    anime: item.anime,
+                    label: item.sharedGenres > 1 ? "共通ジャンル " + item.sharedGenres + "件" : "同じジャンル"
+                }))
+            ].slice(0, 8);
 
-            if (
-                relations.length === 0
-            ) {
-
-                hideSection(
-                    "related-section"
-                );
-
+            if (items.length === 0) {
+                hideSection("related-section");
                 return;
             }
 
+            showSection("related-section");
+            list.innerHTML = "";
 
-            showSection(
-                "related-section"
-            );
+            items.forEach(item => {
+                const anime = item.anime;
+                const title = getMainTitle(anime);
+                const wrapper = document.createElement("div");
+                wrapper.className = "related-item";
 
+                if (anime.cover_image) {
+                    const image = document.createElement("img");
+                    image.className = "person-image";
+                    image.src = safeURL(anime.cover_image);
+                    image.alt = title;
+                    image.loading = "lazy";
+                    wrapper.appendChild(image);
+                } else {
+                    const placeholder = document.createElement("div");
+                    placeholder.className = "person-placeholder";
+                    placeholder.textContent = "画像なし";
+                    wrapper.appendChild(placeholder);
+                }
 
-            list.innerHTML =
-                relations
-                    .map(
-                        item => {
+                const body = document.createElement("div");
+                const name = document.createElement("p");
+                name.className = "item-name";
+                const link = document.createElement("a");
+                link.href = "anime/" + encodeURIComponent(anime.id) + "/";
+                link.textContent = title;
+                name.appendChild(link);
+                body.appendChild(name);
 
-                            const anime =
-                                item.anime;
-
-
-                            return `
-
-                                <div
-                                    class="related-item"
-                                >
-
-                                    <div>
-
-                                        <a
-                                            href="anime-detail.html?id=${encodeURIComponent(
-                                                anime.id
-                                            )}"
-                                        >
-                                            ${escapeHTML(
-                                                getMainTitle(
-                                                    anime
-                                                )
-                                            )}
-                                        </a>
-
-                                        <div
-                                            class="related-type"
-                                        >
-                                            ${escapeHTML(
-                                                relationLabel(
-                                                    item.relation
-                                                        .relation_type
-                                                )
-                                            )}
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            `;
-                        }
-                    )
-                    .join("");
-
-
+                const type = document.createElement("div");
+                type.className = "related-type";
+                type.textContent = item.label;
+                body.appendChild(type);
+                wrapper.appendChild(body);
+                list.appendChild(wrapper);
+            });
         } catch (error) {
-
-            console.error(
-                "関連作品取得エラー:",
-                error
-            );
-
-            hideSection(
-                "related-section"
-            );
+            console.error("関連作品取得エラー:", error);
+            hideSection("related-section");
         }
     }
-
 
     /* =========================================
        Auth
