@@ -90,12 +90,7 @@ jobs:
 
           query='''query($ids:[Int]){Page(page:1,perPage:50){media(id_in:$ids){id genres tags{name rank isMediaSpoiler isGeneralSpoiler}}}}'''
 
-          rows=sb("/rest/v1/anime",params={
-              "select":"id,source_id,external_id,source_provider",
-              "anime_verification_status":"eq.verified",
-              "subgenre_classification_version":"is.null",
-              "order":"id.asc","limit":str(BATCH)
-          })
+          rows=sb("/rest/v1/rpc/get_subgenre_candidates","POST",{"p_limit":BATCH})
 
           ids=[]
           for r in rows:
