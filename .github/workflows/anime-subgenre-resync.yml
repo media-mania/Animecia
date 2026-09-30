@@ -130,7 +130,7 @@ jobs:
               updates.append({"anime_id":int(r["id"]),"subgenre_ids":[int(SUB[x]["id"]) for x,_ in selected],"classification_version":VERSION})
 
           if updates:
-              sb("/rest/v1/rpc/bulk_replace_anime_subgenres","POST",updates)
+              sb("/rest/v1/rpc/bulk_replace_anime_subgenres","POST",{"p_updates":updates})
               ids_done=[str(x["anime_id"]) for x in updates]
               sb("/rest/v1/anime","PATCH",{"subgenre_classification_version":VERSION,"subgenres_classified_at":"now()"}, {"id":"in.("+",".join(ids_done)+")"})
               print("classified",len(updates),"anime")
