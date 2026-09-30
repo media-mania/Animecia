@@ -178,7 +178,7 @@ jobs:
 
           inserted=skipped=errors=0
           for i in range(0,len(rows),100):
-              result=sb("/rest/v1/rpc/bulk_register_anime_batch","POST",rows[i:i+100])
+              result=sb("/rest/v1/rpc/bulk_register_anime_batch","POST",{"p_items":rows[i:i+100]})
               result=result[0] if isinstance(result,list) and result else (result if isinstance(result,dict) else {})
               inserted+=int(result.get("inserted",0))
               skipped+=int(result.get("skipped",0))
