@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 
 const base = "https://media-mania.github.io/Animecia";
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -162,6 +162,25 @@ ${meta.length ? `<div class="meta">${meta.map(([k,v]) => `<div><strong>${esc(k)}
 </html>`;
 }
 
+const genrePage = (genre, works) => {
+  const title = text(genre.name) || "アニメ";
+  const canonical = base + "/genre/" + encodeURIComponent(genre.id) + "/";
+  const workHtml = works.map(work => {
+    const workTitle = mainTitle(work);
+    const image = /^https?:\/\//i.test(String(work.cover_image || "")) ? work.cover_image : "";
+    return "<article class=\"work\">" +
+      (image ? "<img src=\"" + esc(image) + "\" alt=\"" + esc(workTitle) + "の画像\" loading=\"lazy\">" : "") +
+      "<div><h2><a href=\"" + base + "/anime/" + encodeURIComponent(work.id) + "/\">" + esc(workTitle) + "</a></h2>" +
+      "<p>" + esc(text(work.synopsis || work.description).slice(0, 120) || "作品情報を確認できます。") + "</p>" +
+      "<small>評価 " + (work.average_score ? esc(Number(work.average_score).toFixed(1)) : "—") + " / 人気度 " + (work.popularity ? esc(work.popularity) : "—") + "</small></div></article>";
+  }).join("");
+  const schema = { "@context": "https://schema.org", "@type": "CollectionPage", name: title + "アニメ一覧 | Animecia", url: canonical, description: title + "に関連するアニメ作品をAnimeciaで一覧できます。", inLanguage: "ja" };
+  return "<!doctype html><html lang=\"ja\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
+    "<title>" + esc(title) + "アニメ一覧 | Animecia</title><meta name=\"description\" content=\"" + esc(title + "に関連するアニメ作品をAnimeciaで一覧できます。") + "\"><meta name=\"robots\" content=\"index,follow\"><link rel=\"canonical\" href=\"" + esc(canonical) + "\">" +
+    "<meta property=\"og:title\" content=\"" + esc(title) + "アニメ一覧 | Animecia\"><meta property=\"og:url\" content=\"" + esc(canonical) + "\"><script type=\"application/ld+json\">" + jsonLd(schema) + "</script>" +
+    "<style>body{margin:0;background:#f6f6f6;color:#222;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",\"Yu Gothic\",Meiryo,sans-serif;line-height:1.7}main{max-width:1000px;margin:0 auto;padding:28px 18px}.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.06)}.grid{display:grid;gap:14px}.work{display:grid;grid-template-columns:90px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid #eee}.work img{width:90px;height:125px;object-fit:cover;border-radius:8px}.work h2{font-size:1.05rem;margin:0 0 6px}.work a{color:#111}.work p{margin:5px 0;font-size:.92rem;color:#555}</style></head><body><main><div class=\"card\"><p><small>Animecia / ジャンル</small></p>" +
+    "<h1>" + esc(title) + "のアニメ一覧</h1><p>" + esc(title) + "に関連する作品を、Animeciaの作品データをもとに一覧表示しています。</p><section class=\"grid\">" + (workHtml || "<p>現在、このジャンルの作品は登録されていません。</p>") + "</section></div></main></body></html>";
+};
 const animeRows = [];
 for (let offset = 0; ; offset += pageSize) {
   const rows = await fetchAnimePage(offset);
@@ -170,7 +189,9 @@ for (let offset = 0; ; offset += pageSize) {
 }
 
 await rm(outDir, { recursive: true, force: true });
+await rm("genre", { recursive: true, force: true });
 await mkdir(outDir, { recursive: true });
+await mkdir("genre", { recursive: true });
 
 for (const anime of animeRows) {
   if (!anime?.id) continue;
@@ -179,4 +200,23 @@ for (const anime of animeRows) {
   await writeFile(`${dir}/index.html`, page(anime), "utf8");
 }
 
-console.log(`Generated ${animeRows.length} static SEO anime pages.`);
+const genreMap = new Map();
+for (const anime of animeRows) {
+  for (const genre of genres(anime)) {
+    const key = String(genre.id);
+    if (!genreMap.has(key)) genreMap.set(key, { id: genre.id, name: genre.name, works: [] });
+    genreMap.get(key).works.push(anime);
+  }
+}
+for (const genre of genreMap.values()) {
+  genre.works.sort((a, b) => {
+    const bp = Number(b.popularity) || 0; const ap = Number(a.popularity) || 0;
+    if (bp !== ap) return bp - ap;
+    return (Number(b.average_score) || 0) - (Number(a.average_score) || 0);
+  });
+  const dir = `genre/${genre.id}`;
+  await mkdir(dir, { recursive: true });
+  await writeFile(`${dir}/index.html`, genrePage(genre, genre.works.slice(0, 60)), "utf8");
+}
+
+console.log(`Generated ${animeRows.length} static SEO anime pages and ${genreMap.size} genre pages.`);
