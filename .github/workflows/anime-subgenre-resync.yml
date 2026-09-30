@@ -67,7 +67,7 @@ jobs:
 
           def norm(v): return re.sub(r"\s+"," ",str(v or "").strip().lower())
 
-          subrows=sb("/rest/v1/subgenres",params={"select":"id,name,slug,parent_genre_id,active","active":"eq.true","order":"id.asc"})
+          subrows=sb("/rest/v1/rpc/get_active_subgenres","POST",{})
           SUB={r["slug"]:r for r in subrows}
 
           RULES={
