@@ -7,7 +7,7 @@ on:
     paths-ignore:
       - "sitemap.xml"
       - "sitemap-pages.xml"
-      - "sitemap-anime-*.xml"
+      - "sitemap-anime-*.xml"\n      - "anime/**"
   schedule:
     - cron: "20 */6 * * *"
   workflow_dispatch:
