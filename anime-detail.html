@@ -2240,7 +2240,18 @@
                     style="display:none;"
                 >
                     <h2>配信・視聴リンク</h2>
+                    <p class="affiliate-disclosure">広告・アフィリエイトリンクを含む場合があります。</p>
                     <div id="streaming-list" class="item-list"></div>
+                </section>
+
+                <section
+                    id="affiliate-section"
+                    class="content-section"
+                    style="display:none;"
+                >
+                    <h2>公式配信サービス</h2>
+                    <p class="affiliate-disclosure">このリンク経由で申込み等が行われた場合、Animeciaに報酬が入ることがあります。</p>
+                    <div id="affiliate-list" class="item-list"></div>
                 </section>
 
                 <section
@@ -2363,6 +2374,14 @@
 
 
 <script>
+
+    <style>
+        .affiliate-disclosure {
+            margin: 6px 0 12px;
+            color: #666;
+            font-size: 0.82rem;
+        }
+    </style>
 
     /* =========================================
        Supabase
@@ -3300,6 +3319,8 @@
                 loadVoiceActors(),
 
                 loadStreamingLinks(),
+
+                loadAffiliateLinks(),
 
                 loadExternalLinks(),
 
@@ -5509,6 +5530,55 @@
             section.style.display = "block";
         } catch (error) {
             console.error("配信リンク取得エラー:", error);
+            section.style.display = "none";
+        }
+    }
+
+    async function loadAffiliateLinks() {
+        const section = document.getElementById("affiliate-section");
+        const list = document.getElementById("affiliate-list");
+        if (!section || !list) return;
+
+        try {
+            const { data, error } = await supabaseClient
+                .from("affiliate_links")
+                .select("provider,service_name,affiliate_url,destination_url,title,description,priority")
+                .eq("anime_id", Number(currentAnimeId))
+                .eq("is_active", true)
+                .order("priority", { ascending: true });
+
+            if (error) throw error;
+
+            const links = Array.isArray(data) ? data : [];
+            if (!links.length) {
+                section.style.display = "none";
+                return;
+            }
+
+            list.innerHTML = links.map(link => {
+                const url = safeURL(link.affiliate_url || link.destination_url);
+                if (!url) return "";
+
+                return `
+                    <a href="${escapeHTML(url)}"
+                       target="_blank"
+                       rel="sponsored nofollow noopener noreferrer"
+                       style="display:block;padding:14px;border:1px solid #eee;border-radius:10px;text-decoration:none;color:inherit;">
+                        <strong>${escapeHTML(link.service_name || link.provider || "配信サービス")}</strong>
+                        ${link.title ? `<br><span>${escapeHTML(link.title)}</span>` : ""}
+                        ${link.description ? `<br><small>${escapeHTML(link.description)}</small>` : ""}
+                    </a>
+                `;
+            }).join("");
+
+            if (!list.innerHTML.trim()) {
+                section.style.display = "none";
+                return;
+            }
+
+            section.style.display = "block";
+        } catch (error) {
+            console.error("アフィリエイトリンク取得エラー:", error);
             section.style.display = "none";
         }
     }
