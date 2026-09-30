@@ -21,6 +21,7 @@ function esc(value = "") {
 }
 
 function text(value = "") {
+  if (value === null || value === undefined) return "";
   return String(value).replace(/\s+/g, " ").trim();
 }
 
@@ -84,7 +85,7 @@ function page(anime) {
   const image = /^https?:\/\//i.test(String(anime.cover_image || "")) ? anime.cover_image : "";
   const genreList = genres(anime);
   const genreHtml = genreList.length
-    ? `<div class="genres">${genreList.map(g => `<a href="${base}/genres.html?genre=${encodeURIComponent(g.id)}">${esc(g.name)}</a>`).join("")}</div>`
+    ? `<div class="genres">${genreList.map(g => `<a href="${base}/discover.html?genre=${encodeURIComponent(g.id)}">${esc(g.name)}</a>`).join("")}</div>`
     : "";
   const synopsis = text(anime.synopsis || anime.description);
   const meta = [
