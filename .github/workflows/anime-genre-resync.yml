@@ -32,7 +32,7 @@ jobs:
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
       MAL_API: https://api.jikan.moe/v4
-      CLASSIFICATION_VERSION: "animecia-cross-source-v15-source-first-precision"
+      CLASSIFICATION_VERSION: "animecia-cross-source-v16-higher-precision"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -134,7 +134,7 @@ jobs:
           # タグはrankが高いほど強い。ただし「spoiler」タグは除外する。
           TAG_RULES = {
               "学園": {
-                  "school": 0.98, "school club": 0.95, "school life": 0.96, "college": 0.90,
+                  "school": 0.82, "school club": 0.78, "school life": 0.84, "college": 0.78,
                   "high school": 0.98, "middle school": 0.98, "university": 0.90
               },
               "異世界": {"isekai": 1.00},
@@ -153,7 +153,7 @@ jobs:
               },
               "恋愛": {
                   "romance": 0.96, "love triangle": 0.92,
-                  "love interest": 0.88, "tsundere": 0.72, "romantic comedy": 0.82
+                  "love interest": 0.88, "romantic comedy": 0.82
               },
               "日常": {
                   "slice of life": 0.98, "school club": 0.70,
@@ -216,7 +216,7 @@ jobs:
               "ファンタジー": {
                   "fantasy": 1.00, "fairy tale": 0.94, "mythology": 0.90,
                   "demons": 0.78, "vampire": 0.72, "dragons": 0.92, "fairies": 0.90, "youkai": 0.82,
-                  "supernatural": 0.70, "magic": 0.92, "witches": 0.90, "alchemy": 0.76,
+                  "supernatural": 0.58, "magic": 0.92, "witches": 0.90, "alchemy": 0.76,
                   "urban fantasy": 0.88, "high fantasy": 0.98,
                   "dark fantasy": 0.98
               },
@@ -276,7 +276,7 @@ jobs:
               MAL_GENRE = {
                   "Action":"アクション","Adventure":"冒険","Comedy":"コメディ","Drama":"ドラマ",
                   "Fantasy":"ファンタジー","Horror":"ホラー","Mystery":"推理","Romance":"恋愛",
-                  "Sci-Fi":"SF","Sports":"スポーツ","Supernatural":"ファンタジー","School":"学園",
+                  "Sci-Fi":"SF","Sports":"スポーツ","School":"学園",
                   "Slice of Life":"日常","Music":"音楽","Military":"ミリタリー","Historical":"歴史",
                   "Mecha":"メカ","Supernatural":"ファンタジー","Suspense":"サスペンス"
               }
@@ -317,7 +317,7 @@ jobs:
               strong = [(name, score) for name, score in scores.items() if score >= 0.78]
               strong.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
 
-              secondary = [(name, score) for name, score in scores.items() if 0.55 <= score < 0.78]
+              secondary = [(name, score) for name, score in scores.items() if 0.68 <= score < 0.78]
               secondary.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
 
               selected = strong[:5]
@@ -330,7 +330,7 @@ jobs:
                   if len(selected) >= 5:
                       break
 
-              tertiary = [(name, score) for name, score in scores.items() if 0.35 <= score < 0.55]
+              tertiary = [(name, score) for name, score in scores.items() if 0.55 <= score < 0.68]
               tertiary.sort(key=lambda x: (-x[1], ALL_NAMES.index(x[0])))
               for candidate in tertiary:
                   if candidate[0] not in chosen:
