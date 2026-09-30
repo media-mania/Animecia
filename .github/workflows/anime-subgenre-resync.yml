@@ -1,4 +1,5 @@
 name: Animecia Subgenre Resync
+# service_role access verified
 
 on:
   push:
