@@ -7,7 +7,8 @@ on:
     paths-ignore:
       - "sitemap.xml"
       - "sitemap-pages.xml"
-      - "sitemap-anime-*.xml"\n      - "anime/**"
+      - "sitemap-anime-*.xml"
+      - "anime/**"
   schedule:
     - cron: "20 */6 * * *"
   workflow_dispatch:
@@ -22,7 +23,7 @@ concurrency:
 jobs:
   sitemap:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
@@ -35,19 +36,22 @@ jobs:
         with:
           node-version: 22
 
+      - name: Generate static SEO anime pages
+        run: node scripts/generate-anime-seo-pages.mjs
+
       - name: Generate sitemap
         run: node scripts/generate-sitemap.mjs
 
-      - name: Commit sitemap
+      - name: Commit generated SEO data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add anime sitemap.xml sitemap-pages.xml sitemap-anime-*.xml
           if git diff --cached --quiet; then
-            echo "No sitemap changes."
+            echo "No generated changes."
             exit 0
           fi
-          git commit -m "Update Animecia sitemap"
+          git commit -m "Update Animecia SEO pages and sitemap"
           git fetch origin main
           git rebase origin/main
           git push
