@@ -9,6 +9,7 @@ on:
       - "sitemap-pages.xml"
       - "sitemap-anime-*.xml"
       - "anime/**"
+      - "genre/**"
   schedule:
     - cron: "20 */6 * * *"
   workflow_dispatch:
@@ -46,7 +47,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add anime sitemap.xml sitemap-pages.xml sitemap-anime-*.xml
+          git add anime genre sitemap.xml sitemap-pages.xml sitemap-anime-*.xml
           if git diff --cached --quiet; then
             echo "No generated changes."
             exit 0
