@@ -43,7 +43,7 @@ jobs:
           KEY=os.environ["SUPABASE_SECRET_KEY"]
           ANI=os.environ["ANILIST_URL"]
           VERSION=os.environ["CLASSIFICATION_VERSION"]
-          BATCH=max(50,min(500,int(os.environ.get("BATCH_SIZE","500"))))
+          BATCH=max(25,min(50,int(os.environ.get("BATCH_SIZE","50"))))
 
           def http(url,method="GET",body=None,retries=5):
               data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
