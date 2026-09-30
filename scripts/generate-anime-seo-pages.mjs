@@ -32,7 +32,7 @@ async function fetchAnimePage(offset) {
   const url = new URL("/rest/v1/anime", supabaseUrl);
   url.searchParams.set(
     "select",
-    "id,title,title_japanese,title_english,title_native,english_title,description,synopsis,cover_image,banner_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,average_score,popularity,favourites_count,updated_at,anime_genres(genres(name))"
+    "id,title,title_japanese,title_english,title_native,english_title,description,synopsis,cover_image,banner_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,average_score,popularity,favourites_count,updated_at,anime_genres(genres(id,name))"
   );
   url.searchParams.set("order", "id.asc");
   url.searchParams.set("limit", String(pageSize));
@@ -71,9 +71,9 @@ function description(anime) {
 
 function genres(anime) {
   return (anime.anime_genres || [])
-    .map(row => row?.genres?.name)
-    .filter(Boolean)
-    .map(text);
+    .map(row => ({ id: row?.genres?.id, name: row?.genres?.name }))
+    .filter(row => row.id && row.name)
+    .map(row => ({ id: row.id, name: text(row.name) }));
 }
 
 function page(anime) {
@@ -84,7 +84,7 @@ function page(anime) {
   const image = /^https?:\/\//i.test(String(anime.cover_image || "")) ? anime.cover_image : "";
   const genreList = genres(anime);
   const genreHtml = genreList.length
-    ? `<div class="genres">${genreList.map(g => `<span>${esc(g)}</span>`).join("")}</div>`
+    ? `<div class="genres">${genreList.map(g => `<a href="${base}/genres.html?genre=${encodeURIComponent(g.id)}">${esc(g.name)}</a>`).join("")}</div>`
     : "";
   const synopsis = text(anime.synopsis || anime.description);
   const meta = [
@@ -138,7 +138,7 @@ main{max-width:900px;margin:0 auto;padding:32px 20px}
 .card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
 h1{line-height:1.35;margin-top:0}
 .cover{max-width:280px;max-height:390px;object-fit:cover;border-radius:10px}
-.genres{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.genres span{padding:5px 10px;border-radius:999px;background:#eee}
+.genres{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.genres a{padding:5px 10px;border-radius:999px;background:#eee;color:inherit;text-decoration:none}.genres a:hover{background:#ddd}
 .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:20px 0}.meta div{padding:10px;background:#f5f5f5;border-radius:8px}
 a.button{display:inline-block;padding:11px 16px;background:#111;color:#fff;text-decoration:none;border-radius:8px}
 small{color:#666}
