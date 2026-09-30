@@ -81,7 +81,7 @@ function page(anime) {
   const desc = description(anime);
   const canonical = `${base}/anime/${encodeURIComponent(anime.id)}/`;
   const detail = `${base}/anime-detail.html?id=${encodeURIComponent(anime.id)}`;
-  const image = /^https?:\\/\\//i.test(String(anime.cover_image || "")) ? anime.cover_image : "";
+  const image = /^https?:\/\//i.test(String(anime.cover_image || "")) ? anime.cover_image : "";
   const genreList = genres(anime);
   const genreHtml = genreList.length
     ? `<div class="genres">${genreList.map(g => `<span>${esc(g)}</span>`).join("")}</div>`
