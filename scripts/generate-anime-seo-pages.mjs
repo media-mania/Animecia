@@ -102,7 +102,7 @@ function page(anime) {
     url: canonical,
     description: desc,
     image: image || undefined,
-    genre: genreList.length ? genreList : undefined,
+    genre: genreList.length ? genreList.map(g => g.name) : undefined,
     dateCreated: anime.start_date || undefined,
     dateModified: anime.updated_at || undefined,
     aggregateRating: anime.average_score
