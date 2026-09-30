@@ -79,7 +79,7 @@ for (let i = 0, chunkIndex = 1; i < animeRows.length; i += chunkSize, chunkIndex
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...chunk.map(row => urlEntry(`${base}/anime-detail.html?id=${encodeURIComponent(row.id)}`, row.updated_at)),
+    ...chunk.map(row => urlEntry(`${base}/anime/${encodeURIComponent(row.id)}/`, row.updated_at)),
     "</urlset>",
   ].join("\n");
   await writeFile(filename, xml, "utf8");
