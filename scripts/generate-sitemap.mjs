@@ -19,7 +19,7 @@ function esc(value) {
 
 async function fetchAnimePage(offset) {
   const url = new URL("/rest/v1/anime", supabaseUrl);
-  url.searchParams.set("select", "id,updated_at");
+  url.searchParams.set("select", "id,updated_at,anime_genres(genre_id)");
   url.searchParams.set("order", "id.asc");
   url.searchParams.set("limit", "1000");
   url.searchParams.set("offset", String(offset));
@@ -64,10 +64,13 @@ for (let offset = 0; ; offset += 1000) {
   if (rows.length < 1000) break;
 }
 
+const genreIds = [...new Set(animeRows.flatMap(row => (row.anime_genres || []).map(item => Number(item.genre_id)).filter(Number.isInteger)))];
+
 const pageXml = [
   '<?xml version="1.0" encoding="UTF-8"?>',
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
   ...fixedPages.map(loc => urlEntry(loc)),
+  ...genreIds.map(id => urlEntry(`${base}/genre/${encodeURIComponent(id)}/`)),
   "</urlset>",
 ].join("\n");
 
