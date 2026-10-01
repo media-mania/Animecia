@@ -343,7 +343,7 @@ function bindCropControls(){
  });
 }
 async function loadProfile(){
- const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,background_url,avatar_position_x,avatar_position_y,avatar_zoom,background_position_x,background_position_y,background_zoom,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking,show_posts").eq("id",currentUser.id).maybeSingle();
+ const {data,error}=await supabaseClient.from("profiles").select("username,display_name,avatar_url,background_url,avatar_position_x,avatar_position_y,avatar_zoom,background_position_x,background_position_y,background_zoom,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking,show_posts,updated_at").eq("id",currentUser.id).maybeSingle();
  if(error){console.error("profile load error",error);throw error;}
  let p=data;
  if(!p){
