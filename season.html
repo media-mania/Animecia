@@ -144,11 +144,11 @@ const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?
 const seasonName={WINTER:"冬",SPRING:"春",SUMMER:"夏",FALL:"秋"};
 const params=new URLSearchParams(location.search);
 const now=new Date();
-const seasonByMonth=["WINTER","WINTER","SPRING","SPRING","SPRING","SUMMER","SUMMER","SUMMER","FALL","FALL","FALL","WINTER"];
+const seasonByMonth=["WINTER","WINTER","WINTER","SPRING","SPRING","SPRING","SUMMER","SUMMER","SUMMER","FALL","FALL","FALL"];
 function getCurrentSeasonDate(date=new Date()){
   const m=date.getMonth(), currentSeason=seasonByMonth[m];
   const currentYear=date.getFullYear();
-  return {year:currentSeason==="WINTER"&&m===11?currentYear:currentYear,season:currentSeason};
+  return {year:currentYear,season:currentSeason};
 }
 const currentSeasonState=getCurrentSeasonDate(now);
 const hasExplicitSeason=params.has("year")||params.has("season");
