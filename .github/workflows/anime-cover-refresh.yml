@@ -1,6 +1,8 @@
 name: Animecia Cover Image Refresh
 
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: '45 * * * *'
   workflow_dispatch:
