@@ -252,7 +252,69 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
  .home-v4 .home-cta{display:block}
  .home-v4 .cta-actions{margin-top:14px}
 }
-</style></head>
+</style>
+<style id="animecia-home-mobile-fix">
+/* 今期アニメの横切れ防止 */
+.home-v4 #season-feature{
+  width:100%;
+  min-width:0;
+}
+.home-v4 #season-feature .feature-anime{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:96px minmax(0,1fr) !important;
+  align-items:stretch;
+}
+.home-v4 #season-feature .feature-anime > .poster{
+  width:96px !important;
+  min-width:0 !important;
+  max-width:96px !important;
+  height:126px !important;
+  overflow:hidden;
+}
+.home-v4 #season-feature .feature-anime > .poster img{
+  display:block;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  object-fit:cover;
+}
+.home-v4 #season-feature .feature-copy{
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+}
+.home-v4 #season-feature .feature-copy h3{
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+@media (max-width:640px){
+  .home-v4 #season-feature .feature-anime{
+    grid-template-columns:96px minmax(0,1fr) !important;
+    min-height:126px;
+  }
+  .home-v4 #season-feature .feature-anime > .poster{
+    width:96px !important;
+    max-width:96px !important;
+    height:126px !important;
+  }
+  .home-v4 #season-feature .feature-copy{
+    padding:11px 12px;
+  }
+  .home-v4 #season-feature .feature-copy h3{
+    font-size:13px;
+    line-height:1.45;
+  }
+}
+</style>
+</head>
 <body>
 <header class="site-header">
 <div class="container nav">
