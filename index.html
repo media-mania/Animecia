@@ -209,5 +209,21 @@ document.getElementById("search-form").addEventListener("submit",e=>{e.preventDe
  try{await load()}catch(e){console.error(e);document.getElementById("season-grid").innerHTML='<div class="empty">作品情報を読み込めませんでした。時間を置いて再読み込みしてください。</div>';}
 })();
 </script>
-</body>
+<script id="animecia-auth-nav">
+(function(){
+  function syncAuthNav(){
+    try{
+      if(!window.supabase || !window.supabase.createClient) return;
+      var links=document.querySelectorAll('.nav-actions #auth-link, .nav-actions a[href="login.html"]');
+      if(!links.length) return;
+      var U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",client=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient(U,K));
+      client.auth.getUser().then(function(res){
+        var loggedIn=!!(res.data&&res.data.user&&!res.data.user.is_anonymous);
+        links.forEach(function(el){el.style.display=loggedIn?"none":"";});
+      }).catch(function(){});
+    }catch(e){}
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",syncAuthNav); else syncAuthNav();
+})();
+</script></body>
 </html>
