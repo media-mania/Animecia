@@ -233,7 +233,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <a class="side-link" href="compare.html">作品を比較 <span>›</span></a>
 <a class="side-link" href="messages.html">メッセージ <span>›</span></a>
 <a class="side-link" href="mypage.html#user_search">ユーザー検索 <span>›</span></a>
-<a class="side-link" href="#notifications" id="notification-side-link">通知 <span id="side-notification-count"></span></a>
+<a class="side-link" href="#notifications" id="notification-side-link" data-quick-tab="notifications">通知 <span id="side-notification-count"></span></a>
 </section>
 <section class="panel side-panel">
 <div class="side-title">アカウント統計</div>
@@ -474,9 +474,14 @@ async function updateNotificationBadge(){
 let notificationChannel=null;
 let notificationPollTimer=null;
 async function refreshNotifications(){
- await updateNotificationBadge();
- if(currentTab==="notifications") await loadTab();
+ try{
+  await updateNotificationBadge();
+  if(currentTab==="notifications") await loadTab();
+ }catch(e){
+  console.error("notification refresh error",e);
+ }
 }
+
 function subscribeNotifications(){
  if(notificationChannel) supabaseClient.removeChannel(notificationChannel);
  notificationChannel=supabaseClient.channel("user-notifications-"+currentUser.id)
@@ -762,11 +767,17 @@ async function start(){
   await Promise.all([loadProfile(),loadStats(),loadSocialStats(),updateNotificationBadge()]);
   subscribeNotifications();
   await refreshNotifications();
+  const initialTab=String(location.hash||"").replace(/^#/,"").trim();
+  if(initialTab&&document.querySelector(".tab[data-tab=\""+CSS.escape(initialTab)+"\"]")){
+   currentTab=initialTab;
+   document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===currentTab));
+  }
   await loadTab();
  }catch(e){console.error("mypage start error",e);document.getElementById("auth-warning").style.display="block";document.getElementById("auth-warning").innerHTML='<div class="error">マイページを読み込めませんでした。ページを再読み込みしてください。</div>';}
 }
 document.addEventListener("DOMContentLoaded",()=>{
- document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;history.replaceState(null,"","#"+currentTab);await loadTab();if(currentTab==="notifications")await updateNotificationBadge();}));document.querySelectorAll("[data-quick-tab]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();const tab=a.dataset.quickTab;const b=document.querySelector(".tab[data-tab=\""+tab+"\"]");if(b)b.click();document.getElementById("list")?.scrollIntoView({behavior:"smooth",block:"start"});}));
+ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;history.replaceState(null,"","#"+currentTab);await loadTab();if(currentTab==="notifications")await updateNotificationBadge();}));
+document.querySelectorAll("[data-quick-tab]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();const tab=a.dataset.quickTab;const b=document.querySelector(".tab[data-tab=\""+tab+"\"]");if(b)b.click();document.getElementById("list")?.scrollIntoView({behavior:"smooth",block:"start"});}));
  document.getElementById("mypage-post-submit")?.addEventListener("click",submitMypagePost);
  document.getElementById("mypage-post-body")?.addEventListener("input",e=>{document.getElementById("post-length").textContent=e.target.value.length+" / 500";});
  document.getElementById("save-profile").addEventListener("click",saveProfile);
