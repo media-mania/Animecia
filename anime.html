@@ -1029,6 +1029,11 @@
 .result-header{padding:4px 2px}
 @media(max-width:760px){.page-intro{padding:20px}.page-intro h1{font-size:24px}}
 </style>
+<style id="animecia-navigation-v5">
+.page-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin:0 0 20px;padding:26px 28px;border-radius:18px;background:linear-gradient(135deg,#101827,#1c2a42);color:#fff;box-shadow:0 14px 38px rgba(16,24,39,.14)}
+.page-intro h1{margin:5px 0 7px!important;color:#fff!important;font-size:clamp(28px,4vw,42px)!important;letter-spacing:-.045em}.page-intro p{margin:0;color:#cbd5e1;line-height:1.8;max-width:760px}.page-kicker{display:block;color:#f59e0b;font-size:10px;font-weight:900;letter-spacing:.16em}.page-kicker.dark{color:#e87900}.page-intro-actions{display:flex;gap:8px;flex-wrap:wrap}.page-intro-actions a{padding:9px 12px;border:1px solid rgba(255,255,255,.17);border-radius:999px;background:rgba(255,255,255,.07);color:#fff;text-decoration:none;font-size:12px;font-weight:800}.page-intro-actions a:hover{background:rgba(255,255,255,.14)}.section-card{background:#fff;border:1px solid #e2e5e9;border-radius:16px;box-shadow:0 8px 28px rgba(16,20,26,.055)}
+@media(max-width:760px){.page-intro{display:block;padding:21px}.page-intro-actions{margin-top:16px}}
+</style>
 </head>
 
 
@@ -1065,26 +1070,25 @@
 
 
         <div class="breadcrumb">
-
-            <a href="index.html">
-                ホーム
-            </a>
-
-            <span aria-hidden="true">
-                ›
-            </span>
-
-            <span>
-                アニメ一覧
-            </span>
-
+            <a href="index.html">ホーム</a>
+            <span aria-hidden="true">›</span>
+            <span>アニメを探す</span>
         </div>
 
+        <section class="page-intro">
+            <div>
+                <span class="page-kicker">ANIME DATABASE</span>
+                <h1>アニメを探す</h1>
+                <p>作品名・ジャンル・放送年・形式・スタジオ・評価などから、Animeciaの作品データベースを検索できます。</p>
+            </div>
+            <div class="page-intro-actions">
+                <a href="season.html">今期アニメ</a>
+                <a href="ranking.html">ランキング</a>
+                <a href="discover.html">ジャンルから探す</a>
+            </div>
+        </section>
 
-        <section
-            class="anime-search-area"
-            aria-label="アニメ検索"
-        >
+        <section class="anime-search-area section-card" aria-label="アニメ検索">
 
             <div class="search-box">
 
