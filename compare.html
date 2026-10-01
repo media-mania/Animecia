@@ -121,19 +121,16 @@ async function loadImportedWorks(q=""){
  const box=document.getElementById("search-results");
  const term=q.trim();
  box.innerHTML='<div class="search-loading">取り込んだ作品を読み込み中…</div>';
- let query=supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,season_year,season");
- if(term.length>=1){
-  const safe=term.replace(/[,%()]/g," ");
-  query=query.or("title.ilike.%"+safe+"%,title_japanese.ilike.%"+safe+"%,title_native.ilike.%"+safe+"%,title_user_preferred.ilike.%"+safe+"%,title_romaji.ilike.%"+safe+"%,title_english.ilike.%"+safe+"%,english_title.ilike.%"+safe+"%");
- }
- const {data,error}=await query.order("id",{ascending:false}).limit(term.length?30:18);
- if(error){console.error(error);box.innerHTML='<div class="search-loading">取り込んだ作品を読み込めませんでした。Supabaseの公開設定を確認してください。</div>';return;}
+ const {data,error}=await supabaseClient.rpc("search_anime_catalog",{
+  p_query:term||null,p_genre_id:null,p_studio_id:null,p_year:null,p_season:null,
+  p_status:null,p_format:null,p_sort:"default",p_limit:term.length?30:18,p_offset:0
+ });
+ if(error){console.error(error);box.innerHTML='<div class="search-loading">取り込んだ作品を読み込めませんでした。Supabaseの検索設定を確認してください。</div>';return;}
  box.innerHTML=(data||[]).map(a=>{
   const selected=ids.includes(Number(a.id));
   const disabled=selected||ids.length>=5;
   return '<div class="search-result"><img src="'+esc(a.cover_image||"")+'" alt="" onerror="this.style.visibility=\'hidden\'"><div><strong>'+esc(titleOf(a))+'</strong><small>'+esc(a.season_year||"")+ " "+esc(seasonName[a.season]||"")+'</small></div><button type="button" data-add="'+a.id+'" '+(disabled?"disabled":"")+'>'+ (selected?"選択中":ids.length>=5?"上限":"比較に追加")+'</button></div>';
  }).join("")||'<div class="search-loading">取り込まれた作品がありません。</div>';
- box.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>addId(b.dataset.add));
 }
 function addId(rawId){
  if(ids.length>=5)return;
