@@ -69,7 +69,7 @@ function save(){localStorage.setItem("animecia_compare",JSON.stringify(ids));}
 function updateCount(){document.getElementById("compare-count").textContent=ids.length+" / 5";}
 async function fetchAnimeByIds(){
  if(!ids.length)return[];
- const {data}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url,genres").in("id",ids);
+ const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url").eq("anime_verification_status","verified").in("id",ids); if(error) throw error;
  const map=new Map((data||[]).map(a=>[Number(a.id),a]));
  return ids.map(id=>map.get(id)).filter(Boolean);
 }
