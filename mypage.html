@@ -73,6 +73,19 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <style id="animecia-mypage-ui-v11">
 .section-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:14px}.section-heading h2{margin:2px 0 0;font-size:19px;letter-spacing:-.025em}.eyebrow{font-size:10px;letter-spacing:.14em;font-weight:900;color:#d9002b}.section-note{font-size:11px;color:#8a919b}.activity-panel,.profile-editor-panel,.settings-panel{overflow:hidden}.activity-panel{padding-top:18px}.profile-editor-panel,.settings-panel{margin-top:16px}.profile-editor-panel .profile-editor{margin-top:18px}.profile-editor-panel .crop-editor{background:#f7f8fa}.profile-editor-panel input:not([type=file]):focus,.profile-editor-panel textarea:focus{border-color:#9da5af;box-shadow:0 0 0 3px rgba(16,24,39,.06);outline:none}.profile-editor-panel input,.profile-editor-panel textarea{transition:border-color .15s,box-shadow .15s}.settings-panel .visibility-grid{margin-top:8px}.settings-panel .visibility-grid label{transition:background .15s,border-color .15s}.settings-panel .visibility-grid label:has(input:checked){background:#fff5f6;border-color:#f0b5bf}.settings-panel .visibility-grid input{accent-color:#d9002b}.profile-card{box-shadow:0 10px 30px rgba(17,24,39,.07)}
 @media(max-width:600px){.section-heading{align-items:flex-start}.section-note{display:none}.section-heading h2{font-size:17px}}
+</style><style id="animecia-mypage-records-v12">
+.anime-record-card{position:relative;gap:14px;padding:12px!important;border:1px solid #e4e7eb!important;border-radius:12px!important;transition:transform .15s,border-color .15s,box-shadow .15s;background:#fff!important}
+.anime-record-card:hover{transform:translateY(-1px);border-color:#cbd1d8!important;box-shadow:0 6px 18px rgba(17,24,39,.06)}
+.anime-record-cover{width:68px;height:92px;flex:none;overflow:hidden;border-radius:8px;background:#eef0f2}
+.anime-record-cover .thumb{width:100%;height:100%;border-radius:0}
+.anime-record-info{min-width:0;padding:2px 0}
+.anime-record-title{font-size:14px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.anime-record-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;color:#7a818b;font-size:11px}
+.anime-record-meta .pill{margin:0}
+.anime-record-rating{display:flex;align-items:baseline;gap:4px;margin-top:9px;color:#e87900}
+.anime-record-rating strong{font-size:17px}.anime-record-rating span{font-size:10px;color:#969ca4}
+.anime-record-arrow{align-self:center;font-size:25px;line-height:1;color:#a4aab2;padding-left:4px}
+@media(max-width:600px){.anime-record-card{gap:11px}.anime-record-cover{width:56px;height:76px}.anime-record-title{font-size:13px}.anime-record-rating{margin-top:6px}.anime-record-arrow{font-size:22px}}
 </style></head>
 <body>
 <header class="site-header">
@@ -404,7 +417,21 @@ async function loadStats(){
 }
 function renderAnimeList(rows,map,labelFn){
  const el=document.getElementById("list");
- const html=rows.map(x=>{const a=map.get(Number(x.anime_id));if(!a)return "";return '<a class="list-item" href="anime-detail.html?id='+a.id+'">'+imageMarkup(a.cover_image,titleOf(a))+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="meta"><span class="pill">'+esc(labelFn(x))+'</span></div></div></a>';}).join("");
+ const html=rows.map(x=>{
+  const a=map.get(Number(x.anime_id));if(!a)return "";
+  const title=titleOf(a);
+  const format=a.format||"";
+  const label=labelFn(x);
+  const rating=x.rating!=null?Number(x.rating):null;
+  return '<a class="list-item anime-record-card" href="anime-detail.html?id='+encodeURIComponent(a.id)+'">'+
+   '<div class="anime-record-cover">'+imageMarkup(a.cover_image,title)+'</div>'+
+   '<div class="grow anime-record-info">'+
+    '<div class="title anime-record-title">'+esc(title)+'</div>'+
+    '<div class="anime-record-meta">'+(format?'<span>'+esc(format)+'</span>':"")+'<span class="pill">'+esc(label)+'</span></div>'+
+    (rating!=null&&Number.isFinite(rating)?'<div class="anime-record-rating"><strong>'+esc(rating.toFixed(1))+'</strong><span>/ 10</span></div>':"")+
+   '</div><span class="anime-record-arrow" aria-hidden="true">›</span>'+
+  '</a>';
+ }).join("");
  el.innerHTML=html||'<div class="empty">該当する作品はありません。</div>';
 }
 async function updateNotificationBadge(){
