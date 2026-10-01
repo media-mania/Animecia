@@ -190,10 +190,10 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <aside>
 <section class="panel side-panel">
 <div class="side-title">マイページ</div>
-<a class="side-link" href="mypage.html">マイアニメランキング <span>›</span></a>
+<a class="side-link" href="mypage.html#my_ranking">マイアニメランキング <span>›</span></a>
 <a class="side-link" href="compare.html">作品を比較 <span>›</span></a>
 <a class="side-link" href="messages.html">メッセージ <span>›</span></a>
-<a class="side-link" href="mypage.html">ユーザー検索 <span>›</span></a>
+<a class="side-link" href="mypage.html#user_search">ユーザー検索 <span>›</span></a>
 <a class="side-link" href="#notifications" id="notification-side-link">通知 <span id="side-notification-count"></span></a>
 </section>
 <section class="panel side-panel">
@@ -381,6 +381,7 @@ async function saveVisibility(){
  const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_ranking:document.getElementById("show-ranking").checked,show_posts:document.getElementById("show-posts").checked,updated_at:new Date().toISOString()};
  const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
  if(error){console.error(error);msg.textContent="公開範囲を保存できませんでした。";return;}
+ await loadProfile();
  msg.textContent="公開範囲を保存しました。";
 }
 
