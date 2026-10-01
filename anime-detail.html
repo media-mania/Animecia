@@ -1593,7 +1593,35 @@
   .anime-detail-page .info-table{grid-template-columns:90px minmax(0,1fr)!important}
 }
 </style>
-</head>
+<style id="animecia-detail-v7">
+:root{--ac-navy:#101827;--ac-navy2:#18243a;--ac-orange:#e87900;--ac-line:#e4e7eb;--ac-bg:#f5f6f8}
+.anime-detail-page{max-width:1240px!important}
+.anime-detail-page .anime-hero{border-radius:14px!important;margin-bottom:14px!important;min-height:410px!important}
+.anime-detail-page .hero-content{grid-template-columns:210px minmax(0,1fr)!important;gap:25px!important;padding:30px!important}
+.anime-detail-page .hero-cover{width:210px!important;border-radius:9px!important}
+.anime-detail-page .hero-info h1{font-size:clamp(25px,3.2vw,40px)!important}
+.anime-detail-page .hero-stat{background:rgba(255,255,255,.09)!important;border:1px solid rgba(255,255,255,.08)}
+.anime-detail-page .action-button{border-radius:7px!important;box-shadow:none!important}
+.anime-detail-page #favorite-button{background:var(--ac-orange)!important;border-color:var(--ac-orange)!important;color:#fff!important}
+.anime-detail-page .content-layout{grid-template-columns:minmax(0,1fr) 280px!important;gap:14px!important}
+.anime-detail-page .content-section{border-radius:10px!important;padding:20px!important;margin-bottom:14px!important;box-shadow:0 5px 18px rgba(16,24,39,.045)!important}
+.anime-detail-page .content-section h2{font-size:18px!important;border-bottom:1px solid var(--ac-line)!important;padding-bottom:9px!important;margin-bottom:14px!important}
+.anime-detail-page .info-table{grid-template-columns:125px minmax(0,1fr)!important}
+.anime-detail-page .info-label{background:#f8f9fa!important}
+.anime-detail-page .person-item,.anime-detail-page .studio-item,.anime-detail-page .related-item{background:#fff!important;border-color:var(--ac-line)!important}
+.anime-detail-page .official-button,.anime-detail-page .status-save,.anime-detail-page .rating-save,.anime-detail-page .review-form button[type=submit]{background:var(--ac-navy)!important}
+.anime-detail-page .side-column .content-section{position:relative}
+.anime-detail-page .review-item{padding:15px 0}
+.anime-detail-page .review-rating{color:var(--ac-orange)}
+.detail-v7-nav{display:flex;gap:6px;overflow:auto;padding:8px 2px;margin:0 0 14px;position:sticky;top:64px;z-index:5;background:rgba(245,246,248,.94);backdrop-filter:blur(8px)}
+.detail-v7-nav a{white-space:nowrap;padding:7px 11px;border:1px solid var(--ac-line);border-radius:7px;background:#fff;color:#3b414a;text-decoration:none;font-size:11px;font-weight:800}
+.detail-v7-nav a:hover{border-color:#f0b36d;color:#b95d00}
+.detail-v7-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
+.detail-v7-summary>div{background:#fff;border:1px solid var(--ac-line);border-radius:9px;padding:11px 13px}
+.detail-v7-summary b{display:block;font-size:16px}.detail-v7-summary span{font-size:10px;color:#777}
+@media(max-width:800px){.anime-detail-page .hero-content{grid-template-columns:145px minmax(0,1fr)!important;padding:20px!important;gap:17px!important}.anime-detail-page .hero-cover{width:145px!important}.anime-detail-page .content-layout{grid-template-columns:1fr!important}.detail-v7-summary{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.anime-detail-page .hero-content{grid-template-columns:1fr!important}.anime-detail-page .hero-cover{width:150px!important}.detail-v7-nav{top:56px}.anime-detail-page .content-section{padding:16px!important}.anime-detail-page .info-table{grid-template-columns:105px minmax(0,1fr)!important}}
+</style></head>
 
 
 <body>
