@@ -76,9 +76,9 @@ jobs:
 
           def valid_candidate(x):
               url=(x.get("url") or "").strip()
-              if not url.startswith(("http://","https://")): return False,0,url,0,url
+              if not url.startswith(("http://","https://")): return False,0,url
               h=host(url)
-              if any(b in h for b in BAD): return False
+              if any(b in h for b in BAD): return False,0,url
               site=(x.get("site") or "").lower()
               lang=(x.get("language") or "").lower()
               typ=(x.get("type") or "").lower()
