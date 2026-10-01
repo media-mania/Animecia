@@ -7408,7 +7408,7 @@
         const currentId = Number(currentAnimeId);
         if (ids.includes(currentId)) {
             button.textContent = ids.length >= 2
-                ? "メモを見る（" + ids.length + "作品）"
+                ? "メモを確認（" + ids.length + "作品）"
                 : "メモに追加済み";
             button.classList.add("active");
         } else {
@@ -7425,7 +7425,7 @@
         let ids = getMemoIds();
         if (ids.includes(currentId)) {
             if (ids.length >= 2) {
-                location.href = "memo.html" + encodeURIComponent(ids.join(","));
+                location.href = "memo.html";
                 return;
             }
             ids = ids.filter(id => id !== currentId);
