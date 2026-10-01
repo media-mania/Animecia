@@ -63,6 +63,14 @@ async function loadFeed(){
   }catch(e){console.warn("投稿写真取得をスキップ",e)}
 
   const ids=rows.map(x=>x.id);
+  const repliesMap=new Map();
+  if(ids.length){
+   try{
+    const rr=await sb.from("social_posts").select("id,author_id,body,reply_to_id,created_at,updated_at,deleted_at").in("reply_to_id",ids).is("deleted_at",null).order("created_at",{ascending:true}).limit(300);
+    if(!rr.error)(rr.data||[]).forEach(x=>{if(!repliesMap.has(x.reply_to_id))repliesMap.set(x.reply_to_id,[]);repliesMap.get(x.reply_to_id).push(x)});
+   }catch(e){console.warn("返信取得をスキップ",e)}
+  }
+
   const lc=new Map(),rc=new Map(),liked=new Set(),reposted=new Set(),saved=new Set();
   try{
    const r=await sb.from("social_post_likes").select("post_id,user_id").in("post_id",ids);
@@ -79,18 +87,22 @@ async function loadFeed(){
    }catch(e){console.warn("ブックマーク情報取得をスキップ",e)}
   }
 
-  el.innerHTML=rows.map(p=>renderPost(p,authors.get(p.author_id),mediaMap.get(p.id)||[],lc.get(p.id)||0,rc.get(p.id)||0,liked.has(p.id),reposted.has(p.id),saved.has(p.id))).join("");
+  const replyAuthorIds=[...(repliesMap.values())].flat().map(x=>x.author_id);
+  let replyAuthors=new Map();
+  try{replyAuthors=await getProfiles(replyAuthorIds)}catch(e){console.warn("返信プロフィール取得をスキップ",e)}
+  el.innerHTML=rows.map(p=>renderPost(p,authors.get(p.author_id),mediaMap.get(p.id)||[],lc.get(p.id)||0,rc.get(p.id)||0,liked.has(p.id),reposted.has(p.id),saved.has(p.id),repliesMap.get(p.id)||[],replyAuthors)).join("");
   bindActions();
  }catch(e){
   console.error("コミュニティ読み込みエラー",e);
   el.innerHTML='<div class="error">コミュニティを読み込めませんでした。<br><small>'+esc(e.message||"データ取得エラー")+'</small><br><button type="button" class="btn secondary" onclick="loadFeed()">再読み込み</button></div>';
  }
 }
-function renderPost(p,author,media,lc,rc,isLiked,isReposted,isSaved){
+function renderPost(p,author,media,lc,rc,isLiked,isReposted,isSaved,replies=[],replyAuthors=new Map()){
  const name=author?.display_name||author?.username||"Animeciaユーザー",handle=author?.username?"@"+String(author.username).replace(/^@/,""):"";
  const urls=media.length?media.map(x=>x.public_url):p.attachment_url?[p.attachment_url]:[];
  const mediaHtml=urls.length?'<div class="post-media-grid">'+urls.slice(0,4).map(u=>'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img src="'+esc(u)+'" alt="投稿された写真" loading="lazy"></a>').join("")+'</div>':"";
  const body=p.body?'<div class="post-body">'+esc(p.body)+'</div>':"";
+ const repliesHtml=replies.length?'<div class="replies">'+replies.slice(0,20).map(r=>'<div class="reply"><div class="post-head">'+avatar(replyAuthors.get(r.author_id))+'<div style="min-width:0;flex:1"><div><b>'+esc(replyAuthors.get(r.author_id)?.display_name||replyAuthors.get(r.author_id)?.username||"Animeciaユーザー")+'</b> <span class="small">'+esc(fmt(r.created_at))+'</span></div><div class="post-body">'+esc(r.body||"")+'</div></div></div></div>').join("")+'</div>':"";
  return '<article class="post" data-post-id="'+p.id+'"><div class="post-head">'+avatar(author)+'<div style="min-width:0;flex:1"><div><a href="profile.html?id='+encodeURIComponent(p.author_id)+'" style="font-weight:900;color:#111">'+esc(name)+'</a> <span class="small">'+esc(handle)+' · '+esc(fmt(p.created_at))+'</span></div>'+body+mediaHtml+(p.quote_post_id?'<div class="quote"><span class="small">引用投稿</span></div>':"")+'<div class="post-actions"><button data-act="reply">返信</button><button data-act="repost" class="'+(isReposted?'reposted':'')+'">↻ リポスト '+(rc||"")+'</button><button data-act="like" class="'+(isLiked?'active':'')+'">♥ いいね '+(lc||"")+'</button><button data-act="bookmark" class="'+(isSaved?'active':'')+'">🔖 保存</button>'+(currentUser?.id===p.author_id?'<button data-act="delete">削除</button>':"")+'</div><div class="reply-box"><textarea maxlength="4000" placeholder="返信を入力"></textarea><div class="row"><button class="btn secondary" data-act="cancel-reply">キャンセル</button><button class="btn" data-act="send-reply">返信</button></div></div></div></div></article>';
 }
 function bindActions(){document.querySelectorAll("[data-act]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const article=b.closest(".post"),id=article?.dataset.postId;if(!id)return;try{
