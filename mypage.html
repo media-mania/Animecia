@@ -8,7 +8,33 @@
 <link rel="canonical" href="https://media-mania.github.io/Animecia/mypage.html">
 <link rel="stylesheet" href="site-theme.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style><style>
+<style>
+/* X-inspired Animecia profile */
+body{background:#f5f6f8}
+.site-header{position:sticky;top:0;z-index:50}
+main{max-width:1120px!important}
+.profile-card{border-radius:14px!important}
+.profile-cover{height:190px!important;background-color:#101827!important}
+.profile-main{padding:0 24px 22px!important}
+.profile-actions .btn{border-radius:999px!important}
+.profile-stats{gap:18px!important}
+.quick-actions{grid-template-columns:repeat(4,1fr)!important}
+.profile-tabs{background:#fff;border:1px solid #e3e6ea;border-radius:14px 14px 0 0;overflow:auto;scrollbar-width:none}
+.profile-tabs::-webkit-scrollbar{display:none}
+.tab-group{display:flex;min-width:max-content;border-bottom:1px solid #edf0f2;padding:0 8px}
+.tab-group:last-child{border-bottom:0}
+.tab-group:before{content:"";display:block;width:4px;flex:none}
+.tab{padding:14px 14px!important;font-size:12px!important}
+.social-tabs .tab.active{border-bottom-color:#101827!important}
+.anime-tabs .tab.active{border-bottom-color:#e87900!important}
+.account-tabs .tab.active{border-bottom-color:#d83a24!important}
+#list{margin-top:0!important}
+#list .list-item{border-radius:0!important;border-left:0;border-right:0;border-top:0;padding:17px 12px}
+#list .list-item:hover{background:#fafbfc}
+.profile-card + .panel{border-radius:0 0 14px 14px;border-top:0}
+.profile-editor{scroll-margin-top:90px}
+@media(max-width:700px){.quick-actions{grid-template-columns:1fr 1fr!important}.profile-cover{height:150px!important}.profile-main{padding:0 16px 17px!important}}
+</style></style>
 main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 .page-shell{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
 .profile-card{background:#fff;border:1px solid #e3e6ea;border-radius:16px;overflow:hidden;box-shadow:0 8px 26px rgba(17,24,39,.06);margin-bottom:16px}
@@ -43,15 +69,15 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 .crop-editor{margin-top:12px;padding:14px;border:1px solid #e5e7eb;border-radius:12px;background:#fafafa}.crop-title{font-size:12px;font-weight:850;margin-bottom:10px}.crop-preview{position:relative;overflow:hidden;border-radius:12px;background:#e5e7eb}.crop-preview.avatar-crop{width:92px;height:92px;border-radius:50%;margin-bottom:10px}.crop-preview.cover-crop{width:100%;height:130px}.crop-preview img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center}.crop-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.crop-control label{display:flex;justify-content:space-between;font-size:11px;color:#666;font-weight:750}.crop-control input{width:100%}@media(max-width:600px){.crop-controls{grid-template-columns:1fr}}.visibility-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.visibility-grid label{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid #e5e7eb;border-radius:9px;background:#f8f9fb;font-size:13px;font-weight:700}.visibility-grid input{accent-color:#d9002b;width:17px;height:17px}@media(max-width:600px){.visibility-grid{grid-template-columns:1fr}}</style></style>
 </head>
 <body>
-<header><div class="wrap head">
-<a class="logo" href="index.html">Animecia</a>
-<nav>
-<a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="ranking.html">ランキング</a>
-<a href="anime.html?season=current">今期アニメ</a><a href="recommendations.html">おすすめ</a>
-<a href="discover.html">作品発見</a><a href="genres.html">ジャンル</a><a href="community.html">コミュニティ</a>
-<a href="compare.html">作品比較</a><a href="mypage.html">マイページ</a>
+<header class="site-header">
+<div class="container nav">
+<a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
+<nav class="nav-links" aria-label="メインメニュー">
+<a href="index.html">ホーム</a><a href="season.html">今期</a><a href="ranking.html">ランキング</a>
+<a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="community.html">コミュニティ</a><a href="compare.html">比較</a>
 </nav>
-<div class="userbar"><span id="user-name"></span><button id="auth-btn" class="btn secondary" type="button">ログイン</button></div>
+<form class="header-search" action="anime.html" method="get" role="search"><input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索"></form>
+<div class="nav-actions"><a class="nav-btn" href="mypage.html">マイページ</a><button id="auth-btn" class="nav-btn primary" type="button">ログイン</button></div>
 </div></header>
 <main>
 <div id="auth-warning" class="panel" style="display:none"><div class="empty"><h2>ログインが必要です</h2><p>マイページの機能を利用するにはログインしてください。</p><p><a class="btn" href="login.html?redirect=mypage.html">ログインする</a> <a class="btn secondary" href="signup.html">新規登録</a></p></div></div>
@@ -63,8 +89,8 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <div class="profile-main">
 <div class="profile-avatar-wrap" id="profile-avatar-wrap"><div id="profile-avatar-fallback" class="profile-avatar profile-avatar-fallback">A</div><img id="profile-avatar-large" class="profile-avatar" alt="" style="display:none"></div>
 <div class="profile-actions">
+<a class="btn secondary" href="#profile-editor">プロフィールを編集</a>
 <a class="btn secondary" href="messages.html">メッセージ</a>
-<a class="btn" href="my-ranking.html">マイアニメランキング</a>
 </div>
 <h1 id="profile-display-name" class="profile-name">Animeciaユーザー</h1>
 <div id="profile-handle" class="profile-handle">@ユーザー名未設定</div>
@@ -74,34 +100,46 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <a id="following-link" class="profile-stat" href="#following"><strong id="following-count">0</strong>フォロー中</a>
 </div>
 <div class="quick-actions">
-<a class="quick-action" href="profile.html" id="my-profile-link">ユーザーホーム</a>
+<a class="quick-action" href="profile.html" id="my-profile-link">公開プロフィール</a>
 <a class="quick-action" href="user-search.html">ユーザーを探す</a>
 <a class="quick-action" href="messages.html">メッセージ</a>
-<a class="quick-action" href="my-ranking.html">ランキング</a>
+<a class="quick-action" href="my-ranking.html">マイアニメランキング</a>
 </div>
 </div>
 </section>
 
 <section class="panel">
-<div class="tabs">
-<button class="tab active" data-tab="posts" type="button">投稿</button><button class="tab" data-tab="favorites" type="button">お気に入り</button>
+<div class="profile-tabs">
+<div class="tab-group social-tabs" aria-label="ソーシャル">
+<button class="tab active" data-tab="posts" type="button">投稿</button>
+<button class="tab" data-tab="replies" type="button">返信</button>
+<button class="tab" data-tab="media" type="button">メディア</button>
+<button class="tab" data-tab="likes" type="button">いいね</button>
+<button class="tab" data-tab="bookmarks" type="button">ブックマーク</button>
+<button class="tab" data-tab="reposts" type="button">リポスト</button>
+</div>
+<div class="tab-group anime-tabs" aria-label="アニメ記録">
+<button class="tab" data-tab="favorites" type="button">お気に入り</button>
 <button class="tab" data-tab="follows" type="button">作品フォロー</button>
 <button class="tab" data-tab="watching" type="button">視聴中</button>
 <button class="tab" data-tab="completed" type="button">視聴完了</button>
 <button class="tab" data-tab="want_to_watch" type="button">視聴予定</button>
+<button class="tab" data-tab="paused" type="button">一時停止</button>
+<button class="tab" data-tab="dropped" type="button">視聴中止</button>
 <button class="tab" data-tab="ratings" type="button">評価</button>
 <button class="tab" data-tab="reviews" type="button">レビュー</button>
+</div>
+<div class="tab-group account-tabs" aria-label="アカウント">
 <button class="tab" data-tab="user_following" type="button">フォロー</button>
 <button class="tab" data-tab="user_followers" type="button">フォロワー</button>
 <button class="tab" data-tab="notifications" type="button">通知 <span id="notification-badge" style="display:none"></span></button>
 <button class="tab" data-tab="activity" type="button">活動</button>
-<button class="tab" data-tab="paused" type="button">一時停止</button>
-<button class="tab" data-tab="dropped" type="button">視聴中止</button>
+</div>
 </div>
 <div id="list" class="list"></div>
 </section>
 
-<section class="panel">
+<section class="panel" id="profile-editor">
 <h2>プロフィールを編集</h2>
 <div class="profile-head"><div id="avatar-preview-wrap"><div id="avatar-preview-fallback" class="avatar" style="display:grid;place-items:center;font-weight:900;color:#888">A</div><img id="avatar-preview" class="avatar" alt="" style="display:none"></div><div><div class="sub">公開プロフィールに表示されます。</div><div class="avatar-picker" style="margin-top:7px"><input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button id="upload-avatar" class="btn secondary" type="button">画像をアップロード</button></div><div class="avatar-help">JPG / PNG / WebP / GIF、2MB以下。</div><div class="crop-editor"><div class="crop-title">プロフィール画像のトリミング・位置調整</div><div id="avatar-crop-preview" class="crop-preview avatar-crop"><img id="avatar-crop-image" alt=""></div><div class="crop-controls"><div class="crop-control"><label>左右 <output id="avatar-x-value">50%</output></label><input id="avatar-x" type="range" min="0" max="100" value="50"></div><div class="crop-control"><label>上下 <output id="avatar-y-value">50%</output></label><input id="avatar-y" type="range" min="0" max="100" value="50"></div><div class="crop-control"><label>拡大 <output id="avatar-zoom-value">100%</output></label><input id="avatar-zoom" type="range" min="100" max="220" value="100"></div></div></div></div></div>
 <div class="profile-editor">
@@ -399,9 +437,52 @@ async function loadUserFollowList(mode){
    return '<a class="list-item" href="profile.html?id='+encodeURIComponent(uid)+'">'+avatar+'<div class="grow"><div class="title">'+esc(name)+'</div><div class="sub">'+(p.username?'@'+esc(p.username):"ユーザー名未設定")+'</div>'+(p.bio?'<div class="sub">'+esc(p.bio).slice(0,120)+'</div>':"")+'</div><div class="pill">プロフィール</div></a>';
  }).join("")||'<div class="empty">ユーザーはいません。</div>';
 }
+async function loadSocialPosts(mode){
+ const el=document.getElementById("list");
+ let query=supabaseClient.from("social_posts").select("id,author_id,body,attachment_url,attachment_path,attachment_type,reply_to_id,quote_post_id,created_at").is("deleted_at",null).order("created_at",{ascending:false}).limit(100);
+ if(mode==="posts")query=query.eq("author_id",currentUser.id).is("reply_to_id",null);
+ if(mode==="replies")query=query.eq("author_id",currentUser.id).not("reply_to_id","is",null);
+ if(mode==="media")query=query.eq("author_id",currentUser.id).is("reply_to_id",null).not("attachment_url","is",null);
+ if(mode==="likes"||mode==="bookmarks"||mode==="reposts"){
+   const table=mode==="likes"?"social_post_likes":mode==="bookmarks"?"social_post_bookmarks":"social_post_reposts";
+   const {data:actions,error:actionError}=await supabaseClient.from(table).select("post_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);
+   if(actionError)throw actionError;
+   const ids=(actions||[]).map(x=>x.post_id);
+   if(!ids.length){el.innerHTML='<div class="empty">該当する投稿はありません。</div>';return;}
+   query=supabaseClient.from("social_posts").select("id,author_id,body,attachment_url,attachment_path,attachment_type,reply_to_id,quote_post_id,created_at").in("id",ids).is("deleted_at",null);
+ }
+ const {data,error}=await query;
+ if(error)throw error;
+ const rows=data||[];
+ if(!rows.length){el.innerHTML='<div class="empty">該当する投稿はありません。</div>';return;}
+ const authorIds=[...new Set(rows.map(x=>x.author_id))];
+ const {data:profiles}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url").in("id",authorIds);
+ const pm=new Map((profiles||[]).map(x=>[x.id,x]));
+ const postIds=rows.map(x=>x.id);
+ const counts={};
+ for(const table of ["social_post_likes","social_post_reposts","social_post_bookmarks"]){
+   const {data:a}=await supabaseClient.from(table).select("post_id").in("post_id",postIds);
+   (a||[]).forEach(x=>{counts[x.post_id]??={likes:0,reposts:0,bookmarks:0};});
+ }
+ for(const table of ["social_post_likes","social_post_reposts","social_post_bookmarks"]){
+   const {data:a}=await supabaseClient.from(table).select("post_id").in("post_id",postIds);
+   (a||[]).forEach(x=>{const key=table==="social_post_likes"?"likes":table==="social_post_reposts"?"reposts":"bookmarks";counts[x.post_id]??={likes:0,reposts:0,bookmarks:0};counts[x.post_id][key]++;});
+ }
+ const label=mode==="likes"?"いいねした投稿":mode==="bookmarks"?"ブックマークした投稿":mode==="reposts"?"リポストした投稿":mode==="replies"?"返信":"投稿";
+ el.innerHTML=rows.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(x=>{
+   const p=pm.get(x.author_id)||{};const name=p.display_name||p.username||"Animeciaユーザー";const avatar=p.avatar_url?'<img class="avatar" src="'+esc(p.avatar_url)+'" alt="">':'<div class="avatar" style="display:grid;place-items:center;font-weight:800;color:#888">'+esc(name.slice(0,1))+'</div>';
+   const c=counts[x.id]||{likes:0,reposts:0,bookmarks:0};
+   const photo=x.attachment_url?'<img src="'+esc(x.attachment_url)+'" alt="投稿メディア" loading="lazy" style="display:block;width:min(420px,100%);max-height:360px;object-fit:cover;border-radius:12px;margin-top:10px">':"";
+   return '<article class="list-item" style="align-items:flex-start"><div style="flex:none">'+avatar+'</div><div class="grow"><div><strong>'+esc(name)+'</strong>'+(p.username?' <span class="sub">@'+esc(p.username)+'</span>':"")+'<span class="sub"> · '+esc(new Date(x.created_at).toLocaleString("ja-JP"))+'</span></div><div style="margin-top:8px;white-space:pre-wrap;line-height:1.7">'+esc(x.body||"")+'</div>'+photo+'<div class="meta" style="margin-top:11px"><span>返信 '+(x.reply_to_id?1:0)+'</span><span>リポスト '+c.reposts+'</span><span>いいね '+c.likes+'</span><span>ブックマーク '+c.bookmarks+'</span><span class="pill">'+label+'</span></div></div></article>';
+ }).join("");
+}
 async function loadTab(){
  const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';
  try{
+  if(["posts","replies","media","likes","bookmarks","reposts"].includes(currentTab)){
+   await loadSocialPosts(currentTab);
+   return;
+  }
   if(currentTab==="posts"){
    let data=[];
    const primary=await supabaseClient.from("social_posts").select("id,body,attachment_url,attachment_path,attachment_type,reply_to_id,created_at").eq("author_id",currentUser.id).is("deleted_at",null).is("reply_to_id",null).order("created_at",{ascending:false}).limit(100);
