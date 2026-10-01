@@ -1654,7 +1654,7 @@
 <a href="discover.html">ジャンル</a>
 <a href="recommendations.html">おすすめ</a>
 <a href="community.html">コミュニティ</a>
-<a href="compare.html">比較</a>
+<a href="memo.html">メモ</a>
 </nav>
 <form class="header-search" action="anime.html" method="get" role="search">
 <input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
@@ -1905,10 +1905,10 @@
 
                         <button
                             type="button"
-                            id="compare-button"
+                            id="memo-button"
                             class="action-button"
                         >
-                            比較に追加
+                            メモに追加
                         </button>
 
 
@@ -7381,9 +7381,9 @@
     }
 
 
-    function getCompareIds() {
+    function getMemoIds() {
         try {
-            const ids = JSON.parse(localStorage.getItem("animecia_compare") || "[]");
+            const ids = JSON.parse(localStorage.getItem("animecia_memo") || "[]");
             return Array.isArray(ids)
                 ? ids.map(Number).filter(id => Number.isInteger(id)).slice(0, 5)
                 : [];
@@ -7392,37 +7392,37 @@
         }
     }
 
-    function saveCompareIds(ids) {
+    function saveMemoIds(ids) {
         localStorage.setItem(
-            "animecia_compare",
+            "animecia_memo",
             JSON.stringify(
                 [...new Set(ids.map(Number).filter(id => Number.isInteger(id)))].slice(0, 5)
             )
         );
     }
 
-    function updateCompareButton() {
-        const button = document.getElementById("compare-button");
+    function updateMemoButton() {
+        const button = document.getElementById("memo-button");
         if (!button) return;
-        const ids = getCompareIds();
+        const ids = getMemoIds();
         const currentId = Number(currentAnimeId);
         if (ids.includes(currentId)) {
             button.textContent = ids.length >= 2
-                ? "比較を見る（" + ids.length + "作品）"
-                : "比較に追加済み";
+                ? "メモを見る（" + ids.length + "作品）"
+                : "メモに追加済み";
             button.classList.add("active");
         } else {
             button.textContent = ids.length >= 5
-                ? "比較は最大5作品"
-                : "比較に追加";
+                ? "メモは最大5作品"
+                : "メモに追加";
             button.classList.remove("active");
         }
     }
 
-    function toggleCompare() {
+    function toggleMemo() {
         const currentId = Number(currentAnimeId);
         if (!Number.isInteger(currentId)) return;
-        let ids = getCompareIds();
+        let ids = getMemoIds();
         if (ids.includes(currentId)) {
             if (ids.length >= 2) {
                 location.href = "compare.html?ids=" + encodeURIComponent(ids.join(","));
@@ -7436,12 +7436,12 @@
             }
             ids.push(currentId);
         }
-        saveCompareIds(ids);
-        updateCompareButton();
+        saveMemoIds(ids);
+        updateMemoButton();
         if (ids.length >= 2) {
             const message = document.getElementById("share-message");
             if (message) {
-                message.textContent = "比較に追加しました。もう一度押すと比較ページを開きます。";
+                message.textContent = "メモに追加しました。もう一度押すと比較ページを開きます。";
             }
         }
     }
@@ -7489,14 +7489,14 @@
 
     document
         .getElementById(
-            "compare-button"
+            "memo-button"
         )
         .addEventListener(
             "click",
-            toggleCompare
+            toggleMemo
         );
 
-    updateCompareButton();
+    updateMemoButton();
 
     document
         .getElementById(
