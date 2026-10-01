@@ -759,7 +759,7 @@ async function start(){
   supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
   const {data,error}=await supabaseClient.auth.getSession();if(error)throw error;
   const user=data?.session?.user||null;
-  document.getElementById("user-name").textContent=user?.email||"";
+  const userNameEl=document.getElementById("user-name");if(userNameEl)userNameEl.textContent=user?.email||"";
   if(!user||!user.email_confirmed_at){
    document.getElementById("auth-warning").style.display="block";
    document.getElementById("auth-btn").onclick=()=>location.href="login.html?redirect=mypage.html";
