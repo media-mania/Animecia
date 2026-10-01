@@ -1696,6 +1696,23 @@
 }
 </style>
 </style>
+<style id="animecia-official-button-final">
+/* 公式サイト：枠は既存サイズを維持し、文字を枠の完全な中央へ */
+.anime-detail-page .action-area #official-button{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  margin:0!important;
+}
+@media(max-width:560px){
+  .anime-detail-page .action-area #official-button{
+    grid-column:1/-1!important;
+    justify-self:stretch!important;
+    width:100%!important;
+  }
+}
+</style>
 </head>
 
 
