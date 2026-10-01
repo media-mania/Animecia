@@ -50,21 +50,12 @@ jobs:
               body={"cover_image":img}
               if official_url is not None:
                   body["official_url"]=official_url
-              req=urllib.request.Request(
-                  url,
-                  data=json.dumps(body).encode(),
-                  method="PATCH",
-                  headers={
-                      "apikey":key,
-                      "Authorization":"Bearer "+key,
-                      "Content-Type":"application/json",
-                      "Prefer":"return=minimal",
-                      "User-Agent":"Animecia-ImageResync/1.0"
-                  }
-              )
+              req=urllib.request.Request(url,data=json.dumps(body).encode(),method="PATCH",headers={
+                  "apikey":key,"Authorization":"Bearer "+key,
+                  "Content-Type":"application/json","Prefer":"return=minimal","User-Agent":"Animecia-ImageResync/1.0"
+              })
               with urllib.request.urlopen(req,timeout=30) as r:
                   r.read()
-
 
           qs=urllib.parse.urlencode({
               "select":"id,title,source_id,cover_image,official_url",
