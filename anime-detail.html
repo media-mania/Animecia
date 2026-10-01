@@ -4705,105 +4705,23 @@
         const currentId = Number(currentAnimeId);
 
         try {
-            const { data: relationRowsRaw, error: relationError } =
+            const { data: relatedRows, error: relatedError } =
                 await supabaseClient
-                    .from("anime_relations")
-                    .select("anime_id, related_anime_id, relation_type")
-                    .eq("anime_id", currentId);
+                    .rpc("get_related_anime_by_shared_genres", {
+                        p_anime_id: currentId,
+                        p_limit: 8
+                    });
 
-            if (relationError) throw relationError;
+            if (relatedError) throw relatedError;
 
-            const relationRows = (relationRowsRaw || []).filter(row =>
-                row?.related_anime_id !== null &&
-                row?.related_anime_id !== undefined &&
-                Number.isInteger(Number(row.related_anime_id)) &&
-                Number(row.related_anime_id) !== currentId
-            );
-
-            const explicitIds = [...new Set(relationRows.map(row => Number(row.related_anime_id)))];
-            let explicitRelations = [];
-
-            if (explicitIds.length > 0) {
-                const { data: relatedAnime, error: relatedError } =
-                    await supabaseClient
-                        .from("anime")
-                        .select("id,title,title_romaji,title_english,title_native,title_japanese,english_title,cover_image")
-                        .in("id", explicitIds);
-
-                if (relatedError) throw relatedError;
-
-                const animeMap = new Map((relatedAnime || []).map(anime => [String(anime.id), anime]));
-                explicitRelations = relationRows
-                    .map(relation => ({
-                        relation: relation,
-                        anime: animeMap.get(String(relation.related_anime_id))
-                    }))
-                    .filter(item => item.anime);
-            }
-
-            const usedIds = new Set(explicitRelations.map(item => Number(item.anime.id)));
-            let fallbackRelations = [];
-
-            const genreIds = [...new Set(
-                (currentAnime?.anime_genres || [])
-                    .map(row => Number(row?.genre_id ?? row?.genres?.id))
-                    .filter(Number.isInteger)
-            )];
-
-            if (genreIds.length > 0 && explicitRelations.length < 8) {
-                const { data: genreRows, error: genreError } =
-                    await supabaseClient
-                        .from("anime_genres")
-                        .select("anime_id,genre_id")
-                        .in("genre_id", genreIds)
-                        .neq("anime_id", currentId)
-                        .limit(1200);
-
-                if (genreError) throw genreError;
-
-                const sharedGenreCount = new Map();
-                (genreRows || []).forEach(row => {
-                    const animeId = Number(row?.anime_id);
-                    if (!Number.isInteger(animeId) || usedIds.has(animeId)) return;
-                    sharedGenreCount.set(animeId, (sharedGenreCount.get(animeId) || 0) + 1);
-                });
-
-                const candidateIds = [...sharedGenreCount.entries()]
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 80)
-                    .map(([id]) => id);
-
-                if (candidateIds.length > 0) {
-                    const { data: candidates, error: candidateError } =
-                        await supabaseClient
-                            .from("anime")
-                            .select("id,title,title_romaji,title_english,title_native,title_japanese,english_title,cover_image,average_score,popularity,season_year,status")
-                            .in("id", candidateIds);
-
-                    if (candidateError) throw candidateError;
-
-                    const candidateMap = new Map((candidates || []).map(anime => [Number(anime.id), anime]));
-                    fallbackRelations = candidateIds
-                        .map(id => ({ anime: candidateMap.get(id), sharedGenres: sharedGenreCount.get(id) || 0 }))
-                        .filter(item => item.anime && !usedIds.has(Number(item.anime.id)))
-                        .sort((a, b) => {
-                            if (b.sharedGenres !== a.sharedGenres) return b.sharedGenres - a.sharedGenres;
-                            const bp = Number(b.anime.popularity) || 0;
-                            const ap = Number(a.anime.popularity) || 0;
-                            if (bp !== ap) return bp - ap;
-                            return (Number(b.anime.average_score) || 0) - (Number(a.anime.average_score) || 0);
-                        })
-                        .slice(0, Math.max(0, 8 - explicitRelations.length));
-                }
-            }
-
-            const items = [
-                ...explicitRelations.map(item => ({ anime: item.anime, label: relationLabel(item.relation.relation_type) })),
-                ...fallbackRelations.map(item => ({
-                    anime: item.anime,
-                    label: item.sharedGenres > 1 ? "共通ジャンル " + item.sharedGenres + "件" : "同じジャンル"
-                }))
-            ].slice(0, 8);
+            const items = (relatedRows || []).map(anime => ({
+                anime,
+                label: "共通ジャンル " + Number(anime.shared_genres || 0) + "件"
+            })).filter(item =>
+                item.anime &&
+                Number(item.anime.id) !== currentId &&
+                Number(item.anime.shared_genres) >= 2
+            ).slice(0, 8);
 
             if (items.length === 0) {
                 hideSection("related-section");
