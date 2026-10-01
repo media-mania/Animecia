@@ -397,9 +397,25 @@ async function load(){
  const genreCountSide=document.getElementById("genre-count-side");if(genreCountSide)genreCountSide.textContent=genres.length.toLocaleString("ja-JP");
  const seasonRows=(seasonRes.data||[]).filter(valid),newRows=(newRes.data||[]).filter(valid);
  document.getElementById("season-count-side").textContent=seasonRows.length.toLocaleString("ja-JP");
- const eng=new Map((engRes.data||[]).map(x=>[String(x.anime_id),x])); const rankedIds=(engRes.data||[]).filter(x=>x.average_rating!=null).sort((a,b)=>Number(b.average_rating)-Number(a.average_rating)).slice(0,10).map(x=>x.anime_id); let rankedRows=[]; if(rankedIds.length){const rk=await sb.from("animecia_public_anime").select(base).in("id",rankedIds); const by=new Map((rk.data||[]).map(a=>[String(a.id),a])); rankedRows=rankedIds.map(id=>by.get(String(id))).filter(Boolean);} renderHomeRanking(rankedRows,eng);
- const seasonal=seasonRows;
- document.getElementById("season-feature").innerHTML=seasonal.slice(0,3).map((a,i)=>'<a class="feature-anime" href="anime-detail.html?id='+a.id+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':"画像なし")+'</div><div class="feature-copy"><div class="feature-rank">#'+(i+1)+' 今期</div><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(scoreOf(a,eng.get(String(a.id)))??"—")+(scoreOf(a,eng.get(String(a.id)))!=null?'<span>評価</span>':"")+'</div></div></a>').join("")||'<div class="empty">今期作品がまだ登録されていません。</div>'; setCards("new-grid",newRows.length?newRows:await fetchCatalog(10));
+ const eng=new Map((engRes.data||[]).map(x=>[String(x.anime_id),x]));
+ const rankedIds=(engRes.data||[]).filter(x=>x.average_rating!=null).sort((a,b)=>Number(b.average_rating)-Number(a.average_rating)).slice(0,10).map(x=>x.anime_id);
+ let rankedRows=[]; if(rankedIds.length){const rk=await sb.from("animecia_public_anime").select(base).in("id",rankedIds); const by=new Map((rk.data||[]).map(a=>[String(a.id),a])); rankedRows=rankedIds.map(id=>by.get(String(id))).filter(Boolean);} renderHomeRanking(rankedRows,eng);
+
+ // トップページの「今期アニメ」は順位表示ではなく、今期作品の中から利用状況（評価・お気に入り・レビュー）の合計で注目作品を選ぶ。
+ let seasonal=seasonRows;
+ if(seasonal.length){
+   const seasonIds=seasonal.map(a=>a.id);
+   const {data:seasonEngData}=await sb.from("anime_engagement_summary")
+     .select("anime_id,rating_count,favorite_count,review_count")
+     .in("anime_id",seasonIds);
+   const seasonEng=new Map((seasonEngData||[]).map(x=>[String(x.anime_id),x]));
+   seasonal=seasonal.map(a=>{
+     const e=seasonEng.get(String(a.id))||{};
+     const popularity=Number(e.rating_count||0)+Number(e.favorite_count||0)+Number(e.review_count||0);
+     return {...a,_popularity:popularity};
+   }).sort((a,b)=>b._popularity-a._popularity);
+ }
+ document.getElementById("season-feature").innerHTML=seasonal.slice(0,3).map(a=>'<a class="feature-anime" href="anime-detail.html?id='+a.id+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':"画像なし")+'</div><div class="feature-copy"><div class="feature-rank">今期注目</div><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(scoreOf(a,eng.get(String(a.id)))??"—")+(scoreOf(a,eng.get(String(a.id)))!=null?'<span>評価</span>':"")+'</div></div></a>').join("")||'<div class="empty">今期作品がまだ登録されていません。</div>'; setCards("new-grid",newRows.length?newRows:await fetchCatalog(10));
  document.getElementById("genre-grid").innerHTML=genres.slice(0,50).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id||g.name)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンル情報を準備中です。</div>';
  const reviewIds=[...new Set((reviewRes.data||[]).map(r=>r.anime_id).filter(Boolean))].slice(0,12);
  let reviewAnime=[];
