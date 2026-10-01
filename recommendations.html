@@ -64,7 +64,7 @@ async function init(){
  (ag||[]).forEach(x=>{const id=Number(x.anime_id);if(!gids.has(id))gids.set(id,[]);gids.get(id).push(Number(x.genre_id))});
  const ids=(ar||[]).map(a=>a.id),em=new Map();
  for(let i=0;i<ids.length;i+=500){const {data:e}=await s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count,rating_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}
- rows=(ar||[]).filter(a=>a.anime_verification_status==="verified" && a.start_date && a.start_date >= "1963-01-01").map(a=>({...a,g:gids.get(Number(a.id))||[],gn:(gids.get(Number(a.id))||[]).map(x=>gm.get(x)).filter(Boolean),e:em.get(Number(a.id))||{}}));
+ rows=(ar||[]).filter(a=>a.anime_verification_status==="verified" && a.start_date && a.start_date >= "1963-01-01" && /^https:\/\/s[^/]+\.anilist\.co\//.test(a.cover_image || "")).map(a=>({...a,g:gids.get(Number(a.id))||[],gn:(gids.get(Number(a.id))||[]).map(x=>gm.get(x)).filter(Boolean),e:em.get(Number(a.id))||{}}));
  renderGenres();
  if(auth.data.user&&!auth.data.user.is_anonymous){const uid=auth.data.user.id;const [rt,st,fv]=await Promise.all([s.from("user_ratings").select("anime_id,rating").eq("user_id",uid),s.from("user_anime_status").select("anime_id,status").eq("user_id",uid),s.from("favorites").select("anime_id").eq("user_id",uid)]);(rt.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{rating:Number(x.rating)}));(st.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),status:x.status}));(fv.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),favorite:true}));}
  recommendationsReady=true;
