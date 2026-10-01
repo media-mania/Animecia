@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>メモ | Animecia</title>
+<meta name="description" content="Animeciaで気になるアニメをメモできます。">
+<link rel="canonical" href="https://media-mania.github.io/Animecia/memo.html">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="site-theme.css?v=20261001-v8">
+<style>
+.memo-page{max-width:1100px;margin:auto;padding:34px 18px 70px}.memo-hero{padding:30px;border-radius:18px;background:#101827;color:#fff;margin-bottom:20px}.memo-kicker{font-size:11px;font-weight:900;letter-spacing:.15em;color:#f59e0b}.memo-hero h1{margin:7px 0;font-size:34px}.memo-hero p{margin:0;color:#cbd5e1;line-height:1.7}.memo-panel{background:#fff;border:1px solid #e4e7eb;border-radius:16px;padding:20px;margin-bottom:20px}.memo-head{display:flex;justify-content:space-between;gap:15px;align-items:center}.memo-head h2{margin:0}.memo-clear{border:1px solid #ddd;background:#fff;border-radius:9px;padding:9px 13px;font-weight:800;cursor:pointer}.memo-count{color:#69717d;font-size:13px;margin-top:5px}.memo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-top:18px}.memo-card{border:1px solid #e4e7eb;border-radius:14px;overflow:hidden;background:#fff}.memo-card img{width:100%;aspect-ratio:3/4;object-fit:cover;background:#eef0f3}.memo-body{padding:12px}.memo-title{font-weight:900;line-height:1.5}.memo-meta{font-size:12px;color:#69717d;margin-top:5px}.memo-actions{display:flex;gap:7px;margin-top:10px}.memo-actions a,.memo-actions button{flex:1;text-align:center;padding:8px;border-radius:8px;border:1px solid #ddd;background:#fff;font-weight:800;text-decoration:none;cursor:pointer}.memo-actions a{background:#101827;color:#fff;border-color:#101827}.empty{padding:35px;text-align:center;color:#69717d}.search-row{display:flex;gap:9px}.search-row input{flex:1;height:46px;border:1px solid #dfe4eb;border-radius:10px;padding:0 13px;font-size:15px}.search-results{display:grid;gap:8px;margin-top:12px}.search-result{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #e4e7eb;border-radius:10px}.search-result img{width:40px;height:54px;object-fit:cover;border-radius:6px}.search-result div{flex:1;min-width:0}.search-result strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.search-result small{color:#69717d}.search-result button{border:0;border-radius:8px;background:#101827;color:#fff;padding:8px 11px;font-weight:800;cursor:pointer}.search-result button:disabled{background:#ddd;color:#777}@media(max-width:600px){.memo-page{padding:22px 14px 50px}.memo-hero{padding:23px}.memo-hero h1{font-size:28px}.memo-head{align-items:flex-start}.memo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.memo-body{padding:9px}.memo-actions{display:block}.memo-actions a,.memo-actions button{display:block;width:100%;margin-top:6px}.search-row{display:block}.search-row input{width:100%}.search-row button{width:100%;margin-top:8px}}
+</style>
+</head>
+<body>
+<header class="site-header"><div class="container nav">
+<a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
+<nav class="nav-links" aria-label="メインメニュー">
+<a href="index.html">ホーム</a><a href="anime.html">アニメを探す</a><a href="season.html">今期</a><a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="memo.html" aria-current="page">メモ</a><a href="community.html">コミュニティ</a>
+</nav>
+<form class="header-search" action="anime.html" method="get"><input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索"></form>
+<div class="nav-actions"><a class="nav-btn primary" href="login.html">ログイン</a></div>
+</div></header>
+<main class="memo-page">
+<section class="memo-hero"><span class="memo-kicker">MY ANIME MEMO</span><h1>メモ</h1><p>気になる作品を保存して、あとからすぐ確認できます。</p></section>
+<section class="memo-panel"><div class="memo-head"><div><h2>保存した作品</h2><div id="memo-count" class="memo-count"></div></div><button id="clear" class="memo-clear" type="button">すべて外す</button></div><div id="memo-grid" class="memo-grid"></div></section>
+<section class="memo-panel"><h2>作品をメモに追加</h2><div class="search-row"><input id="memo-search" type="search" placeholder="作品名を検索…" autocomplete="off"><button id="search-button" class="memo-clear" type="button">検索</button></div><div id="search-results" class="search-results"></div></section>
+</main>
+<footer class="site-footer"><div class="container footer-inner"><div><strong>Animecia</strong><p>アニメを探す、評価する、記録する。</p></div><nav class="footer-nav"><a href="index.html">ホーム</a><a href="anime.html">アニメ一覧</a><a href="terms.html">利用規約</a><a href="privacy.html">プライバシー</a></nav></div><p class="copyright">© 2026 Animecia</p></footer>
+<script>
+const supabaseClient=window.supabase.createClient("https://bhgdjuwlxvbaeraaivmh.supabase.co","sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c");
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
+const key="animecia_memo"; let ids=[]; let version=0;
+function getIds(){try{const x=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(x)?[...new Set(x.map(Number).filter(Number.isInteger))].slice(0,5):[]}catch{return[]}}
+function save(){localStorage.setItem(key,JSON.stringify(ids))}
+async function fetchSelected(){if(!ids.length)return[];const {data,error}=await supabaseClient.rpc("get_anime_comparison_catalog",{p_anime_ids:ids});if(error)throw error;const m=new Map((data||[]).map(a=>[Number(a.id),a]));return ids.map(id=>m.get(id)).filter(Boolean)}
+async function render(){const v=++version;ids=getIds();document.getElementById("memo-count").textContent=ids.length+" / 5作品";const grid=document.getElementById("memo-grid");if(!ids.length){grid.innerHTML='<div class="empty">まだメモに保存された作品はありません。<br>下の検索欄から作品を追加できます。</div>';return}try{const rows=await fetchSelected();if(v!==version)return;grid.innerHTML=rows.map(a=>'<article class="memo-card"><img src="'+esc(a.cover_image||a.banner_image||"")+'" alt="'+esc(titleOf(a))+'" onerror="this.style.visibility=\'hidden\'"><div class="memo-body"><div class="memo-title">'+esc(titleOf(a))+'</div><div class="memo-meta">'+esc(a.season_year||"")+" "+esc(({WINTER:"冬",SPRING:"春",SUMMER:"夏",FALL:"秋"})[a.season]||"")+'</div><div class="memo-actions"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'">詳細を見る</a><button type="button" data-remove="'+a.id+'">外す</button></div></div></article>').join("");grid.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeId(Number(b.dataset.remove)))}catch(e){console.error(e);grid.innerHTML='<div class="empty">メモを読み込めませんでした。</div>'}}
+function addId(id){id=Number(id);if(!Number.isInteger(id)||ids.includes(id)||ids.length>=5)return;ids.push(id);save();render();searchWorks("")}
+function removeId(id){ids=ids.filter(x=>x!==id);save();render();searchWorks(document.getElementById("memo-search").value)}
+async function searchWorks(q=""){const box=document.getElementById("search-results");const {data,error}=await supabaseClient.rpc("search_anime_catalog",{p_query:q.trim()||null,p_genre_id:null,p_studio_id:null,p_year:null,p_season:null,p_status:null,p_format:null,p_sort:"default",p_limit:q.trim()?20:8,p_offset:0});if(error){box.innerHTML='<div class="empty">作品を検索できませんでした。</div>';return}box.innerHTML=(data||[]).map(a=>{const selected=ids.includes(Number(a.id));return '<div class="search-result"><img src="'+esc(a.cover_image||"")+'" alt="" onerror="this.style.visibility=\'hidden\'"><div><strong>'+esc(titleOf(a))+'</strong><small>'+esc(a.start_date||"")+'</small></div><button type="button" data-add="'+a.id+'" '+(selected||ids.length>=5?"disabled":"")+'>'+(selected?"保存中":ids.length>=5?"上限":"メモに追加")+'</button></div>'}).join("")||'<div class="empty">作品が見つかりません。</div>';box.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>addId(b.dataset.add))}
+document.getElementById("clear").onclick=()=>{ids=[];save();render();searchWorks(document.getElementById("memo-search").value)};
+document.getElementById("search-button").onclick=()=>searchWorks(document.getElementById("memo-search").value);
+document.getElementById("memo-search").addEventListener("input",e=>{clearTimeout(window.memoTimer);window.memoTimer=setTimeout(()=>searchWorks(e.target.value),180)});
+ids=getIds();render();searchWorks("");
+</script>
+<script id="animecia-auth-nav">(function(){function sync(){try{var links=document.querySelectorAll('.nav-actions a[href="login.html"]');if(!links.length)return;var c=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient("https://bhgdjuwlxvbaeraaivmh.supabase.co","sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c"));c.auth.getUser().then(function(r){var u=r.data&&r.data.user;links.forEach(function(x){x.style.display=u&&!u.is_anonymous?"none":"";});}).catch(function(){});}catch(e){}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync);else sync();})();</script>
+</body></html>
