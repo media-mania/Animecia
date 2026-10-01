@@ -68,6 +68,74 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
 @media(max-width:470px){.home-v4 .feature-grid,.home-v4 .home-grid{grid-template-columns:1fr 1fr;gap:8px}}
 </style>
 <link rel="stylesheet" href="site-theme.css?v=20261001-v8">
+<style id="animecia-home-v8">
+/* Homepage: compact Japanese portal layout */
+.home-v4 .home-hero{grid-template-columns:minmax(0,1fr) 285px;padding:40px 38px;margin-top:18px;margin-bottom:30px}
+.home-v4 .home-hero h1{font-size:clamp(30px,4vw,48px);margin:7px 0 14px}
+.home-v4 .home-hero-copy>p{font-size:13px;max-width:610px;margin-bottom:18px}
+.home-v4 .hero-search{max-width:700px}
+.home-v4 .hero-shortcuts{gap:8px;margin-top:12px}
+.home-v4 .hero-shortcuts a{font-size:11px;padding:6px 9px;border:1px solid #334158;border-radius:999px}
+.home-v4 .hero-stat-card{padding:20px}
+.home-v4 .hero-stat-card>strong{font-size:32px}
+.home-v4 .home-section{padding-bottom:34px;margin:20px 0}
+.home-v4 .section-head{margin-bottom:9px}
+.home-v4 .section-title{font-size:19px}
+.home-v4 .home-section .section-desc{display:none}
+.home-v4 .season-feature{gap:10px;margin-bottom:9px}
+.home-v4 .feature-anime{min-height:132px;grid-template-columns:78px 1fr}
+.home-v4 .feature-anime .poster{height:132px}
+.home-v4 .feature-copy{padding:12px}
+.home-v4 .feature-copy h3{font-size:13px;margin:5px 0}
+.home-v4 .feature-score{font-size:18px}
+.home-v4 .season-ranking{grid-template-columns:1fr 1fr}
+.home-v4 .season-row{grid-template-columns:30px 45px minmax(0,1fr) auto;padding:8px 10px}
+.home-v4 .season-row img,.home-v4 .season-row .row-thumb{width:45px;height:60px}
+.home-v4 .season-row .row-title{font-size:12px}
+.home-v4 .season-row .row-score{font-size:15px}
+.home-v4 .rank-layout{grid-template-columns:minmax(0,1fr) 260px;gap:10px}
+.home-v4 .rank-list{padding:4px}
+.home-v4 .rank-item{grid-template-columns:30px 48px minmax(0,1fr) auto;padding:8px}
+.home-v4 .rank-thumb{width:48px;height:60px}
+.home-v4 .rank-title{font-size:12px}
+.home-v4 .home-side-panel{padding:20px}
+.home-v4 .home-side-panel h3{font-size:20px}
+.home-v4 .home-side-panel p{display:none}
+.home-v4 .cards{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+.home-v4 .card-body{padding:8px}
+.home-v4 .card-title{font-size:11px}
+.home-v4 .meta{font-size:9px}
+.home-v4 .genre-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.home-v4 .genre{padding:9px 6px;font-size:10px}
+.home-v4 .home-cta{padding:23px 28px;margin-bottom:30px}
+.home-v4 .home-cta h2{font-size:21px;margin:3px 0}
+.home-v4 .home-cta p{display:none}
+.home-v4 .cta-actions{min-width:170px}
+.home-v4 .cta-actions a{padding:8px 11px;font-size:11px}
+@media(max-width:1050px){
+ .home-v4 .cards{grid-template-columns:repeat(5,minmax(0,1fr))}
+ .home-v4 .genre-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+}
+@media(max-width:820px){
+ .home-v4 .home-hero{grid-template-columns:1fr;padding:30px 24px}
+ .home-v4 .hero-stat-card{display:none}
+ .home-v4 .rank-layout{grid-template-columns:1fr}
+ .home-v4 .home-side-panel{display:none}
+ .home-v4 .cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .home-v4 .genre-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media(max-width:600px){
+ .home-v4 .season-ranking{grid-template-columns:1fr}
+ .home-v4 .cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .home-v4 .genre-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .home-v4 .home-hero{margin-left:-11px;margin-right:-11px;border-radius:0 0 12px 12px}
+}
+@media(max-width:430px){
+ .home-v4 .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .home-v4 .genre-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .home-v4 .home-hero h1{font-size:30px}
+}
+</style>
 </head>
 <body>
 <header class="site-header">
@@ -94,12 +162,12 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
 </header>
 
 <main class="container home-v4">
-<section class="home-hero"><div class="home-hero-copy"><div class="eyebrow">JAPAN ANIME DATABASE</div><h1>観たいアニメを、<br><span>見つける。</span>記録する。</h1><p>今期アニメ、ランキング、ジャンル、過去作品まで。Animeciaは作品データとユーザーの評価・レビューをまとめて探せる、日本向けアニメデータベースです。</p><form class="hero-search" id="search-form"><input id="search-input" type="search" placeholder="作品名・キャラクター・キーワードで検索" autocomplete="off" aria-label="アニメを検索"><button type="submit">検索</button></form><div class="hero-shortcuts"><a href="season.html">今期アニメ</a><a href="ranking.html">ランキング</a><a href="discover.html">ジャンルから探す</a><a href="recommendations.html">おすすめ</a></div></div><div class="hero-stat-card"><span class="hero-stat-label">ANIME DATABASE</span><strong id="database-count">—</strong><span>登録・公開作品</span><div class="hero-stat-grid"><div><b id="genre-count">—</b><small>ジャンル</small></div><div><b id="season-count-side">—</b><small>今期作品</small></div></div><a href="anime.html" class="hero-database-link">作品データベースを見る →</a></div></section>
-<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">SEASONAL ANIME</div><h2 class="section-title">今期アニメランキング</h2><p class="section-desc">今期の作品をAnimeciaの評価順でチェック</p></div><a class="more" href="season.html">今期をすべて見る →</a></div><div class="season-feature" id="season-feature"><div class="loading">読み込み中…</div></div><div class="season-ranking" id="season-ranking"><div class="loading">読み込み中…</div></div></section>
-<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">TOP ANIME</div><h2 class="section-title">人気・高評価の作品</h2><p class="section-desc">Animeciaに登録された評価データから表示</p></div><a class="more" href="ranking.html">ランキングを見る →</a></div><div class="rank-layout"><div class="panel rank-list" id="rank-list"><div class="loading">読み込み中…</div></div><div class="home-side-panel"><div class="eyebrow">DISCOVER</div><h3>次に観る作品を探す</h3><p>好きなジャンルや年代、形式などの条件を組み合わせて、まだ知らないアニメを見つけられます。</p><a class="side-action" href="recommendations.html">おすすめを探す →</a><a class="side-action" href="discover.html">ジャンルから探す →</a><a class="side-action" href="compare.html">作品を比較する →</a></div></div></section>
-<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">NEW RELEASES</div><h2 class="section-title">新しく登録された作品</h2><p class="section-desc">Animeciaに追加された新着作品</p></div><a class="more" href="anime.html?sort=new">新着をもっと見る →</a></div><div class="cards" id="new-grid"><div class="loading">読み込み中…</div></div></section>
-<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">GENRE</div><h2 class="section-title">ジャンルから探す</h2><p class="section-desc">気分や好みに合わせて作品を絞り込む</p></div><a class="more" href="discover.html">ジャンル一覧 →</a></div><div class="genre-grid" id="genre-grid"><div class="loading">読み込み中…</div></div></section>
-<section class="home-cta"><div><div class="eyebrow">ANIMECIA MY LIST</div><h2>観た作品を、あなたのアニメ史に。</h2><p>お気に入り、視聴状況、評価、レビューを自分のアカウントに保存できます。</p></div><div class="cta-actions"><a href="mypage.html">マイページを見る →</a><a href="community.html">コミュニティを見る →</a></div></section>
+<section class="home-hero"><div class="home-hero-copy"><div class="eyebrow">JAPAN ANIME DATABASE</div><h1>観たいアニメを、<br><span>見つける。</span>記録する。</h1><p>今期アニメ、ランキング、ジャンル、過去作品をまとめて探せる日本向けアニメデータベース。</p><form class="hero-search" id="search-form"><input id="search-input" type="search" placeholder="作品名・キャラクター・キーワードで検索" autocomplete="off" aria-label="アニメを検索"><button type="submit">検索</button></form><div class="hero-shortcuts"><a href="season.html">今期アニメ</a><a href="ranking.html">ランキング</a><a href="discover.html">ジャンルから探す</a><a href="recommendations.html">おすすめ</a></div></div><div class="hero-stat-card"><span class="hero-stat-label">ANIME DATABASE</span><strong id="database-count">—</strong><span>登録・公開作品</span><div class="hero-stat-grid"><div><b id="genre-count">—</b><small>ジャンル</small></div><div><b id="season-count-side">—</b><small>今期作品</small></div></div><a href="anime.html" class="hero-database-link">作品データベースを見る →</a></div></section>
+<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">SEASONAL ANIME</div><h2 class="section-title">今期アニメランキング</h2><p class="section-desc">今期の注目作品をチェック</p></div><a class="more" href="season.html">今期をすべて見る →</a></div><div class="season-feature" id="season-feature"><div class="loading">読み込み中…</div></div><div class="season-ranking" id="season-ranking"><div class="loading">読み込み中…</div></div></section>
+<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">TOP ANIME</div><h2 class="section-title">人気・高評価の作品</h2><p class="section-desc">評価データをもとに表示</p></div><a class="more" href="ranking.html">ランキングを見る →</a></div><div class="rank-layout"><div class="panel rank-list" id="rank-list"><div class="loading">読み込み中…</div></div><div class="home-side-panel"><div class="eyebrow">DISCOVER</div><h3>次に観る作品を探す</h3><p>好きなジャンルや年代、形式などの条件を組み合わせて、まだ知らないアニメを見つけられます。</p><a class="side-action" href="recommendations.html">おすすめを探す →</a><a class="side-action" href="discover.html">ジャンルから探す →</a><a class="side-action" href="compare.html">作品を比較する →</a></div></div></section>
+<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">NEW RELEASES</div><h2 class="section-title">新しく登録された作品</h2><p class="section-desc">最近追加された作品</p></div><a class="more" href="anime.html?sort=new">新着をもっと見る →</a></div><div class="cards" id="new-grid"><div class="loading">読み込み中…</div></div></section>
+<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">GENRE</div><h2 class="section-title">ジャンルから探す</h2><p class="section-desc"></p></div><a class="more" href="discover.html">ジャンル一覧 →</a></div><div class="genre-grid" id="genre-grid"><div class="loading">読み込み中…</div></div></section>
+<section class="home-cta"><div><div class="eyebrow">ANIMECIA MY LIST</div><h2>観た作品を、あなたのアニメ史に。</h2><p></p></div><div class="cta-actions"><a href="mypage.html">マイページを見る →</a><a href="community.html">コミュニティを見る →</a></div></section>
 </main>
 <footer>
 <div class="container footer-inner">
