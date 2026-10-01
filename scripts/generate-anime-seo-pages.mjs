@@ -35,6 +35,12 @@ async function fetchAnimePage(offset) {
     "select",
     "id,title,title_japanese,title_english,title_native,english_title,description,synopsis,cover_image,banner_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,average_score,popularity,favourites_count,updated_at,anime_genres(genres(id,name))"
   );
+  // 公開SEOページは、Animeciaの検証済み・アニメ作品だけを対象にする。
+  // 未確定の作品や1963年以前のデータを静的ページ化しない。
+  url.searchParams.set("anime_verification_status", "eq.verified");
+  url.searchParams.set("format", "in.(TV,TV_SHORT,MOVIE,OVA,OAV,ONA,SPECIAL)");
+  url.searchParams.set("or", "(start_date.is.null,start_date.gte.1963-01-01)");
+
   url.searchParams.set("order", "id.asc");
   url.searchParams.set("limit", String(pageSize));
   url.searchParams.set("offset", String(offset));
@@ -98,7 +104,7 @@ function page(anime) {
 
   const schema = {
     "@context": "https://schema.org",
-    "@type": anime.format === "Movie" ? "Movie" : "TVSeries",
+    "@type": anime.format === "MOVIE" ? "Movie" : "TVSeries",
     name: title,
     url: canonical,
     description: desc,
