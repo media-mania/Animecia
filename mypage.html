@@ -276,21 +276,55 @@ async function uploadBackground(){
  msg.textContent="背景画像を更新しました。";button.disabled=false;
 }
 async function saveProfile(){
- const msg=document.getElementById("profile-msg"),username=document.getElementById("username").value.trim().replace(/^@+/,"");
+ const msg=document.getElementById("profile-msg");
+ const username=document.getElementById("username").value.trim().replace(/^@+/,"");
  if(username&&!/^[A-Za-z0-9_\-ぁ-んァ-ン一-龯]{2,30}$/.test(username)){msg.textContent="ユーザー名は2〜30文字で入力してください。";return;}
- const payload={id:currentUser.id,background_url:document.getElementById("profile-background-url").value.trim()||null,avatar_position_x:Number(document.getElementById("avatar-x")?.value||50),avatar_position_y:Number(document.getElementById("avatar-y")?.value||50),avatar_zoom:Number(document.getElementById("avatar-zoom")?.value||100),background_position_x:Number(document.getElementById("background-x")?.value||50),background_position_y:Number(document.getElementById("background-y")?.value||50),background_zoom:Number(document.getElementById("background-zoom")?.value||100),username:username?"@"+username:null,display_name:document.getElementById("display_name").value.trim()||null,avatar_url:document.getElementById("avatar_url").value.trim()||null,bio:document.getElementById("bio").value.trim()||null,show_favorites:document.getElementById("show-favorites")?.checked!==false,show_anime_follows:document.getElementById("show-anime_follows")?.checked!==false,show_watch_status:document.getElementById("show-watch_status")?.checked!==false,show_ratings:document.getElementById("show-ratings")?.checked!==false,show_reviews:document.getElementById("show-reviews")?.checked!==false,show_user_follows:document.getElementById("show-user_follows")?.checked!==false,show_ranking:document.getElementById("show-ranking")?.checked!==false,show_posts:document.getElementById("show-posts")?.checked!==false,updated_at:new Date().toISOString()};
- const {data:savedProfile,error}=await supabaseClient.from("profiles").update(payload).eq("id",currentUser.id).select("avatar_url,background_url,avatar_position_x,avatar_position_y,avatar_zoom,background_position_x,background_position_y,background_zoom").single();
- if(error){console.error(error);msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";return;}
+ const payload={
+  id:currentUser.id,
+  username:username?"@"+username:null,
+  display_name:document.getElementById("display_name").value.trim()||null,
+  avatar_url:document.getElementById("avatar_url").value.trim()||null,
+  background_url:document.getElementById("profile-background-url").value.trim()||null,
+  bio:document.getElementById("bio").value.trim()||null,
+  avatar_position_x:clampCrop(document.getElementById("avatar-x")?.value,0,100,50),
+  avatar_position_y:clampCrop(document.getElementById("avatar-y")?.value,0,100,50),
+  avatar_zoom:clampCrop(document.getElementById("avatar-zoom")?.value,100,220,100),
+  background_position_x:clampCrop(document.getElementById("background-x")?.value,0,100,50),
+  background_position_y:clampCrop(document.getElementById("background-y")?.value,0,100,50),
+  background_zoom:clampCrop(document.getElementById("background-zoom")?.value,100,180,100),
+  show_favorites:document.getElementById("show-favorites")?.checked!==false,
+  show_anime_follows:document.getElementById("show-anime_follows")?.checked!==false,
+  show_watch_status:document.getElementById("show-watch_status")?.checked!==false,
+  show_ratings:document.getElementById("show-ratings")?.checked!==false,
+  show_reviews:document.getElementById("show-reviews")?.checked!==false,
+  show_user_follows:document.getElementById("show-user_follows")?.checked!==false,
+  show_ranking:document.getElementById("show-ranking")?.checked!==false,
+  show_posts:document.getElementById("show-posts")?.checked!==false,
+  updated_at:new Date().toISOString()
+ };
+ const {data:savedProfile,error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"}).select("username,display_name,avatar_url,background_url,avatar_position_x,avatar_position_y,avatar_zoom,background_position_x,background_position_y,background_zoom,bio,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking,show_posts").single();
+ if(error){console.error("profile save error",error);msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";return;}
  const saved=savedProfile||payload;
+ document.getElementById("username").value=String(saved.username||"").replace(/^@/,"");
+ document.getElementById("display_name").value=saved.display_name||"";
  document.getElementById("avatar_url").value=saved.avatar_url||"";
  document.getElementById("profile-background-url").value=saved.background_url||"";
+ document.getElementById("bio").value=saved.bio||"";
+ const visibility={favorites:saved.show_favorites!==false,anime_follows:saved.show_anime_follows!==false,watch_status:saved.show_watch_status!==false,ratings:saved.show_ratings!==false,reviews:saved.show_reviews!==false,user_follows:saved.show_user_follows!==false,ranking:saved.show_ranking!==false,posts:saved.show_posts!==false};
+ Object.entries(visibility).forEach(([key,value])=>{const el=document.getElementById("show-"+key);if(el)el.checked=value;});
  applyCropState("avatar",saved.avatar_position_x,saved.avatar_position_y,saved.avatar_zoom,saved.avatar_url);
  applyCropState("background",saved.background_position_x,saved.background_position_y,saved.background_zoom,saved.background_url);
- setAvatar("avatar-preview","avatar-preview-fallback",saved.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",saved.avatar_url,payload.display_name||payload.username||"Animeciaユーザー");document.getElementById("profile-display-name").textContent=payload.display_name||payload.username||"Animeciaユーザー";document.getElementById("profile-handle").textContent=payload.username?"@"+payload.username.replace(/^@/,""):"@ユーザー名未設定";document.getElementById("profile-bio").textContent=payload.bio||"";
- const cover=document.getElementById("profile-cover");if(cover){cover.style.backgroundImage=payload.background_url?"url(\""+payload.background_url.replace(/\"/g,"%22")+"\")":"";applyCoverStyle(cover,payload.background_position_x,payload.background_position_y,payload.background_zoom);} const ai=document.getElementById("profile-avatar-large");if(ai)applyAvatarStyle(ai,saved.avatar_position_x,saved.avatar_position_y,saved.avatar_zoom);
+ const displayName=saved.display_name||String(saved.username||"").replace(/^@/,"")||"Animeciaユーザー";
+ setAvatar("avatar-preview","avatar-preview-fallback",saved.avatar_url,displayName);
+ setAvatar("profile-avatar-large","profile-avatar-fallback",saved.avatar_url,displayName);
+ document.getElementById("profile-display-name").textContent=displayName;
+ document.getElementById("profile-handle").textContent=saved.username?"@"+String(saved.username).replace(/^@/,""):"@ユーザー名未設定";
+ document.getElementById("profile-bio").textContent=saved.bio||"";
+ const cover=document.getElementById("profile-cover");
+ if(cover){cover.style.backgroundImage=saved.background_url?"url(\""+saved.background_url.replace(/\"/g,"%22")+"\")":"";applyCoverStyle(cover,saved.background_position_x,saved.background_position_y,saved.background_zoom);}
+ const ai=document.getElementById("profile-avatar-large");if(ai)applyAvatarStyle(ai,saved.avatar_position_x,saved.avatar_position_y,saved.avatar_zoom);
  msg.textContent="プロフィールを保存しました。";
 }
-
 async function saveVisibility(){
  const msg=document.getElementById("profile-msg");
  const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_ranking:document.getElementById("show-ranking").checked,show_posts:document.getElementById("show-posts").checked,updated_at:new Date().toISOString()};
