@@ -321,14 +321,14 @@ async function load(){
  const now=new Date(),year=now.getFullYear(),month=now.getMonth()+1,season=month<=3?"WINTER":month<=6?"SPRING":month<=9?"SUMMER":"FALL";
  const base="id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,season,season_year,average_score,anime_verification_status,created_at";
  const [countRes,seasonRes,newRes,genreRes,engRes,reviewRes]=await Promise.all([
-   sb.from("anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified"),
+   sb.rpc("search_anime_catalog",{p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"default",p_limit:1,p_offset:0}),
    sb.from("anime").select(base).eq("anime_verification_status","verified").eq("season_year",year).eq("season",season).order("average_score",{ascending:false,nullsFirst:false}).limit(12),
    sb.from("anime").select(base).eq("anime_verification_status","verified").order("created_at",{ascending:false}).limit(10),
    sb.rpc("get_catalog_genres"),
    sb.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").order("average_rating",{ascending:false,nullsFirst:false}).limit(100),
    sb.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at").order("created_at",{ascending:false}).limit(6)
  ]);
- const catalog=(countRes.count||0);
+ const catalog=Number(countRes.data?.[0]?.total_count||0);
  document.getElementById("database-count").textContent=catalog.toLocaleString("ja-JP")+"作品";
  const genres=genreRes.data||[];
  document.getElementById("genre-count").textContent=genres.length.toLocaleString("ja-JP");
