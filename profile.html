@@ -28,6 +28,7 @@ const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const profileId=new URLSearchParams(location.search).get("id");
+const mediaUrl=(url,stamp)=>{if(!url)return "";try{const u=new URL(url,location.href);if(stamp)u.searchParams.set("v",String(new Date(stamp).getTime()));return u.href}catch(_){return url}};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
 const imageMarkup=(url,alt)=>url?'<img class="thumb" src="'+esc(url)+'" alt="'+esc(alt)+'" loading="lazy">':'<div class="thumb" style="display:grid;place-items:center;color:#888">画像なし</div>';
@@ -36,7 +37,7 @@ let profile=null,visibility={},currentUser=null,tabs=[];
 function renderHeader(followStats,reviewCount,isSelf){
  const name=profile.display_name||profile.username||"Animeciaユーザー";
  const ax=Math.min(100,Math.max(0,Number(profile.avatar_position_x??50))),ay=Math.min(100,Math.max(0,Number(profile.avatar_position_y??50))),az=Math.min(220,Math.max(100,Number(profile.avatar_zoom??100)));
- const avatar=profile.avatar_url?'<img class="profile-avatar" style="object-position:'+ax+'% '+ay+'%;transform:scale('+(az/100)+')" src="'+esc(profile.avatar_url)+'" alt="'+esc(name)+'">':'<div class="profile-avatar profile-avatar-fallback">'+esc(name.slice(0,1))+'</div>';
+ const avatar=profile.avatar_url?'<img class="profile-avatar" style="object-position:'+ax+'% '+ay+'%;transform:scale('+(az/100)+')" src="'+esc(mediaUrl(profile.avatar_url,profile.updated_at))+'" alt="'+esc(name)+'">':'<div class="profile-avatar profile-avatar-fallback">'+esc(name.slice(0,1))+'</div>';
  const actions=isSelf?'<a class="btn" href="mypage.html">プロフィールを編集</a>':'<button id="follow-button" class="btn" type="button">'+(followStats.is_following?"フォロー中":"フォロー")+'</button><a class="btn secondary" href="messages.html?user='+encodeURIComponent(profileId)+'">メッセージ</a>';
  const reviewStat=visibility.reviews!==false?'<span class="profile-stat"><strong>'+esc(reviewCount||0)+'</strong>レビュー</span>':"";
  const follows=visibility.user_follows!==false?'<div class="profile-stats">'+reviewStat+'<button id="followers-link" class="profile-stat"><strong>'+esc(followStats.followers_count||0)+'</strong>フォロワー</button><button id="following-link" class="profile-stat"><strong>'+esc(followStats.following_count||0)+'</strong>フォロー中</button></div>':(reviewStat?'<div class="profile-stats">'+reviewStat+'</div>':"");
@@ -96,7 +97,7 @@ async function loadTab(tab){
 async function start(){
  const app=document.getElementById("app");
  if(!profileId){app.innerHTML='<div class="error">プロフィールIDが指定されていません。</div>';return;}
- const {data,error}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,background_url,avatar_position_x,avatar_position_y,avatar_zoom,background_position_x,background_position_y,background_zoom,bio,show_posts,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking").eq("id",profileId).maybeSingle();
+ const {data,error}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,background_url,avatar_position_x,avatar_position_y,avatar_zoom,background_position_x,background_position_y,background_zoom,bio,show_posts,show_favorites,show_anime_follows,show_watch_status,show_ratings,show_reviews,show_user_follows,show_ranking,updated_at").eq("id",profileId).maybeSingle();
  if(error||!data){app.innerHTML='<div class="error">プロフィールを取得できませんでした。</div>';return;}
  profile=data;visibility={favorites:data.show_favorites!==false,anime_follows:data.show_anime_follows!==false,watch_status:data.show_watch_status!==false,ratings:data.show_ratings!==false,reviews:data.show_reviews!==false,user_follows:data.show_user_follows!==false,ranking:data.show_ranking!==false,posts:data.show_posts!==false};
  const name=profile.display_name||profile.username||"Animeciaユーザー";document.title=name+" | Animecia";document.getElementById("meta-description").content=name+"のAnimeciaプロフィール。";await renderContent();
