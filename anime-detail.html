@@ -3470,9 +3470,11 @@
                         favourites_count,
                         site_url,
                         updated_at,
-                        created_at
+                        created_at,
+                        is_adult,
+                        is_kids,
+                        is_sensitive_visual
                     `)
-
                     .eq(
                         "id",
                         Number(
@@ -3480,6 +3482,9 @@
                         )
                     )
                     .eq("anime_verification_status", "verified")
+                    .eq("is_adult", false)
+                    .eq("is_kids", false)
+                    .eq("is_sensitive_visual", false)
 
                     .maybeSingle();
 
