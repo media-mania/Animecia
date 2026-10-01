@@ -105,17 +105,20 @@ function render(rows){
  }).join("");
 }
 async function load(){
- const e=await sb.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count");
+ // 0件の作品に埋もれないよう、実際に評価・お気に入り・レビューがある作品だけを取得
+ const e=await sb.from("anime_engagement_summary")
+   .select("anime_id,average_rating,rating_count,favorite_count,review_count,engagement_count")
+   .gt("engagement_count",0)
+   .order("engagement_count",{ascending:false})
+   .limit(1000);
  if(e.error) throw e.error;
  engagement=new Map((e.data||[]).map(x=>[String(x.anime_id),x]));
  const ids=(e.data||[]).map(x=>x.anime_id).filter(Boolean);
  let rows=[];
  if(ids.length){
-   const a=await sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").in("id",ids);
-   if(a.error) throw a.error;
-   rows=a.data||[];
- }else{
-   const a=await sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").order("created_at",{ascending:false}).limit(100);
+   const a=await sb.from("animecia_public_anime").select(base)
+     .eq("anime_verification_status","verified")
+     .in("id",ids);
    if(a.error) throw a.error;
    rows=a.data||[];
  }
