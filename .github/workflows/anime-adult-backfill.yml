@@ -1,6 +1,9 @@
 name: Animecia Adult Content Backfill
 
 on:
+  push:
+    paths:
+      - ".github/workflows/anime-adult-backfill.yml"
   schedule:
     - cron: '35 3 * * 1'
   workflow_dispatch:
