@@ -3591,7 +3591,7 @@
                 const savedProgress=Number(watchMap.get(String(animeId))?.progress||0);
                 let progress=Number.isFinite(savedProgress) ? Math.max(0,Math.floor(savedProgress)) : 0;
                 if(total>0) progress=Math.min(progress,total);
-                const {error}=await supabaseClient.from("user_anime_status").upsert({user_id:user.id,anime_id:Number(animeId),status:sel.value,progress},{onConflict:"user_id,anime_id"});
+                const {error}=await supabaseClient.from("user_anime_status").upsert({user_id:user.id,anime_id:Number(animeId),status:sel.value,progress,updated_at:new Date().toISOString()},{onConflict:"user_id,anime_id"});
                 if(error){console.error("視聴状況保存エラー:",error);alert("視聴状況の保存に失敗しました。");}
             };
             sel.onchange=save;
