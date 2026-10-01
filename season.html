@@ -144,11 +144,20 @@ const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?
 const seasonName={WINTER:"冬",SPRING:"春",SUMMER:"夏",FALL:"秋"};
 const params=new URLSearchParams(location.search);
 const now=new Date();
-let year=Number(params.get("year"))||now.getFullYear();
-let season=params.get("season")||(["WINTER","SPRING","SUMMER","FALL"][Math.floor(now.getMonth()/3)]);
+const seasonByMonth=["WINTER","WINTER","SPRING","SPRING","SPRING","SUMMER","SUMMER","SUMMER","FALL","FALL","FALL","WINTER"];
+function getCurrentSeasonDate(date=new Date()){
+  const m=date.getMonth(), currentSeason=seasonByMonth[m];
+  const currentYear=date.getFullYear();
+  return {year:currentSeason==="WINTER"&&m===11?currentYear:currentYear,season:currentSeason};
+}
+const currentSeasonState=getCurrentSeasonDate(now);
+const hasExplicitSeason=params.has("year")||params.has("season");
+let year=Number(params.get("year"))||currentSeasonState.year;
+let season=params.get("season")||currentSeasonState.season;
 let sort=params.get("sort")||"default";
 let search="";
 let allRows=[];
+let lastCurrentSeasonKey=currentSeasonState.year+"-"+currentSeasonState.season;
 
 async function auth(){
   try{
@@ -167,9 +176,29 @@ function setupYears(){
  select.value=String(year);
 }
 
+function isCurrentSeason(){
+ const s=getCurrentSeasonDate(new Date());
+ return Number(year)===s.year&&season===s.season;
+}
+function refreshCurrentSeasonIfChanged(){
+ const s=getCurrentSeasonDate(new Date());
+ const key=s.year+"-"+s.season;
+ if(key===lastCurrentSeasonKey)return;
+ lastCurrentSeasonKey=key;
+ if(!hasExplicitSeason){
+   year=s.year; season=s.season; search="";
+   const input=document.getElementById("search"); if(input)input.value="";
+   load();
+ }else{
+   loadYears();
+ }
+}
 function syncUI(){
  document.querySelectorAll(".season-button").forEach(b=>b.classList.toggle("active",b.dataset.season===season));
  document.getElementById("page-title").textContent=year+"年"+(seasonName[season]||"")+"アニメ";
+ const hero=document.querySelector(".hero p");
+ if(hero)hero.textContent=isCurrentSeason()?"現在放送中・放送予定の作品をまとめてチェック。今期の作品は自動的に切り替わります。":"過去の放送クールを閲覧中。年と季節を切り替えて作品を振り返れます。";
+ document.querySelector(".season-v7-head .page-kicker")?.replaceChildren(document.createTextNode(isCurrentSeason()?"CURRENT SEASON":"SEASON ARCHIVE"));
  const p=new URLSearchParams({year:String(year),season});
  if(sort!=="default")p.set("sort",sort);
  if(search)p.set("search",search);
@@ -314,7 +343,7 @@ document.getElementById("year").onchange=async e=>{
 };
 document.getElementById("sort").onchange=e=>{sort=e.target.value;syncUI();render()};
 document.getElementById("search").oninput=e=>{search=e.target.value;syncUI();render()};
-(async()=>{await auth();await loadYears();await load()})();
+(async()=>{await auth();await loadYears();await load();setInterval(refreshCurrentSeasonIfChanged,60000)})();
 </script>
 <footer class="site-footer"><div class="container footer-inner">
 <div><strong>Animecia</strong><p>アニメを探す、評価する、記録する。</p></div>
