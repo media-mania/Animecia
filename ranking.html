@@ -135,6 +135,10 @@ main{padding:34px 0 60px}
  .ranking-v6 #ranking-list .title{font-size:12px!important}
  .ranking-v6 #ranking-list .meta span:not(.pill){display:none}
 }
+</style><style id="animecia-ranking-v7">
+.ranking-v7-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px}.ranking-v7-summary .stat{background:#fff;border:1px solid #e4e7eb;border-radius:10px;padding:12px 14px}.ranking-v7-summary .label{display:block;color:#7a828d;font-size:10px;font-weight:800;letter-spacing:.05em}.ranking-v7-summary strong{display:block;margin-top:3px;font-size:18px;color:#101827}.ranking-v7-summary small{display:block;color:#8a929c;font-size:9px;margin-top:2px}
+.ranking-v7-top{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:9px;margin-bottom:14px}.ranking-v7-top .podium{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr);gap:12px;align-items:center;min-height:104px;padding:12px;background:#fff;border:1px solid #e1e5ea;border-radius:10px}.ranking-v7-top .podium:first-child{background:linear-gradient(135deg,#fff8ee,#fff)}.ranking-v7-top .podium img{width:70px;height:82px;object-fit:cover;border-radius:7px;background:#eef1f4}.ranking-v7-top .medal{position:absolute;left:10px;top:9px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#101827;color:#fff;font-size:10px;font-weight:900}.ranking-v7-top .podium:first-child .medal{background:#e87900}.ranking-v7-top .p-title{font-weight:900;font-size:13px;line-height:1.45}.ranking-v7-top .p-meta{color:#7a828d;font-size:10px;margin-top:5px}.ranking-v7-top .p-score{color:#a84f00;font-size:17px;font-weight:950;margin-top:5px}.ranking-v7-label{font-size:10px;font-weight:900;color:#69717d;letter-spacing:.08em;margin:0 0 7px}
+@media(max-width:800px){.ranking-v7-summary{grid-template-columns:repeat(2,1fr)}.ranking-v7-top{grid-template-columns:1fr}.ranking-v7-top .podium{min-height:92px}}
 </style></head>
 <body>
 <header class="site-header">
@@ -168,6 +172,14 @@ main{padding:34px 0 60px}
 <p>評価・お気に入り・レビュー・新着作品を切り替えて、今のAnimeciaで注目されている作品を探せます。</p>
 </section>
 
+<div id="ranking-v7-summary" class="ranking-v7-summary" aria-label="ランキング概要">
+<div class="stat"><span class="label">公開作品</span><strong id="stat-works">—</strong><small>現在の対象作品数</small></div>
+<div class="stat"><span class="label">評価済み</span><strong id="stat-rated">—</strong><small>平均評価がある作品</small></div>
+<div class="stat"><span class="label">平均スコア</span><strong id="stat-average">—</strong><small>評価済み作品の平均</small></div>
+<div class="stat"><span class="label">レビュー</span><strong id="stat-reviews">—</strong><small>集計対象レビュー数</small></div>
+</div>
+<div id="ranking-v7-top-label" class="ranking-v7-label">TOP 3</div>
+<div id="ranking-v7-top" class="ranking-v7-top" aria-label="トップ3作品"></div>
 <section class="panel section-card">
 <div class="panel-heading"><div><span class="page-kicker dark">RANKING</span><h2>ランキングを切り替える</h2><p>評価・お気に入り・レビュー・新着の4つの指標から作品を確認できます。</p></div></div>
 <div class="tabs">
@@ -295,7 +307,30 @@ function applyFilters(){
   renderRanking(rows.slice(0,50));
 }
 
+function renderTopThree(rows){
+  const el=document.getElementById("ranking-v7-top");
+  const label=document.getElementById("ranking-v7-top-label");
+  if(!el)return;
+  if(rankMode==="newest"){el.style.display="none";if(label)label.style.display="none";return;}
+  el.style.display="grid";if(label)label.style.display="";
+  const top=rows.slice(0,3);
+  const metric=rankMode==="favorites"?"お気に入り":rankMode==="reviews"?"レビュー":"平均評価";
+  el.innerHTML=top.map((x,i)=>{
+    const score=rankMode==="favorites"?Number(x.favorite_count||0):rankMode==="reviews"?Number(x.review_count||0):(x.average_rating!=null?Number(x.average_rating).toFixed(2):"—");
+    return '<a class="podium" href="anime-detail.html?id='+encodeURIComponent(x.anime.id)+'"><span class="medal">'+(i+1)+'</span><img src="'+esc(imgOf(x.anime))+'" alt="" loading="lazy"><div><div class="p-title">'+esc(titleOf(x.anime))+'</div><div class="p-meta">'+esc(x.anime.format||"")+'</div><div class="p-score">'+esc(score)+' <small>'+metric+'</small></div></div></a>';
+  }).join("");
+}
+function updateSummary(){
+  const rows=allRows.filter(x=>x.anime);
+  const rated=rows.filter(x=>x.average_rating!=null);
+  const avg=rated.length?rated.reduce((s,x)=>s+Number(x.average_rating),0)/rated.length:null;
+  document.getElementById("stat-works").textContent=rows.length.toLocaleString("ja-JP");
+  document.getElementById("stat-rated").textContent=rated.length.toLocaleString("ja-JP");
+  document.getElementById("stat-average").textContent=avg==null?"—":avg.toFixed(2);
+  document.getElementById("stat-reviews").textContent=rows.reduce((s,x)=>s+Number(x.review_count||0),0).toLocaleString("ja-JP");
+}
 function renderRanking(rows){
+  renderTopThree(rows);
   const el=document.getElementById("ranking-list");
   const count=document.getElementById("ranking-count");
   count.textContent=rows.length+"件を表示";
@@ -373,6 +408,7 @@ async function loadRankingData(){
   allRows=(summary||[]).map(s=>({...s,anime:map.get(s.anime_id)})).filter(x=>x.anime);
 
   populateYears();
+  updateSummary();
   applyFilters();
 }
 
