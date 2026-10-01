@@ -3589,7 +3589,7 @@
                     <button
                         type="button"
                         class="anime-memo-button"
-                        data-compare-id="${anime.id}"
+                        data-memo-id="${anime.id}"
                     >
                         メモに追加
                     </button>
@@ -4239,9 +4239,9 @@
         if (!toolbar) return;
         toolbar.style.display = ids.length ? "flex" : "none";
         if (count) count.textContent = String(ids.length);
-        if (open) open.href = ids.length ? "compare.html?ids=" + ids.join(",") : "compare.html";
+        if (open) open.href = ids.length ? "memo.html" + ids.join(",") : "memo.html";
         document.querySelectorAll(".anime-memo-button").forEach(button => {
-            const id = Number(button.dataset.compareId);
+            const id = Number(button.dataset.memoId);
             const selected = ids.includes(id);
             button.classList.toggle("selected", selected);
             button.textContent = selected ? "メモから外す" : "メモに追加";
@@ -4259,13 +4259,13 @@
             button.onclick = event => {
                 event.preventDefault();
                 event.stopPropagation();
-                const id = Number(button.dataset.compareId);
+                const id = Number(button.dataset.memoId);
                 let ids = getMemoIds();
                 if (ids.includes(id)) {
                     ids = ids.filter(value => value !== id);
                 } else {
                     if (ids.length >= 5) {
-                        alert("比較できる作品は5作品まで選択できます。");
+                        alert("メモできる作品は5作品まで保存できます。");
                         return;
                     }
                     ids.push(id);
