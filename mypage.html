@@ -67,7 +67,23 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 @media(max-width:600px){main{padding:16px 10px 50px}.profile-cover{height:120px}.profile-main{padding:0 16px 17px}.profile-actions{position:static;margin-top:10px;justify-content:flex-start}.profile-name{font-size:22px}.quick-actions{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}.panel{padding:16px}.tabs{margin:-16px -16px 0}.tab{padding:14px 11px;font-size:11px}}
 .crop-editor{margin-top:12px;padding:14px;border:1px solid #e5e7eb;border-radius:12px;background:#fafafa}.crop-title{font-size:12px;font-weight:850;margin-bottom:10px}.crop-preview{position:relative;overflow:hidden;border-radius:12px;background:#e5e7eb}.crop-preview.avatar-crop{width:92px;height:92px;border-radius:50%;margin-bottom:10px}.crop-preview.cover-crop{width:100%;height:130px}.crop-preview img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center}.crop-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.crop-control label{display:flex;justify-content:space-between;font-size:11px;color:#666;font-weight:750}.crop-control input{width:100%}@media(max-width:600px){.crop-controls{grid-template-columns:1fr}}.visibility-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.visibility-grid label{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid #e5e7eb;border-radius:9px;background:#f8f9fb;font-size:13px;font-weight:700}.visibility-grid input{accent-color:#d9002b;width:17px;height:17px}@media(max-width:600px){.visibility-grid{grid-template-columns:1fr}}</style>
 <link rel="stylesheet" href="site-theme.css?v=20261001-v8">
-<style id="animecia-mypage-nav-v15">
+<style id="animecia-mypage-dashboard-v16">
+.mypage-overview{margin-bottom:16px;padding:18px}
+.mypage-stat-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:2px}
+.mypage-stat-grid .stat{min-height:84px;padding:13px 14px;background:linear-gradient(180deg,#fff,#f8f9fb);border-color:#e3e7ec;transition:.16s}
+.mypage-stat-grid .stat:hover{transform:translateY(-1px);border-color:#d2d8df}
+.mypage-stat-grid .stat b{font-size:25px;letter-spacing:-.04em}
+.mypage-overview-links{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.overview-link{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;padding:11px 12px;border:1px solid #e4e7eb;border-radius:9px;background:#fff;text-align:left;cursor:pointer;transition:.16s}
+.overview-link:hover{background:#fff8f1;border-color:#f0c79f;transform:translateY(-1px)}
+.overview-link strong{font-size:12px;color:#17191d}.overview-link span{font-size:10px;color:#7b838e}
+.mypage-shortcuts-panel{position:sticky;top:82px}
+.mypage-side-note p{margin:0 0 12px;color:#737b86;font-size:11px;line-height:1.7}
+.side-cta{display:flex;align-items:center;justify-content:center;min-height:38px;border-radius:8px;background:#101827;color:#fff!important;font-size:11px;font-weight:900}
+.side-cta:hover{background:#e87900}
+@media(max-width:850px){.mypage-shortcuts-panel{position:static}}
+@media(max-width:600px){.mypage-overview{padding:14px}.mypage-stat-grid{grid-template-columns:repeat(2,1fr)}.mypage-stat-grid .stat{min-height:76px}.mypage-stat-grid .stat b{font-size:21px}.mypage-overview-links{grid-template-columns:1fr 1fr}.overview-link{padding:10px}.mypage-side-note{display:none}}
+</style><style id="animecia-mypage-nav-v15">
 .animecia-main-nav{display:flex!important;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}
 .animecia-main-nav::-webkit-scrollbar{display:none}
 .animecia-main-nav a{white-space:nowrap}
@@ -165,6 +181,17 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 </div>
 </section>
 
+<section class="panel mypage-overview">
+<div class="section-heading"><div><span class="eyebrow">MY ANIME</span><h2>アニメ活動サマリー</h2></div><span class="section-note">あなたのAnimecia利用状況</span></div>
+<div id="stats" class="stats mypage-stat-grid"></div>
+<div class="mypage-overview-links">
+<button type="button" class="overview-link" data-quick-tab="favorites"><strong>お気に入り</strong><span>登録作品を確認 ›</span></button>
+<button type="button" class="overview-link" data-quick-tab="watching"><strong>視聴中</strong><span>現在の視聴状況 ›</span></button>
+<button type="button" class="overview-link" data-quick-tab="want_to_watch"><strong>視聴予定</strong><span>あとで観る作品 ›</span></button>
+<button type="button" class="overview-link" data-quick-tab="ratings"><strong>評価</strong><span>自分の評価を確認 ›</span></button>
+</div>
+</section>
+
 <section class="panel activity-panel">
 <div class="section-heading"><div><span class="eyebrow">ACTIVITY</span><h2>あなたの活動</h2></div><span class="section-note">投稿・作品記録・通知</span></div>
 <div class="composer" style="padding:16px 14px;border-bottom:1px solid #e5e7eb">
@@ -242,16 +269,18 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 </section></section>
 </div>
 <aside>
-<section class="panel side-panel">
-<div class="side-title">マイページ</div>
+<section class="panel side-panel mypage-shortcuts-panel">
+<div class="side-title">マイページメニュー</div>
 <a class="side-link" href="compare.html">作品を比較 <span>›</span></a>
 <a class="side-link" href="messages.html">メッセージ <span>›</span></a>
 <a class="side-link" href="mypage.html#user_search">ユーザー検索 <span>›</span></a>
 <a class="side-link" href="#notifications" id="notification-side-link" data-quick-tab="notifications">通知 <span id="side-notification-count"></span></a>
+<a class="side-link" href="#profile-editor">プロフィール編集 <span>›</span></a>
 </section>
-<section class="panel side-panel">
-<div class="side-title">アカウント統計</div>
-<div id="stats" class="stats" style="grid-template-columns:1fr 1fr"></div>
+<section class="panel side-panel mypage-side-note">
+<div class="side-title">Animeciaを使いこなす</div>
+<p>お気に入りや視聴状況を記録すると、作品管理がしやすくなります。</p>
+<a class="side-cta" href="anime.html">作品を探す</a>
 </section>
 </aside>
 </div>
