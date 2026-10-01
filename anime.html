@@ -1303,19 +1303,19 @@
                     <select id="sort-filter">
 
                         <option value="title">
-                            タイトル順
+                            タイトル順（五十音）
                         </option>
 
-                        <option value="default">
-                            標準
-                        </option>
-
-                        <option value="score">
-                            評価順
+                        <option value="newest">
+                            新しい順
                         </option>
 
                         <option value="popularity">
                             お気に入り順
+                        </option>
+
+                        <option value="score">
+                            評価順
                         </option>
 
                     </select>
@@ -2322,14 +2322,13 @@
 
         const validSorts = [
 
-            "default",
+            "title",
 
-            "score",
+            "newest",
 
             "popularity",
 
-
-            "title"
+            "score"
 
         ];
 
@@ -2493,7 +2492,7 @@
 
         if (
             sortFilter.value &&
-            sortFilter.value !== "default"
+            sortFilter.value !== "title"
         ) {
 
             params.set(
@@ -2554,7 +2553,7 @@
         add("genre","ジャンル",genreFilter.options[genreFilter.selectedIndex]?.textContent.trim(),()=>genreFilter.value="");
         add("studio","制作会社",studioFilter.options[studioFilter.selectedIndex]?.textContent.trim(),()=>studioFilter.value="");
         if (sortFilter.value && sortFilter.value !== "default") {
-            add("sort","並び順",sortFilter.options[sortFilter.selectedIndex]?.textContent.trim(),()=>sortFilter.value="default");
+            add("sort","並び順",sortFilter.options[sortFilter.selectedIndex]?.textContent.trim(),()=>sortFilter.value="title");
         }
         activeFilters.innerHTML = items.length
             ? '<span class="active-filter-label">検索条件</span>'+items.map(x=>x).join("")
@@ -2601,7 +2600,7 @@
                 p_season: seasonFilter.value || null,
                 p_status: statusFilter.value || null,
                 p_format: formatFilter.value || null,
-                p_sort: sortFilter.value || "default",
+                p_sort: sortFilter.value || "title",
                 p_limit: PAGE_SIZE,
                 p_offset: (currentPage - 1) * PAGE_SIZE
             });
