@@ -1,4 +1,117 @@
 <!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ログイン | Animecia</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>main{max-width:520px;margin:60px auto;padding:20px}.panel{padding:30px}.field{margin-bottom:16px}.field label{display:block;font-weight:700;font-size:13px;margin-bottom:7px}.field input{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;font:inherit}.actions{display:grid;gap:10px}.message{min-height:24px;margin:14px 0;font-size:13px}.links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;font-size:13px}</style>
 <link rel="stylesheet" href="site-theme.css?v=20261001-v8">
-</head><body><main><section class="panel"><h1>ログイン</h1><p>Animeciaのアカウントにログインします。</p><form id="form"><div class="field"><label for="email">メールアドレス</label><input id="email" type="email" autocomplete="email" required></div><div class="field"><label for="password">パスワード</label><input id="password" type="password" autocomplete="current-password" required></div><div class="actions"><button class="btn" id="submit">ログイン</button><button class="btn secondary" type="button" id="resend">確認メールを再送信</button></div><p id="message" class="message" aria-live="polite"></p></form><div class="links"><a href="signup.html">新規登録</a><a href="login.html">パスワードを忘れた場合</a><a href="index.html">ホームへ戻る</a></div></section></main><script>const params=new URLSearchParams(location.search);const redirect=params.get("redirect");const safeRedirect=redirect&&/^[a-zA-Z0-9._-]+\.html(?:\?.*)?$/.test(redirect)?redirect:"mypage.html";const sb=supabase.createClient("https://bhgdjuwlxvbaeraaivmh.supabase.co","sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c");const $=id=>document.getElementById(id);const msg=(t,e=false)=>{$("message").textContent=t;$("message").style.color=e?"#b42318":""};async function check(){const {data}=await sb.auth.getUser();if(data.user?.email_confirmed_at){location.replace(safeRedirect);}}$("form").addEventListener("submit",async e=>{e.preventDefault();$("submit").disabled=true;msg("ログインしています…");const {data,error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error||!data?.user){msg("メールアドレスまたはパスワードが正しくありません。",true);$("submit").disabled=false;return}if(!data.user.email_confirmed_at){await sb.auth.signOut();msg("メールアドレスの確認が完了していません。確認メールを確認してください。",true);$("submit").disabled=false;return}location.replace(safeRedirect)});$("resend").addEventListener("click",async()=>{const email=$("email").value.trim();if(!email){msg("メールアドレスを入力してください。",true);return}const {error}=await sb.auth.resend({type:"signup",email,options:{emailRedirectTo:location.origin+location.pathname.replace("login.html","auth-callback.html")}});msg(error?"確認メールの再送信に失敗しました。":"確認メールを再送信しました。迷惑メールフォルダも確認してください。",!!error)});check();</script></body></html>
+</head><body><main><section class="panel"><h1>ログイン</h1><p>Animeciaのアカウントにログインします。</p><form id="form"><div class="field"><label for="email">メールアドレス</label><input id="email" type="email" autocomplete="email" required></div><div class="field"><label for="password">パスワード</label><input id="password" type="password" autocomplete="current-password" required></div><div class="actions"><button class="btn" id="submit">ログイン</button><button class="btn secondary" type="button" id="resend">確認メールを再送信</button></div><p id="message" class="message" aria-live="polite"></p></form><div class="links"><a href="signup.html">新規登録</a><a href="login.html">パスワードを忘れた場合</a><a href="index.html">ホームへ戻る</a></div></section></main><script>
+const params=new URLSearchParams(location.search);
+const redirect=params.get("redirect");
+const safeRedirect=redirect&&/^[a-zA-Z0-9._-]+\.html(?:\?.*)?$/.test(redirect)?redirect:"mypage.html";
+const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
+const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
+const $=id=>document.getElementById(id);
+const msg=(t,e=false)=>{$("message").textContent=t;$("message").style.color=e?"#b42318":""};
+let sb=null;
+
+function authErrorMessage(error){
+  const code=error?.code||"";
+  const message=String(error?.message||"");
+  if(code==="email_not_confirmed"||/email not confirmed/i.test(message)){
+    return "メールアドレスの確認が完了していません。確認メールを確認してください。";
+  }
+  if(code==="invalid_credentials"||/invalid login credentials/i.test(message)){
+    return "メールアドレスまたはパスワードが正しくありません。";
+  }
+  if(/failed to fetch|network|fetch/i.test(message)){
+    return "認証サーバーに接続できませんでした。通信状態を確認して、もう一度お試しください。";
+  }
+  return "ログインに失敗しました。しばらくしてからもう一度お試しください。";
+}
+
+async function init(){
+  try{
+    if(!window.supabase||typeof window.supabase.createClient!=="function"){
+      msg("認証機能の読み込みに失敗しました。ページを再読み込みしてください。",true);
+      return;
+    }
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    const {data,error}=await sb.auth.getSession();
+    if(error){console.error("session check error",error);return;}
+    if(data?.session?.user?.email_confirmed_at){
+      location.replace(safeRedirect);
+    }
+  }catch(error){
+    console.error("login initialization error",error);
+    msg("ログイン機能の初期化に失敗しました。ページを再読み込みしてください。",true);
+  }
+}
+
+$("form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!sb){
+    msg("ログイン機能を初期化しています。少し待ってからもう一度お試しください。",true);
+    return;
+  }
+  const email=$("email").value.trim();
+  const password=$("password").value;
+  if(!email||!password){
+    msg("メールアドレスとパスワードを入力してください。",true);
+    return;
+  }
+  $("submit").disabled=true;
+  msg("ログインしています…");
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email,password});
+    if(error){
+      console.error("sign in error",error);
+      msg(authErrorMessage(error),true);
+      $("submit").disabled=false;
+      return;
+    }
+    if(!data?.user){
+      msg("ログイン情報を取得できませんでした。もう一度お試しください。",true);
+      $("submit").disabled=false;
+      return;
+    }
+    if(!data.user.email_confirmed_at){
+      await sb.auth.signOut();
+      msg("メールアドレスの確認が完了していません。確認メールを確認してください。",true);
+      $("submit").disabled=false;
+      return;
+    }
+    location.replace(safeRedirect);
+  }catch(error){
+    console.error("sign in exception",error);
+    msg(authErrorMessage(error),true);
+    $("submit").disabled=false;
+  }
+});
+
+$("resend").addEventListener("click",async()=>{
+  if(!sb){
+    msg("認証機能を初期化しています。少し待ってからお試しください。",true);
+    return;
+  }
+  const email=$("email").value.trim();
+  if(!email){
+    msg("メールアドレスを入力してください。",true);
+    return;
+  }
+  try{
+    const {error}=await sb.auth.resend({
+      type:"signup",
+      email,
+      options:{emailRedirectTo:location.origin+location.pathname.replace("login.html","auth-callback.html")}
+    });
+    if(error){
+      console.error("resend error",error);
+      msg("確認メールの再送信に失敗しました。しばらくしてからもう一度お試しください。",true);
+      return;
+    }
+    msg("確認メールを再送信しました。迷惑メールフォルダも確認してください。");
+  }catch(error){
+    console.error("resend exception",error);
+    msg("確認メールの再送信に失敗しました。",true);
+  }
+});
+
+init();
+</script></body></html>
