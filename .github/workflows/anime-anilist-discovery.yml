@@ -154,6 +154,23 @@ jobs:
               title=m.get("title") or {}
               jp=title.get("native") or title.get("userPreferred") or title.get("romaji") or "タイトル未設定"
               desc=re.sub(r"<[^>]+>"," ",m.get("description") or "")
+              aliases=list(dict.fromkeys((m.get("synonyms") or [])[:30]))
+              alias_rules={
+                "青春ブタ野郎":["青ブタ"], "ソードアート・オンライン":["SAO","ソードアートオンライン"],
+                "Re:ゼロから始める異世界生活":["リゼロ","Re:ゼロ","Reゼロ"],
+                "この素晴らしい世界に祝福を":["このすば"], "ノーゲーム・ノーライフ":["ノゲノラ","NGNL"],
+                "STEINS;GATE":["シュタゲ"], "魔法少女まどか☆マギカ":["まどマギ"],
+                "やはり俺の青春ラブコメはまちがっている":["俺ガイル"],
+                "とある魔術の禁書目録":["とある","禁書目録"], "とある科学の超電磁砲":["レールガン","超電磁砲"],
+                "僕のヒーローアカデミア":["ヒロアカ"], "鬼滅の刃":["鬼滅"], "呪術廻戦":["呪術"],
+                "SPY×FAMILY":["スパイファミリー"], "葬送のフリーレン":["フリーレン"],
+                "薬屋のひとりごと":["薬屋"], "転生したらスライムだった件":["転スラ"],
+                "俺だけレベルアップな件":["俺レベ"], "ぼっち・ざ・ろっく":["ぼざろ"]
+              }
+              for key,vals in alias_rules.items():
+                  if key in jp or key in str(title.get("romaji") or "") or key in str(title.get("english") or ""):
+                      aliases.extend(vals)
+              aliases=list(dict.fromkeys([x.strip() for x in aliases if str(x).strip()]))[:50]
               rows.append({
                 "title":jp[:1000],
                 "title_japanese":title.get("native"),
@@ -173,7 +190,7 @@ jobs:
                 "season_year":m.get("seasonYear"),
                 "source":"AniList automatic discovery",
                 "site_url":m.get("siteUrl"),
-                "aliases":(m.get("synonyms") or [])[:30],
+                "aliases":aliases,
                 "genres":m.get("genres") or [],
                 "studios":[],
                 "is_adult":bool(m.get("isAdult") is True),
