@@ -412,26 +412,20 @@ jobs:
               return rows
 
           def state_offset():
-              rows = sb("/rest/v1/anime_automation_state", params={"key":"eq.ann_scan_offset","select":"value"})
-              return int(rows[0]["value"]) if rows else 0
+              raw = sb("/rest/v1/rpc/anime_automation_get_offset", "POST", {})
+              return int(raw if isinstance(raw,(int,float,str)) else 0)
 
           def save_offset(value):
-              sb("/rest/v1/anime_automation_state", "PATCH",
-                 {"value":int(value),"updated_at":dt.datetime.now(dt.timezone.utc).isoformat()},
-                 {"key":"eq.ann_scan_offset"})
+              sb("/rest/v1/rpc/anime_automation_set_offset", "POST", {"p_value":int(value)})
 
           def log_start():
-              rows = sb("/rest/v1/anime_automation_runs", "POST", {
-                  "status":"running","started_at":dt.datetime.now(dt.timezone.utc).isoformat(),
-                  "discovered":0,"imported":0,"skipped_existing":0,"rejected":0,"errors":0,
-                  "historical_offset_before":state_offset(),"historical_offset_after":state_offset()
-              })
-              return rows[0]["id"] if rows else None
+              before = state_offset()
+              raw = sb("/rest/v1/rpc/anime_automation_start_run", "POST", {"p_before":before})
+              return int(raw if isinstance(raw,(int,float,str)) else 0) or None
 
           def log_finish(run_id, stats):
               if run_id is None: return
-              sb("/rest/v1/anime_automation_runs", "PATCH", stats,
-                 {"id":"eq."+str(run_id)})
+              sb("/rest/v1/rpc/anime_automation_finish_run", "POST", {"p_id":int(run_id),"p_stats":stats})
 
           run_id = log_start()
           before = state_offset()
@@ -468,7 +462,7 @@ jobs:
               inserted = skipped = errors = 0
               for i in range(0, len(rows), 100):
                   payload = rows[i:i+100]
-                  raw = sb("/rest/v1/rpc/bulk_register_anime_batch", "POST", payload)
+                  raw = sb("/rest/v1/rpc/bulk_register_anime_batch", "POST", {"p_items":payload})
                   result = raw if isinstance(raw, dict) else (raw[0] if raw else {})
                   inserted += int(result.get("inserted",0))
                   skipped += int(result.get("skipped",0))
