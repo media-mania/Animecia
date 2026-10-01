@@ -1,170 +1,153 @@
-<!doctype&html>
-<html&lang="ja"><head><meta&charset="UTF-8"><meta&name="viewport"&content="width=device-width,initial-scale=1">
-<title>自分に合ったアニメを探す&|&Animecia</title>
-<meta&name="description"&content="好みのジャンル、形式、話数、評価などからAnimeciaがあなたに合うアニメを探します。ログイン後は評価や視聴履歴も反映します。">
-<link&rel="stylesheet"&href="site-theme.css"><script&src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!doctype html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>自分に合ったアニメを探す | Animecia</title>
+<meta name="description" content="好みのジャンル、形式、話数、評価などからAnimeciaがあなたに合うアニメを探します。ログイン後は評価や視聴履歴も反映します。">
+<link rel="stylesheet" href="site-theme.css?v=20261001-v8"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-main{max-width:1240px;margin:auto;padding:34px&20px&80px}.hero{padding:40px;border-radius:22px;background:linear-gradient(135deg,#111216,#292b31);color:#fff;margin-bottom:16px}.kicker{font-size:11px;color:#fb7185;font-weight:900;letter-spacing:.17em}.hero&h1{font-size:clamp(34px,5vw,54px);margin:12px&0&10px;letter-spacing:-.055em}.hero&p{margin:0;color:#d1d5db;line-height:1.8;max-width:780px}.layout{display:grid;grid-template-columns:340px&1fr;gap:16px;align-items:start}.panel{background:#fff;border:1px&solid&#e3e5e9;border-radius:18px;padding:21px;box-shadow:0&8px&28px&rgba(17,18,20,.045)}.panel&h2{font-size:18px;margin:0&0&5px}.hint{font-size:12px;color:#777;margin:0&0&16px;line-height:1.6}.question{padding:15px&0;border-top:1px&solid&#eceef1}.question:first-of-type{border-top:0}.question&label{display:block;font-size:12px;font-weight:900;margin-bottom:9px}.chips{display:flex;flex-wrap:wrap;gap:7px}.chip{border:1px&solid&#dfe2e7;background:#fff;border-radius:999px;padding:8px&10px;font-size:11px;font-weight:800;cursor:pointer}.chip{display:inline-flex;align-items:center;gap:5px}.chip-check{display:inline-grid;place-items:center;width:15px;height:15px;border:1px&solid&#cfd3da;border-radius:50%;font-size:10px;font-weight:900;color:transparent;background:#fff}.chip.active{background:#111216;color:#fff;border-color:#111216;box-shadow:0&0&0&2px&#111216;transform:translateY(-1px)}.chip.active&.chip-check{color:#111216;border-color:#fff;background:#fff}.chip:focus-visible{outline:3px&solid&#93c5fd;outline-offset:2px}.select{width:100%;height:42px;border:1px&solid&#d9dce2;border-radius:9px;padding:0&10px}.actions{display:flex;gap:8px;margin-top:16px}.primary,.secondary{flex:1;border:0;border-radius:10px;padding:11px;font-weight:900;cursor:pointer}.primary{background:#111216;color:#fff}.secondary{background:#f0f1f3;color:#222}.result-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}.result-head&h2{margin:0}.score-note{font-size:11px;color:#777}.list{display:grid;gap:10px}.item{display:flex;gap:13px;align-items:center;padding:12px;border:1px&solid&#e5e7eb;border-radius:14px;text-decoration:none;color:inherit;transition:.18s}.item:hover{transform:translateY(-2px);box-shadow:0&10px&22px&rgba(17,18,20,.08)}.rank{width:32px;text-align:center;font-weight:900;font-size:20px}.thumb{width:68px;height:88px;object-fit:cover;border-radius:8px;background:#eceef1;flex:none}.grow{min-width:0;flex:1}.title{font-weight:900;line-height:1.45}.reason{font-size:11px;color:#737780;margin-top:4px}.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.pill{background:#f2f3f5;border-radius:999px;padding:4px&7px;font-size:10px;font-weight:800}.match{font-size:11px;font-weight:900;color:#e11d48;white-space:nowrap}.empty,.loading{text-align:center;padding:40px;color:#777}
-@media(max-width:900px){.layout{grid-template-columns:1fr}.hero{padding:30px&23px}}
-@media(max-width:560px){main{padding:24px&13px&55px}.panel{padding:17px}.item{gap:8px}.thumb{width:56px;height:74px}.match{display:none}}
-</style><style&id="animecia-recommendations-v6">
+main{max-width:1240px;margin:auto;padding:34px 20px 80px}.hero{padding:40px;border-radius:22px;background:linear-gradient(135deg,#111216,#292b31);color:#fff;margin-bottom:16px}.kicker{font-size:11px;color:#fb7185;font-weight:900;letter-spacing:.17em}.hero h1{font-size:clamp(34px,5vw,54px);margin:12px 0 10px;letter-spacing:-.055em}.hero p{margin:0;color:#d1d5db;line-height:1.8;max-width:780px}.layout{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}.panel{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:21px;box-shadow:0 8px 28px rgba(17,18,20,.045)}.panel h2{font-size:18px;margin:0 0 5px}.hint{font-size:12px;color:#777;margin:0 0 16px;line-height:1.6}.question{padding:15px 0;border-top:1px solid #eceef1}.question:first-of-type{border-top:0}.question label{display:block;font-size:12px;font-weight:900;margin-bottom:9px}.chips{display:flex;flex-wrap:wrap;gap:7px}.chip{border:1px solid #dfe2e7;background:#fff;border-radius:999px;padding:8px 10px;font-size:11px;font-weight:800;cursor:pointer}.chip{display:inline-flex;align-items:center;gap:5px}.chip-check{display:inline-grid;place-items:center;width:15px;height:15px;border:1px solid #cfd3da;border-radius:50%;font-size:10px;font-weight:900;color:transparent;background:#fff}.chip.active{background:#111216;color:#fff;border-color:#111216;box-shadow:0 0 0 2px #111216;transform:translateY(-1px)}.chip.active .chip-check{color:#111216;border-color:#fff;background:#fff}.chip:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}.select{width:100%;height:42px;border:1px solid #d9dce2;border-radius:9px;padding:0 10px}.actions{display:flex;gap:8px;margin-top:16px}.primary,.secondary{flex:1;border:0;border-radius:10px;padding:11px;font-weight:900;cursor:pointer}.primary{background:#111216;color:#fff}.secondary{background:#f0f1f3;color:#222}.result-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}.result-head h2{margin:0}.score-note{font-size:11px;color:#777}.list{display:grid;gap:10px}.item{display:flex;gap:13px;align-items:center;padding:12px;border:1px solid #e5e7eb;border-radius:14px;text-decoration:none;color:inherit;transition:.18s}.item:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(17,18,20,.08)}.rank{width:32px;text-align:center;font-weight:900;font-size:20px}.thumb{width:68px;height:88px;object-fit:cover;border-radius:8px;background:#eceef1;flex:none}.grow{min-width:0;flex:1}.title{font-weight:900;line-height:1.45}.reason{font-size:11px;color:#737780;margin-top:4px}.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.pill{background:#f2f3f5;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:800}.match{font-size:11px;font-weight:900;color:#e11d48;white-space:nowrap}.empty,.loading{text-align:center;padding:40px;color:#777}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.hero{padding:30px 23px}}
+@media(max-width:560px){main{padding:24px 13px 55px}.panel{padding:17px}.item{gap:8px}.thumb{width:56px;height:74px}.match{display:none}}
+</style><style id="animecia-recommendations-v6">
 .recommendations-v6{max-width:1240px!important}
-.recommendations-v6&.hero{padding:28px!important;border-radius:16px!important;background:linear-gradient(135deg,#101827&0%,#18243a&58%,#26344d&100%)!important;box-shadow:0&16px&40px&rgba(16,24,39,.14)}
-.recommendations-v6&.kicker{color:#f59e0b!important}
-.recommendations-v6&.hero&h1{color:#fff!important;font-size:clamp(28px,4vw,42px)!important}
-.recommendations-v6&.hero&p{color:#c7ced8!important}
-.recommendations-v6&.layout{grid-template-columns:340px&minmax(0,1fr)!important;gap:14px}
-.recommendations-v6&.panel{border-radius:12px!important;box-shadow:0&8px&28px&rgba(16,20,26,.055)!important}
-.recommendations-v6&.layout>.panel:first-child{position:sticky;top:88px}
-.recommendations-v6&.question{padding:14px&0}
-.recommendations-v6&.chip{border-radius:7px!important;padding:7px&9px!important;background:#f8f9fa}
-.recommendations-v6&.chip.active{background:#101827!important;border-color:#101827!important;box-shadow:none!important}
-.recommendations-v6&.select{height:40px!important;border-radius:7px!important;font-size:12px}
-.recommendations-v6&.actions{margin-top:14px}
-.recommendations-v6&.primary{background:#e87900!important}
-.recommendations-v6&.secondary{background:#f1f3f5!important}
-.recommendations-v6&.result-head{border-bottom:1px&solid&#edf0f3;padding-bottom:12px}
-.recommendations-v6&.result-head&h2{font-size:18px}
-.recommendations-v6&.item{border-radius:10px!important;padding:10px!important;border-color:#e0e4e9!important}
-.recommendations-v6&.item:hover{border-color:#cbd1d8!important}
-.recommendations-v6&.rank{color:#89919c}
-.recommendations-v6&.thumb{width:64px;height:82px;border-radius:7px}
-.recommendations-v6&.title{font-size:13px}
-.recommendations-v6&.reason{font-size:10px}
-.recommendations-v6&.pill{background:#fff3e4;color:#a84f00;border-radius:5px}
-.recommendations-v6&.match{color:#e87900;font-size:10px}
-@media(max-width:900px){.recommendations-v6&.layout{grid-template-columns:1fr!important}.recommendations-v6&.layout>.panel:first-child{position:static}}
-@media(max-width:560px){.recommendations-v6{padding-left:13px!important;padding-right:13px!important}.recommendations-v6&.hero{padding:21px!important}.recommendations-v6&.panel{padding:16px!important}.recommendations-v6&.thumb{width:55px;height:70px}.recommendations-v6&.match{display:none}}
-</style><link&rel="stylesheet"&href="site-theme.css?v=20261001-v8">
-</head>
-<body><header&class="site-header">
-<div&class="container&nav">
-<a&class="brand"&href="index.html"&aria-label="Animecia&ホーム">Animecia</a>
-<nav&class="nav-links"&aria-label="メインメニュー">
-<a&href="index.html">ホーム</a>
-
-<a&href="season.html">今期</a>
-<a&href="ranking.html">ランキング</a>
-<a&href="discover.html">ジャンル</a>
-<a&href="recommendations.html">おすすめ</a>
-<a&href="community.html">コミュニティ</a>
-<a&href="compare.html">比較</a>
+.recommendations-v6 .hero{padding:28px!important;border-radius:16px!important;background:linear-gradient(135deg,#101827 0%,#18243a 58%,#26344d 100%)!important;box-shadow:0 16px 40px rgba(16,24,39,.14)}
+.recommendations-v6 .kicker{color:#f59e0b!important}
+.recommendations-v6 .hero h1{color:#fff!important;font-size:clamp(28px,4vw,42px)!important}
+.recommendations-v6 .hero p{color:#c7ced8!important}
+.recommendations-v6 .layout{grid-template-columns:340px minmax(0,1fr)!important;gap:14px}
+.recommendations-v6 .panel{border-radius:12px!important;box-shadow:0 8px 28px rgba(16,20,26,.055)!important}
+.recommendations-v6 .layout>.panel:first-child{position:sticky;top:88px}
+.recommendations-v6 .question{padding:14px 0}
+.recommendations-v6 .chip{border-radius:7px!important;padding:7px 9px!important;background:#f8f9fa}
+.recommendations-v6 .chip.active{background:#101827!important;border-color:#101827!important;box-shadow:none!important}
+.recommendations-v6 .select{height:40px!important;border-radius:7px!important;font-size:12px}
+.recommendations-v6 .actions{margin-top:14px}
+.recommendations-v6 .primary{background:#e87900!important}
+.recommendations-v6 .secondary{background:#f1f3f5!important}
+.recommendations-v6 .result-head{border-bottom:1px solid #edf0f3;padding-bottom:12px}
+.recommendations-v6 .result-head h2{font-size:18px}
+.recommendations-v6 .item{border-radius:10px!important;padding:10px!important;border-color:#e0e4e9!important}
+.recommendations-v6 .item:hover{border-color:#cbd1d8!important}
+.recommendations-v6 .rank{color:#89919c}
+.recommendations-v6 .thumb{width:64px;height:82px;border-radius:7px}
+.recommendations-v6 .title{font-size:13px}
+.recommendations-v6 .reason{font-size:10px}
+.recommendations-v6 .pill{background:#fff3e4;color:#a84f00;border-radius:5px}
+.recommendations-v6 .match{color:#e87900;font-size:10px}
+@media(max-width:900px){.recommendations-v6 .layout{grid-template-columns:1fr!important}.recommendations-v6 .layout>.panel:first-child{position:static}}
+@media(max-width:560px){.recommendations-v6{padding-left:13px!important;padding-right:13px!important}.recommendations-v6 .hero{padding:21px!important}.recommendations-v6 .panel{padding:16px!important}.recommendations-v6 .thumb{width:55px;height:70px}.recommendations-v6 .match{display:none}}
+</style></head>
+<body><header class="site-header">
+<div class="container nav">
+<a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
+<nav class="nav-links" aria-label="メインメニュー">
+<a href="index.html">ホーム</a>
+<a href="anime.html">アニメを探す</a>
+<a href="season.html">今期</a>
+<a href="ranking.html">ランキング</a>
+<a href="discover.html">ジャンル</a>
+<a href="recommendations.html">おすすめ</a>
+<a href="community.html">コミュニティ</a>
+<a href="compare.html">比較</a>
 </nav>
-<form&class="header-search"&action="anime.html"&method="get"&role="search">
-<input&name="search"&type="search"&placeholder="アニメを検索…"&aria-label="アニメを検索">
+<form class="header-search" action="anime.html" method="get" role="search">
+<input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
 </form>
-<div&class="nav-actions">
-<a&class="nav-btn"&href="mypage.html">マイページ</a>
-<a&class="nav-btn&primary"&href="login.html">ログイン</a>
+<div class="nav-actions">
+<a class="nav-btn" href="mypage.html">マイページ</a>
+<a class="nav-btn primary" href="login.html">ログイン</a>
 </div>
 </div>
 </header>
-<main&class="recommendations-v6">
-<section&class="hero"><div&class="kicker">FIND&YOUR&ANIME</div><h1>あなたに合うアニメを探す。</h1><p>好きなジャンルや観たい長さを選ぶだけ。Animeciaの作品データから条件に合う作品を絞り込みます。ログインしている場合は、評価・お気に入り・視聴状況も活用します。</p></section>
-<div&class="layout">
-<section&class="panel">
-<h2>好みを設定</h2><p&class="hint">全部選ばなくても大丈夫です。選んだ条件が多いほど結果を絞り込みます。</p>
-<div&class="question"><label>好きなジャンル&<span&style="font-weight:700;color:#777">（複数選択可）</span></label><div&id="genres"&class="chips"><span&class="loading">読み込み中…</span></div><div&id="genre-selected"&style="font-size:11px;color:#777;margin-top:8px">0件選択中</div></div>
-<div&class="question"><label&for="format">観たい形式</label><select&id="format"&class="select"><option&value="">こだわらない</option><option&value="TV">TVアニメ</option><option&value="Movie">映画</option><option&value="OVA">OVA</option><option&value="ONA">ONA</option></select></div>
-<div&class="question"><label&for="length">話数</label><select&id="length"&class="select"><option&value="">こだわらない</option><option&value="short">短め（1〜13話）</option><option&value="medium">標準（14〜26話）</option><option&value="long">長め（27話以上）</option></select></div>
-<div&class="question"><label&for="rating">最低評価</label><select&id="rating"&class="select"><option&value="0">こだわらない</option><option&value="7">7.0以上</option><option&value="7.5">7.5以上</option><option&value="8">8.0以上</option></select></div>
-<div&class="question"><label&for="status">視聴状態</label><select&id="status"&class="select"><option&value="">こだわらない</option><option&value="RELEASING">放送中を探す</option><option&value="FINISHED">完結作品を探す</option><option&value="NOT_YET_RELEASED">放送前を探す</option></select></div>
-<div&class="actions"><button&id="find"&class="primary">この条件で探す</button><button&id="clear"&class="secondary">リセット</button></div>
+<main class="recommendations-v6">
+<section class="hero"><div class="kicker">FIND YOUR ANIME</div><h1>あなたに合うアニメを探す。</h1><p>好きなジャンルや観たい長さを選ぶだけ。Animeciaの作品データから条件に合う作品を絞り込みます。ログインしている場合は、評価・お気に入り・視聴状況も活用します。</p></section>
+<div class="layout">
+<section class="panel">
+<h2>好みを設定</h2><p class="hint">全部選ばなくても大丈夫です。選んだ条件が多いほど結果を絞り込みます。</p>
+<div class="question"><label>好きなジャンル <span style="font-weight:700;color:#777">（複数選択可）</span></label><div id="genres" class="chips"><span class="loading">読み込み中…</span></div><div id="genre-selected" style="font-size:11px;color:#777;margin-top:8px">0件選択中</div></div>
+<div class="question"><label for="format">観たい形式</label><select id="format" class="select"><option value="">こだわらない</option><option value="TV">TVアニメ</option><option value="Movie">映画</option><option value="OVA">OVA</option><option value="ONA">ONA</option></select></div>
+<div class="question"><label for="length">話数</label><select id="length" class="select"><option value="">こだわらない</option><option value="short">短め（1〜13話）</option><option value="medium">標準（14〜26話）</option><option value="long">長め（27話以上）</option></select></div>
+<div class="question"><label for="rating">最低評価</label><select id="rating" class="select"><option value="0">こだわらない</option><option value="7">7.0以上</option><option value="7.5">7.5以上</option><option value="8">8.0以上</option></select></div>
+<div class="question"><label for="status">視聴状態</label><select id="status" class="select"><option value="">こだわらない</option><option value="RELEASING">放送中を探す</option><option value="FINISHED">完結作品を探す</option><option value="NOT_YET_RELEASED">放送前を探す</option></select></div>
+<div class="actions"><button id="find" class="primary">この条件で探す</button><button id="clear" class="secondary">リセット</button></div>
 </section>
-<section&class="panel">
-<div&class="result-head"><div><h2>おすすめ結果</h2><div&id="result-sub"&class="score-note">条件を設定して「この条件で探す」を押してください。</div></div></div>
-<div&id="results"&class="list"><div&class="empty">あなたの好みから作品を探します。</div></div>
+<section class="panel">
+<div class="result-head"><div><h2>おすすめ結果</h2><div id="result-sub" class="score-note">条件を設定して「この条件で探す」を押してください。</div></div></div>
+<div id="results" class="list"><div class="empty">あなたの好みから作品を探します。</div></div>
 </section>
 </div>
 </main>
 <script>
-const&U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",s=window.supabase.createClient(U,K);
-const&esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const&title=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.title||"タイトル未設定";
-let&rows=[],genres=[],selected=new&Set(),userSignals=new&Map();
-async&function&fetchAllRows(table,&columns,&orderColumn,&batchSize=1000){
-&let&all=[];
-&for(let&from=0;;from+=batchSize){
-&&const&{data,error}=await&s.from(table).select(columns).order(orderColumn,{ascending:true}).range(from,from+batchSize-1);
-&&if(error)&throw&error;
-&&if(!data||!data.length)&break;
-&&all.push(...data);
-&&if(data.length<batchSize)&break;
-&}
-&return&all;
+const U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",s=window.supabase.createClient(U,K);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const title=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.title||"タイトル未設定";
+let rows=[],genres=[],selected=new Set(),userSignals=new Map();
+async function fetchAllRows(table, columns, orderColumn, batchSize=1000){
+ let all=[];
+ for(let from=0;;from+=batchSize){
+  const {data,error}=await s.from(table).select(columns).order(orderColumn,{ascending:true}).range(from,from+batchSize-1);
+  if(error) throw error;
+  if(!data||!data.length) break;
+  all.push(...data);
+  if(data.length<batchSize) break;
+ }
+ return all;
 }
-async&function&init(){
-&const&[ar,gr,ag,auth]=await&Promise.all([
-&&fetchAllRows("anime","id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes,anime_verification_status","id"),
-&&s.from("genres").select("id,name").order("name"),
-&&fetchAllRows("anime_genres","anime_id,genre_id","anime_id"),
-&&s.auth.getUser()
-&]);
-&if(gr.error)&throw&gr.error;
-&genres=gr.data||[];
-&const&gm=new&Map(genres.map(g=>[Number(g.id),g.name])),&gids=new&Map();
-&(ag||[]).forEach(x=>{const&id=Number(x.anime_id);if(!gids.has(id))gids.set(id,[]);gids.get(id).push(Number(x.genre_id))});
-&const&ids=(ar||[]).map(a=>a.id),em=new&Map();
-&for(let&i=0;i<ids.length;i+=500){const&{data:e}=await&s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count,rating_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}
-&rows=(ar||[]).filter(a=>a.anime_verification_status==="verified"&&&&a.start_date&&&&a.start_date&>=&"1963-01-01"&&&&/^https:\/\/s[^/]+\.anilist\.co\//.test(a.cover_image&||&"")).map(a=>({...a,g:gids.get(Number(a.id))||[],gn:(gids.get(Number(a.id))||[]).map(x=>gm.get(x)).filter(Boolean),e:em.get(Number(a.id))||{}}));
-&renderGenres();
-&if(auth.data.user&&!auth.data.user.is_anonymous){const&uid=auth.data.user.id;const&[rt,st,fv]=await&Promise.all([s.from("user_ratings").select("anime_id,rating").eq("user_id",uid),s.from("user_anime_status").select("anime_id,status").eq("user_id",uid),s.from("favorites").select("anime_id").eq("user_id",uid)]);(rt.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{rating:Number(x.rating)}));(st.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),status:x.status}));(fv.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),favorite:true}));}
-&recommendationsReady=true;
-&run();
+async function init(){
+ const [ar,gr,ag,auth]=await Promise.all([
+  fetchAllRows("anime","id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes,anime_verification_status","id"),
+  s.from("genres").select("id,name").order("name"),
+  fetchAllRows("anime_genres","anime_id,genre_id","anime_id"),
+  s.auth.getUser()
+ ]);
+ if(gr.error) throw gr.error;
+ genres=gr.data||[];
+ const gm=new Map(genres.map(g=>[Number(g.id),g.name])), gids=new Map();
+ (ag||[]).forEach(x=>{const id=Number(x.anime_id);if(!gids.has(id))gids.set(id,[]);gids.get(id).push(Number(x.genre_id))});
+ const ids=(ar||[]).map(a=>a.id),em=new Map();
+ for(let i=0;i<ids.length;i+=500){const {data:e}=await s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count,rating_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}
+ rows=(ar||[]).filter(a=>a.anime_verification_status==="verified" && a.start_date && a.start_date >= "1963-01-01" && /^https:\/\/s[^/]+\.anilist\.co\//.test(a.cover_image || "")).map(a=>({...a,g:gids.get(Number(a.id))||[],gn:(gids.get(Number(a.id))||[]).map(x=>gm.get(x)).filter(Boolean),e:em.get(Number(a.id))||{}}));
+ renderGenres();
+ if(auth.data.user&&!auth.data.user.is_anonymous){const uid=auth.data.user.id;const [rt,st,fv]=await Promise.all([s.from("user_ratings").select("anime_id,rating").eq("user_id",uid),s.from("user_anime_status").select("anime_id,status").eq("user_id",uid),s.from("favorites").select("anime_id").eq("user_id",uid)]);(rt.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{rating:Number(x.rating)}));(st.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),status:x.status}));(fv.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),favorite:true}));}
+ recommendationsReady=true;
+ run();
 }
-function&renderGenres(){document.getElementById("genres").innerHTML=genres.map(g=>'<button&type="button"&class="chip"&data-id="'+g.id+'"&aria-pressed="false"><span&class="chip-check"&aria-hidden="true">✓</span><span>'+esc(g.name)+'</span></button>').join("");document.querySelectorAll("#genres&.chip").forEach(b=>b.onclick=()=>{const&id=Number(b.dataset.id),on=!selected.has(id);on?selected.add(id):selected.delete(id);b.classList.toggle("active",on);b.setAttribute("aria-pressed",String(on));updateGenreSelected()})}
-function&updateGenreSelected(){const&el=document.getElementById("genre-selected");if(el)el.textContent=selected.size+"件選択中";}
-function&score(a,format,length,min,status){
-&let&score=0,reason=[];
-&const&match=a.g.filter(x=>selected.has(x)).length;
-&if(selected.size){score+=match*32;if(match)reason.push("好きなジャンルが"+match+"件一致")}
-&if(format&&a.format===format){score+=18;reason.push("形式が一致")}
-&if(length){const&n=Number(a.episodes||0),ok=length==="short"?n>0&&n<=13:length==="medium"?n>=14&&n<=26:length==="long"?n>=27:false;if(ok){score+=15;reason.push("話数が希望に近い")}}
-&const&rating=Number(a.e.average_rating||0);if(min&&rating>=Number(min)){score+=Math.min(15,(rating-Number(min)+1)*5);reason.push("評価が条件以上")}
-&if(status&&a.status===status){score+=12;reason.push("放送状況が一致")}
-&score+=Math.min(10,rating);score+=Math.min(8,Math.log10(Number(a.e.favorite_count||0)+1)*4);
-&const&sig=userSignals.get(Number(a.id));if(sig?.favorite){score-=30}if(sig?.status==="completed"||sig?.status==="dropped"){score-=20}
-&if(sig?.rating>=8){const&overlap=match;score+=overlap*6;if(overlap)reason.push("過去の高評価作品と傾向が近い")}
-&return&{score,reason:reason.slice(0,2).join("&/&")||"評価・人気・作品情報から選定"};
+function renderGenres(){document.getElementById("genres").innerHTML=genres.map(g=>'<button type="button" class="chip" data-id="'+g.id+'" aria-pressed="false"><span class="chip-check" aria-hidden="true">✓</span><span>'+esc(g.name)+'</span></button>').join("");document.querySelectorAll("#genres .chip").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.id),on=!selected.has(id);on?selected.add(id):selected.delete(id);b.classList.toggle("active",on);b.setAttribute("aria-pressed",String(on));updateGenreSelected()})}
+function updateGenreSelected(){const el=document.getElementById("genre-selected");if(el)el.textContent=selected.size+"件選択中";}
+function score(a,format,length,min,status){
+ let score=0,reason=[];
+ const match=a.g.filter(x=>selected.has(x)).length;
+ if(selected.size){score+=match*32;if(match)reason.push("好きなジャンルが"+match+"件一致")}
+ if(format&&a.format===format){score+=18;reason.push("形式が一致")}
+ if(length){const n=Number(a.episodes||0),ok=length==="short"?n>0&&n<=13:length==="medium"?n>=14&&n<=26:length==="long"?n>=27:false;if(ok){score+=15;reason.push("話数が希望に近い")}}
+ const rating=Number(a.e.average_rating||0);if(min&&rating>=Number(min)){score+=Math.min(15,(rating-Number(min)+1)*5);reason.push("評価が条件以上")}
+ if(status&&a.status===status){score+=12;reason.push("放送状況が一致")}
+ score+=Math.min(10,rating);score+=Math.min(8,Math.log10(Number(a.e.favorite_count||0)+1)*4);
+ const sig=userSignals.get(Number(a.id));if(sig?.favorite){score-=30}if(sig?.status==="completed"||sig?.status==="dropped"){score-=20}
+ if(sig?.rating>=8){const overlap=match;score+=overlap*6;if(overlap)reason.push("過去の高評価作品と傾向が近い")}
+ return {score,reason:reason.slice(0,2).join(" / ")||"評価・人気・作品情報から選定"};
 }
-function&run(){
-&const&format=document.getElementById("format").value,length=document.getElementById("length").value,min=Number(document.getElementById("rating").value||0),status=document.getElementById("status").value;
-&const&hasConditions=selected.size>0||!!format||!!length||!!min||!!status;
-&let&r=rows.filter(a=>{
-&&if(selected.size&&&&!a.g.some(g=>selected.has(g)))&return&false;
-&&if(format&&a.format!==format)return&false;
-&&if(status&&a.status!==status)return&false;
-&&const&n=Number(a.episodes||0);
-&&if(length==="short"&&(!n||n>13))return&false;
-&&if(length==="medium"&&(n<14||n>26))return&false;
-&&if(length==="long"&&n<27)return&false;
-&&if(min&&Number(a.e.average_rating||0)<min)return&false;
-&&return&true;
+function run(){
+ const format=document.getElementById("format").value,length=document.getElementById("length").value,min=Number(document.getElementById("rating").value||0),status=document.getElementById("status").value;
+ const hasConditions=selected.size>0||!!format||!!length||!!min||!!status;
+ let r=rows.filter(a=>{
+  if(selected.size && !a.g.some(g=>selected.has(g))) return false;
+  if(format&&a.format!==format)return false;
+  if(status&&a.status!==status)return false;
+  const n=Number(a.episodes||0);
+  if(length==="short"&&(!n||n>13))return false;
+  if(length==="medium"&&(n<14||n>26))return false;
+  if(length==="long"&&n<27)return false;
+  if(min&&Number(a.e.average_rating||0)<min)return false;
+  return true;
 }).map(a=>({...a,m:score(a,format,length,min,status)}))
-.sort((a,b)=>b.m.score-a.m.score&||&Number(b.e.favorite_count||0)-Number(a.e.favorite_count||0))
+.sort((a,b)=>b.m.score-a.m.score || Number(b.e.favorite_count||0)-Number(a.e.favorite_count||0))
 .slice(0,30);
-&document.getElementById("result-sub").textContent=(selected.size?"選択ジャンル&"+selected.size+"件&/&":"")+"作品データからおすすめ順に表示。"+(hasConditions?"&指定した条件も反映しています。":"&条件未指定のため、評価・人気などから選定しています。")+(userSignals.size?"&あなたの視聴・評価履歴も反映中。":"");
-&if(!rows.length){document.getElementById("results").innerHTML='<div&class="empty">おすすめ作品のデータを読み込めていません。ページを再読み込みしてください。</div>';return;}
-&document.getElementById("results").innerHTML=r.map((a,i)=>'<a&class="item"&href="anime-detail.html?id='+a.id+'"><div&class="rank">'+(i+1)+'</div>'+(a.cover_image?'<img&class="thumb"&src="'+esc(a.cover_image)+'"&alt="'+esc(title(a))+'"&loading="lazy">':'<div&class="thumb"></div>')+'<div&class="grow"><div&class="title">'+esc(title(a))+'</div><div&class="reason">'+esc(a.m.reason)+'</div><div&class="meta"><span&class="pill">★&'+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(1):"—")+'</span><span&class="pill">'+esc(a.format||"")+'</span><span&class="pill">'+(a.episodes?esc(a.episodes)+"話":"話数不明")+'</span></div></div><div&class="match">MATCH&'+Math.round(Math.min(99,a.m.score))+'%</div></a>').join("")||'<div&class="empty">条件に合う作品が見つかりませんでした。条件を少し緩めてみてください。</div>';
+ document.getElementById("result-sub").textContent=(selected.size?"選択ジャンル "+selected.size+"件 / ":"")+"作品データからおすすめ順に表示。"+(hasConditions?" 指定した条件も反映しています。":" 条件未指定のため、評価・人気などから選定しています。")+(userSignals.size?" あなたの視聴・評価履歴も反映中。":"");
+ if(!rows.length){document.getElementById("results").innerHTML='<div class="empty">おすすめ作品のデータを読み込めていません。ページを再読み込みしてください。</div>';return;}
+ document.getElementById("results").innerHTML=r.map((a,i)=>'<a class="item" href="anime-detail.html?id='+a.id+'"><div class="rank">'+(i+1)+'</div>'+(a.cover_image?'<img class="thumb" src="'+esc(a.cover_image)+'" alt="'+esc(title(a))+'" loading="lazy">':'<div class="thumb"></div>')+'<div class="grow"><div class="title">'+esc(title(a))+'</div><div class="reason">'+esc(a.m.reason)+'</div><div class="meta"><span class="pill">★ '+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(1):"—")+'</span><span class="pill">'+esc(a.format||"")+'</span><span class="pill">'+(a.episodes?esc(a.episodes)+"話":"話数不明")+'</span></div></div><div class="match">MATCH '+Math.round(Math.min(99,a.m.score))+'%</div></a>').join("")||'<div class="empty">条件に合う作品が見つかりませんでした。条件を少し緩めてみてください。</div>';
 }
 document.getElementById("find").onclick=()=>{if(!recommendationsReady){document.getElementById("result-sub").textContent="作品データを読み込み中です。少し待ってからお試しください。";return;}run();};
-document.getElementById("clear").onclick=()=>{selected.clear();updateGenreSelected();document.querySelectorAll(".chip.active").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-pressed","false")});["format","length","rating","status"].forEach(id=>document.getElementById(id).value=id==="rating"?"0":"");document.getElementById("results").innerHTML='<div&class="empty">あなたの好みから作品を探します。</div>';document.getElementById("result-sub").textContent="条件を設定して「この条件で探す」を押してください。"};
-init().catch(err=>{console.error(err);document.getElementById("result-sub").textContent="作品データを取得できませんでした。";document.getElementById("results").innerHTML="<div&class=\"empty\">作品データの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>";});
+document.getElementById("clear").onclick=()=>{selected.clear();updateGenreSelected();document.querySelectorAll(".chip.active").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-pressed","false")});["format","length","rating","status"].forEach(id=>document.getElementById(id).value=id==="rating"?"0":"");document.getElementById("results").innerHTML='<div class="empty">あなたの好みから作品を探します。</div>';document.getElementById("result-sub").textContent="条件を設定して「この条件で探す」を押してください。"};
+init().catch(err=>{console.error(err);document.getElementById("result-sub").textContent="作品データを取得できませんでした。";document.getElementById("results").innerHTML="<div class=\"empty\">作品データの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>";});
 </script>
-<script&id="animecia-auth-nav">
-(function(){
-&&function&syncAuthNav(){
-&&&&try{
-&&&&&&if(!window.supabase&||&!window.supabase.createClient)&return;
-&&&&&&var&links=document.querySelectorAll('.nav-actions&#auth-link,&.nav-actions&a[href="login.html"]');
-&&&&&&if(!links.length)&return;
-&&&&&&var&U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",client=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient(U,K));
-&&&&&&client.auth.getUser().then(function(res){
-&&&&&&&&var&loggedIn=!!(res.data&&res.data.user&&!res.data.user.is_anonymous);
-&&&&&&&&links.forEach(function(el){el.style.display=loggedIn?"none":"";});
-&&&&&&}).catch(function(){});
-&&&&}catch(e){}
-&&}
-&&if(document.readyState==="loading")&document.addEventListener("DOMContentLoaded",syncAuthNav);&else&syncAuthNav();
-})();
-</script></body></html>
+</body></html>
