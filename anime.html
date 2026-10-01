@@ -4226,16 +4226,21 @@
          * これを逆順にすると、URLに指定された放送年・ジャンル・スタジオが
          * <select> に存在しない状態で上書きされ、見た目上選択できない問題が起きる。
          */
-        await Promise.allSettled([
+        // 作品一覧を最優先で取得し、フィルター候補の取得を待たない。
+        // これにより初回表示をブロックせず、作品カードを先に表示できる。
+        loadURLParameters();
+        bindCompareButtons();
+        updateCompareUI();
+
+        await loadAnime();
+
+        // フィルター候補は作品表示後に並列で読み込む。
+        // 失敗しても作品一覧の表示には影響させない。
+        Promise.allSettled([
             createYearOptions(),
             createGenreOptions(),
             createStudioOptions()
         ]);
-
-        loadURLParameters();
-        bindCompareButtons();
-        updateCompareUI();
-        await loadAnime();
     }
 
     initializeAnimePage();
