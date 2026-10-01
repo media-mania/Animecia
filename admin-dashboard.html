@@ -940,6 +940,20 @@
 
 
       <!-- ===================================================
+           Genre synchronization
+      =================================================== -->
+
+      <section class="box">
+        <h2>ジャンル自動監査・修正</h2>
+        <p class="help">公開作品のうち、監査対象になっている作品をAniList公式ジャンルと照合します。曖昧な作品は自動変更しません。</p>
+        <div class="actions">
+          <button id="sync-genres" class="save" type="button">ジャンル監査を実行</button>
+        </div>
+        <div id="genre-sync-message" class="message"></div>
+      </section>
+
+
+      <!-- ===================================================
            Anime
       =================================================== -->
 
@@ -6700,6 +6714,32 @@
 
         }
       );
+
+
+    /* =====================================================
+       Genre synchronization
+    ===================================================== */
+
+    document.getElementById("sync-genres").addEventListener("click", async function() {
+      const button = this;
+      const message = document.getElementById("genre-sync-message");
+      button.disabled = true;
+      message.className = "message info";
+      message.textContent = "ジャンルを照合しています……";
+      try {
+        const { data, error } = await supabaseClient.functions.invoke("sync-public-anime-genres", { body: { limit: 50 } });
+        if (error) throw error;
+        message.className = "message success";
+        message.textContent = "確認: " + (data?.checked ?? 0) + "件 / 修正: " + (data?.updated ?? 0) + "件 / 未照合: " + (data?.unmatched ?? 0) + "件 / 曖昧: " + (data?.ambiguous ?? 0) + "件";
+        await loadAdminOverview();
+      } catch (error) {
+        console.error("Genre sync error:", error);
+        message.className = "message error";
+        message.textContent = error?.message || "ジャンル監査に失敗しました。";
+      } finally {
+        button.disabled = false;
+      }
+    });
 
 
     /* =====================================================
