@@ -36,7 +36,39 @@ main{max-width:1240px;margin:auto;padding:34px 20px 80px}
 .page-kicker{display:block;color:#e87900;font-size:10px;font-weight:900;letter-spacing:.16em}.page-kicker.dark{color:#e87900}.panel-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:16px}.panel-heading h2{margin:3px 0 4px}.panel-heading p{margin:0;color:#737780;font-size:13px}.section-link{color:#e87900;text-decoration:none;font-size:12px;font-weight:800;white-space:nowrap}.section-link:hover{text-decoration:underline}.section-card{box-shadow:0 8px 28px rgba(16,20,26,.055)!important}.anime-detail-page .anime-hero{box-shadow:0 18px 48px rgba(0,0,0,.18)}
 @media(max-width:760px){.panel-heading{display:block}.section-link{display:inline-block;margin-top:10px}}
 </style>
-</head>
+<style id="animecia-discover-v6">
+.discover-v6{padding-bottom:10px}
+.discover-v6 .hero{padding:28px!important;border-radius:16px!important;background:linear-gradient(135deg,#101827 0%,#18243a 58%,#26344d 100%)!important;box-shadow:0 16px 40px rgba(16,24,39,.14)}
+.discover-v6 .hero-kicker{color:#f59e0b!important}
+.discover-v6 .hero h1{color:#fff!important;font-size:clamp(28px,4vw,42px)!important}
+.discover-v6 .hero p{color:#c7ced8!important}
+.discover-v6 .hero .chip{background:rgba(255,255,255,.07)!important;border-color:rgba(255,255,255,.12)!important;color:#fff!important}
+.discover-v6 .hero .chip:hover{border-color:rgba(245,158,11,.55)!important}
+.discover-v6 .panel{border-radius:12px!important;box-shadow:0 8px 28px rgba(16,20,26,.055)!important}
+.discover-v6 #genre-chips{padding:4px 0 2px}
+.discover-v6 #genre-chips .chip{position:relative;padding:8px 11px;border-radius:7px;background:#f8f9fa;border-color:#e0e4e9;color:#424a54}
+.discover-v6 #genre-chips .chip:hover{border-color:#b9c0c9;background:#fff}
+.discover-v6 #genre-chips .chip.active{background:#101827;color:#fff;border-color:#101827;box-shadow:none}
+.discover-v6 #genre-chips .genre-count{margin-left:5px;color:#8a929c;font-size:10px;font-weight:700}
+.discover-v6 #genre-chips .chip.active .genre-count{color:#c7ced8}
+.discover-v6 .filters{padding:14px;border-radius:10px;background:#f8f9fa;border-color:#e4e7eb}
+.discover-v6 .field input,.discover-v6 .field select{height:40px;border-radius:7px;font-size:12px}
+.discover-v6 .filter-actions{border-top:1px solid #e7eaee;padding-top:12px}
+.discover-v6 .reset{background:#fff;border:1px solid #dfe3e8;color:#4e5762}
+.discover-v6 .result-head-v6{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.discover-v6 .result-head-v6 h2{margin:0;font-size:18px}
+.discover-v6 .result-head-v6 p{margin:3px 0 0;color:#7b838d;font-size:12px}
+.discover-v6 .result-count-v6{font-weight:900;color:#101827;white-space:nowrap}
+.discover-v6 .result-count-v6 b{font-size:22px}
+.discover-v6 .grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.discover-v6 .card{border-radius:10px;border-color:#e0e4e9;box-shadow:0 4px 14px rgba(16,24,39,.045)}
+.discover-v6 .card:hover{border-color:#cbd1d8;box-shadow:0 10px 24px rgba(16,24,39,.09)}
+.discover-v6 .pad{padding:11px}
+.discover-v6 .title{font-size:13px}
+.discover-v6 .meta{font-size:10px}
+.discover-v6 .pill{background:#fff3e4;color:#a84f00;border-radius:5px}
+@media(max-width:700px){.discover-v6 .hero{padding:22px!important}.discover-v6 .panel{padding:17px}.discover-v6 .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.discover-v6 .result-head-v6{display:block}.discover-v6 .result-count-v6{margin-top:7px}}
+</style></head>
 <body>
 <header class="site-header">
 <div class="container nav">
@@ -60,7 +92,7 @@ main{max-width:1240px;margin:auto;padding:34px 20px 80px}
 </div>
 </div>
 </header>
-<main>
+<main class="discover-v6">
 <section class="hero"><div class="hero-kicker">DISCOVER YOUR NEXT ANIME</div><h1>次に観る作品を、探す。</h1><p>ジャンル、形式、年代、放送状況、評価、キーワードを組み合わせて、観たい作品まで絞り込めます。</p><div class="chips" style="margin-top:18px"><a class="chip" href="anime.html">全作品</a><a class="chip" href="season.html">今期アニメ</a><a class="chip" href="ranking.html">ランキング</a><a class="chip" href="recommendations.html">おすすめ</a></div></section>
 
 <section class="panel section-card">
@@ -81,7 +113,7 @@ main{max-width:1240px;margin:auto;padding:34px 20px 80px}
 <div class="filter-actions"><span id="active-summary" class="active-summary">条件なし</span><button id="reset" class="reset">条件をリセット</button></div>
 </section>
 
-<section class="panel"><div id="grid" class="grid"><div class="loading">作品を読み込み中…</div></div></section>
+<section class="panel"><div class="result-head-v6"><div><h2>作品一覧</h2><p>条件に合う作品を最大300件表示します。</p></div><span id="result-count-v6" class="result-count-v6"></span></div><div id="grid" class="grid"><div class="loading">作品を読み込み中…</div></div></section>
 </main>
 <script>
 const U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",s=window.supabase.createClient(U,K);
@@ -117,16 +149,16 @@ async function load(){
  const initialGenre=new URLSearchParams(location.search).get("genre");if(initialGenre){selectedGenres.add(Number(initialGenre));}renderGenres(gr.data||[]);render();
 }
 function renderGenres(gs){
- document.getElementById("genre-chips").innerHTML=gs.map(g=>'<button class="chip" data-id="'+g.id+'">'+esc(g.name)+'</button>').join("")||'<span class="empty">ジャンルがありません。</span>';
- document.querySelectorAll(".chip").forEach(b=>{if(selectedGenres.has(Number(b.dataset.id)))b.classList.add("active");b.onclick=()=>{const id=Number(b.dataset.id);selectedGenres.has(id)?selectedGenres.delete(id):selectedGenres.add(id);b.classList.toggle("active",selectedGenres.has(id));render()};});
+ const counts=new Map(); rows.forEach(a=>a.g.forEach(id=>counts.set(id,(counts.get(id)||0)+1))); document.getElementById("genre-chips").innerHTML=gs.map(g=>'<button type="button" class="chip" data-id="'+g.id+'">'+esc(g.name)+'<span class="genre-count">'+(counts.get(Number(g.id))||0)+'</span></button>').join("")||'<span class="empty">ジャンルがありません。</span>';
+ document.querySelectorAll("#genre-chips .chip").forEach(b=>{if(selectedGenres.has(Number(b.dataset.id)))b.classList.add("active");b.onclick=()=>{const id=Number(b.dataset.id);selectedGenres.has(id)?selectedGenres.delete(id):selectedGenres.add(id);b.classList.toggle("active",selectedGenres.has(id));render()};});
 }
 function render(){
  let r=[...rows],q=document.getElementById("q").value.trim().toLowerCase(),f=document.getElementById("format").value,y=document.getElementById("year").value,st=document.getElementById("status").value,min=document.getElementById("rating").value,sort=document.getElementById("sort").value;
  if(q)r=r.filter(a=>(title(a)+" "+(a.title||"")).toLowerCase().includes(q));
- if(f)r=r.filter(a=>a.format===f);if(y)r=r.filter(a=>String(a.season_year)===y);if(st)r=r.filter(a=>a.status===st);if(min)r=r.filter(a=>Number(a.e.average_rating||0)>=Number(min));
+ if(f){const target=f.toUpperCase();r=r.filter(a=>String(a.format||"").toUpperCase()===target || (target==="MOVIE"&&String(a.format||"").toUpperCase()==="FILM"));}if(y)r=r.filter(a=>String(a.season_year)===y);if(st)r=r.filter(a=>a.status===st);if(min)r=r.filter(a=>Number(a.e.average_rating||0)>=Number(min));
  if(selectedGenres.size)r=r.filter(a=>[...selectedGenres].every(g=>a.g.includes(g)));
  r.sort((a,b)=>sort==="title"?title(a).localeCompare(title(b),"ja"):sort==="new"?String(b.start_date||"").localeCompare(String(a.start_date||"")):sort==="popular"?Number(b.e.favorite_count||0)-Number(a.e.favorite_count||0):Number(b.e.average_rating||0)-Number(a.e.average_rating||0));
- document.getElementById("count").innerHTML='<b>'+r.length+'</b> 作品';
+ document.getElementById("count").innerHTML='<b>'+r.length+'</b> 作品';document.getElementById("result-count-v6").innerHTML='<b>'+r.length+'</b> 作品';
  const summary=[];if(q)summary.push("キーワード");if(selectedGenres.size)summary.push(selectedGenres.size+"ジャンル");if(f)summary.push(f);if(y)summary.push(y+"年");if(st)summary.push("放送状況");if(min)summary.push("評価"+min+"以上");document.getElementById("active-summary").textContent=summary.length?summary.join(" / "):"条件なし";
  document.getElementById("grid").innerHTML=r.slice(0,300).map(a=>'<a class="card" href="anime-detail.html?id='+a.id+'">'+(a.cover_image?'<img class="cover" src="'+esc(a.cover_image)+'" alt="'+esc(title(a))+'" loading="lazy">':'<div class="cover" style="display:grid;place-items:center">画像なし</div>')+'<div class="pad"><div class="title">'+esc(title(a))+'</div><div class="sub">'+esc(a.status||"")+(a.episodes!=null?" · "+a.episodes+"話":"")+'</div><div class="meta"><span class="pill">★ '+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(1):"—")+'</span><span>♥ '+(a.e.favorite_count||0)+'</span><span>レビュー '+(a.e.review_count||0)+'</span></div></div></a>').join("")||'<div class="empty">条件に一致する作品がありません。</div>';
 }
