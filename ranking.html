@@ -247,6 +247,7 @@ async function authState(){
   const {data:{user}}=await supabaseClient.auth.getUser();
   const name=document.getElementById("user-name");
   const btn=document.getElementById("auth-btn");
+  if(!name||!btn)return;
 
   if(user){
     name.textContent=user.email||"";
