@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* X-inspired Animecia profile */
-.composer{background:#fff}.composer:focus-within{background:#fff}.composer textarea::placeholder{color:#8b929b}.composer .btn{border-radius:999px!important;padding:9px 18px!important}
+.notification-filter{display:flex;gap:6px;overflow:auto;padding:10px 12px;border-bottom:1px solid #e5e7eb}.notification-filter button{border:1px solid #dfe3e8;background:#fff;border-radius:999px;padding:7px 12px;white-space:nowrap;cursor:pointer}.notification-filter button.active{background:#101827;color:#fff;border-color:#101827}.notification-item.unread{background:#f5f9ff}.notification-item{padding:15px 14px;border-bottom:1px solid #edf0f2}.notification-icon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#eef2f7;font-weight:800}.composer{background:#fff}.composer:focus-within{background:#fff}.composer textarea::placeholder{color:#8b929b}.composer .btn{border-radius:999px!important;padding:9px 18px!important}
 body{background:#f5f6f8}
 .site-header{position:sticky;top:0;z-index:50}
 main{max-width:1120px!important}
@@ -575,6 +575,36 @@ async function loadSocialPosts(mode){
  }));
 }
 
+async function loadNotifications(){
+ const el=document.getElementById("list");
+ const filter=window.__notificationFilter||"all";
+ const filters=[["all","すべて"],["like","いいね"],["repost","リポスト"],["reply","返信・メンション"],["follow","フォロー"]];
+ const {data,error}=await supabaseClient.from("user_notifications").select("id,title,message,target_url,is_read,created_at,type").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);
+ if(error)throw error;
+ const all=data||[];
+ const rows=filter==="all"?all:all.filter(x=>String(x.type||"").toLowerCase().includes(filter));
+ const unread=all.filter(x=>!x.is_read);
+ const badge=document.getElementById("notification-badge");
+ badge.textContent=unread.length;
+ badge.style.display=unread.length?"inline-flex":"none";
+ const controls='<div class="notification-filter">'+filters.map(([v,t])=>'<button type="button" class="'+(filter===v?"active":"")+'" data-notify-filter="'+v+'">'+t+'</button>').join("")+'<button type="button" id="mark-all-notifications" style="margin-left:auto">すべて既読</button></div>';
+ const body=rows.length?rows.map(x=>{
+  const t=String(x.type||"").toLowerCase();
+  const icon=t.includes("like")?"♡":t.includes("repost")?"↻":t.includes("reply")||t.includes("mention")?"↩":t.includes("follow")?"＋":"●";
+  return '<article class="notification-item '+(!x.is_read?"unread":"")+'"><div style="display:flex;gap:12px"><div class="notification-icon">'+icon+'</div><div class="grow"><div class="title">'+esc(x.title||"通知")+'</div><div class="sub" style="margin-top:4px">'+esc(x.message||"")+'</div><div class="meta">'+esc(new Date(x.created_at).toLocaleString("ja-JP"))+(x.is_read?"":" ・ 未読")+'</div>'+(x.target_url?'<a class="btn secondary" href="'+esc(x.target_url)+'">開く</a>':"")+'</div></div></article>';
+ }).join(""):'<div class="empty">この種類の通知はありません。</div>';
+ el.innerHTML=controls+body;
+ el.querySelectorAll("[data-notify-filter]").forEach(btn=>btn.addEventListener("click",()=>{window.__notificationFilter=btn.dataset.notifyFilter;loadNotifications();}));
+ document.getElementById("mark-all-notifications")?.addEventListener("click",async()=>{
+  const ids=all.filter(x=>!x.is_read).map(x=>x.id);
+  if(ids.length){
+   const {error}=await supabaseClient.from("user_notifications").update({is_read:true}).in("id",ids).eq("user_id",currentUser.id);
+   if(error)throw error;
+  }
+  await loadNotifications();
+ });
+ if(unread.length)await supabaseClient.from("user_notifications").update({is_read:true}).in("id",unread.map(x=>x.id)).eq("user_id",currentUser.id);
+}
 async function loadTab(){
  const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';
  try{
@@ -638,9 +668,10 @@ document.querySelectorAll(".my-post-delete").forEach(button=>button.addEventList
    return;
   }
   if(currentTab==="notifications"){
-   const {data,error}=await supabaseClient.from("user_notifications").select("id,title,message,target_url,is_read,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);if(error)throw error;
-   const rows=data||[];
-   el.innerHTML=rows.map(x=>'<div class="list-item"><div class="grow"><div class="title">'+esc(x.title||"通知")+'</div><div class="sub">'+esc(x.message||"")+'</div><div class="meta">'+new Date(x.created_at).toLocaleString("ja-JP")+(x.is_read?"":" ・ 未読")+'</div>'+(x.target_url?'<a class="btn secondary" href="'+esc(x.target_url)+'">開く</a>':"")+'</div></div>').join("")||'<div class="empty">通知はありません。</div>';
+   await loadNotifications();
+   return;
+  }
+
    const unreadIds=rows.filter(x=>!x.is_read).map(x=>x.id);
    if(unreadIds.length){
     const {error:readError}=await supabaseClient.from("user_notifications").update({is_read:true}).in("id",unreadIds).eq("user_id",currentUser.id);
