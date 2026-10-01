@@ -75,8 +75,9 @@ function removeId(id){ids=ids.filter(x=>x!==Number(id));save();history.replaceSt
 async function renderSelected(rows){
  const el=document.getElementById("selected-list");
  if(!rows.length){el.innerHTML='<div class="selected-empty">まだ作品が選択されていません。</div>';return;}
- el.innerHTML=rows.map(a=>'<div class="selected-item"><img src="'+esc(a.cover_image||"")+'" alt="" onerror="this.style.visibility=\'hidden\'"><span>'+esc(titleOf(a))+'</span><button type="button" data-remove="'+a.id" aria-label="'+esc(titleOf(a))+'を比較から外す">×</button></div>').join("");
- el.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeId(b.dataset.remove));
+ el.innerHTML=rows.map(a=>'<div class="selected-item"><img src="'+esc(a.cover_image||"")+'" alt=""><span>'+esc(titleOf(a))+'</span><button type="button" data-remove="'+a.id+'" aria-label="'+esc(titleOf(a))+'を比較から外す">×</button></div>').join("");
+ el.querySelectorAll("img").forEach(img=>img.addEventListener("error",()=>{img.style.visibility="hidden";}));
+ el.querySelectorAll("[data-remove]").forEach(btn=>btn.onclick=()=>removeId(btn.dataset.remove));
 }
 async function loadStats(rows){
  const ids2=rows.map(a=>a.id); const stats=new Map(ids2.map(id=>[id,{rating:null,ratingCount:0,favorites:0,reviews:0}]));
