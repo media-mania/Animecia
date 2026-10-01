@@ -396,9 +396,7 @@ async function saveProfile(){
   show_watch_status:document.getElementById("show-watch_status")?.checked!==false,
   show_ratings:document.getElementById("show-ratings")?.checked!==false,
   show_reviews:document.getElementById("show-reviews")?.checked!==false,
-  show_user_follows:document.getElementById("show-user_follows")?.checked!==false,
-  show_ranking:document.getElementById("show-ranking")?.checked!==false,
-  show_posts:document.getElementById("show-posts")?.checked!==false,
+  show_user_follows:document.getElementById("show-user_follows")?.checked!==false,  show_posts:document.getElementById("show-posts")?.checked!==false,
   updated_at:new Date().toISOString()
  };
  button.disabled=true;
@@ -422,7 +420,7 @@ async function saveProfile(){
 }
 async function saveVisibility(){
  const msg=document.getElementById("profile-msg");
- const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_ranking:document.getElementById("show-ranking").checked,show_posts:document.getElementById("show-posts").checked,updated_at:new Date().toISOString()};
+ const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_posts:document.getElementById("show-posts").checked,updated_at:new Date().toISOString()};
  const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
  if(error){console.error(error);msg.textContent="公開範囲を保存できませんでした。";return;}
  await loadProfile();
@@ -693,20 +691,6 @@ async function loadUserSearch(){
  document.getElementById("user-search-input").addEventListener("keydown",e=>{if(e.key==="Enter")run();});
 }
 
-async function loadMyRanking(){
- const el=document.getElementById("list");
- const {data,error}=await supabaseClient.from("user_ratings").select("anime_id,rating,updated_at").eq("user_id",currentUser.id).order("rating",{ascending:false,nullsFirst:false}).order("updated_at",{ascending:false}).limit(100);
- if(error)throw error;
- const rows=data||[];
- if(!rows.length){el.innerHTML='<div class="empty">まだ評価した作品がありません。作品ページから評価すると、ここにランキングが作成されます。</div>';return;}
- const map=await getAnime(rows.map(x=>x.anime_id));
- const visible=rows.filter(x=>map.has(Number(x.anime_id)));
- el.innerHTML=visible.map((x,i)=>{
-  const a=map.get(Number(x.anime_id));
-  return '<a class="my-rank-item" href="anime-detail.html?id='+a.id+'"><div class="my-rank-no">#'+(i+1)+'</div>'+imageMarkup(a.cover_image,titleOf(a)).replace('class="thumb"','class="my-rank-thumb"')+'<div class="grow"><div class="title">'+esc(titleOf(a))+'</div><div class="sub">'+esc(a.format||"")+' ・ '+esc(a.season_year||"")+'</div></div><div class="my-rank-score">★ '+esc(Number(x.rating).toFixed(1))+'<small>/ 10</small></div></a>';
- }).join("")||'<div class="empty">表示できる評価作品がありません。</div>';
-}
-
 async function loadTab(){
  const el=document.getElementById("list");
  el.innerHTML='<div class="loading">読み込み中…</div>';
@@ -733,7 +717,6 @@ async function loadTab(){
    if(error)throw error;
    renderAnimeList(data||[],await getAnime((data||[]).map(x=>x.anime_id)),x=>"★ "+x.rating+"/10");return;
   }
-  if(currentTab==="my_ranking"){await loadMyRanking();return;}
   if(currentTab==="reviews"){
    const {data,error}=await supabaseClient.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at,updated_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);
    if(error)throw error;
