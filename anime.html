@@ -2597,6 +2597,7 @@
 
     async function loadAnime() {
 
+        const requestVersion = ++loadRequestVersion;
         animeGrid.innerHTML = '<div class="loading">アニメ情報を読み込んでいます……</div>';
         resultPage.textContent = "読み込み中…";
         pagination.innerHTML = "";
@@ -2616,11 +2617,13 @@
             });
 
             if (error) throw error;
+            if (requestVersion !== loadRequestVersion) return;
 
             // 公開基準をフロント側でも再確認し、古いキャッシュや将来のRPC変更でも1963年以前を表示しない
             animeData = (data || []).filter(anime => {
                 return anime?.start_date && anime.start_date >= "1963-01-01";
             });
+            if (requestVersion !== loadRequestVersion) return;
             filteredAnime = animeData;
             serverTotal = Number(animeData[0]?.total_count || 0);
 
