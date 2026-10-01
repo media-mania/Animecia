@@ -211,7 +211,7 @@ async function load(){
  document.getElementById("database-count").textContent=catalog.toLocaleString("ja-JP")+"作品";
  const genres=genreRes.data||[];
  document.getElementById("genre-count").textContent=genres.length.toLocaleString("ja-JP");
- document.getElementById("genre-count-side").textContent=genres.length.toLocaleString("ja-JP");
+ const genreCountSide=document.getElementById("genre-count-side");if(genreCountSide)genreCountSide.textContent=genres.length.toLocaleString("ja-JP");
  const seasonRows=(seasonRes.data||[]).filter(valid),rankRows=(rankRes.data||[]).filter(valid),newRows=(newRes.data||[]).filter(valid);
  document.getElementById("season-count-side").textContent=seasonRows.length.toLocaleString("ja-JP");
  const eng=new Map((engRes.data||[]).map(x=>[String(x.anime_id),x]));
