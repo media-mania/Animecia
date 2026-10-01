@@ -209,6 +209,7 @@ jobs:
                 "studios":[],
                 "is_adult":bool(m.get("isAdult") is True),
                 "is_kids":bool(tag_names.intersection({"kids","preschool","kindergarten","幼児向け","子供向け","こども向け"})),
+                "is_sensitive_visual":bool(tag_names.intersection({"ecchi","hentai","nudity","sexual content","sexual themes","erotica","erotic","fanservice","性的","性的描写","性的な内容","裸","ヌード","エッチ","お色気","成人向け"})),
                 "source_provider":"anilist",
                 "source_id":str(m["id"]),
                 "cover_image":(m.get("coverImage") or {}).get("large"),
