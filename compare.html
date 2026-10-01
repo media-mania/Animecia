@@ -69,7 +69,7 @@ function save(){localStorage.setItem("animecia_compare",JSON.stringify(ids));}
 function updateCount(){document.getElementById("compare-count").textContent=ids.length+" / 5";}
 async function fetchAnimeByIds(){
  if(!ids.length)return[];
- const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url").eq("anime_verification_status","verified").in("id",ids); if(error) throw error;
+ const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,banner_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url,average_score,popularity,genre").eq("anime_verification_status","verified").in("id",ids); if(error) throw error;
  const map=new Map((data||[]).map(a=>[Number(a.id),a]));
  return ids.map(id=>map.get(id)).filter(Boolean);
 }
@@ -82,9 +82,15 @@ async function renderSelected(rows){
  el.querySelectorAll("[data-remove]").forEach(btn=>btn.onclick=()=>removeId(btn.dataset.remove));
 }
 async function loadStats(rows){
- const ids2=rows.map(a=>a.id); const stats=new Map(ids2.map(id=>[id,{rating:null,ratingCount:0,favorites:0,reviews:0}]));
- const {data}=await supabaseClient.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").in("anime_id",ids2);
- (data||[]).forEach(x=>{const s=stats.get(Number(x.anime_id));if(s){s.rating=x.average_rating;s.ratingCount=x.rating_count||0;s.favorites=x.favorite_count||0;s.reviews=x.review_count||0;}});
+ const ids2=rows.map(a=>Number(a.id)).filter(Number.isInteger);
+ const stats=new Map(ids2.map(id=>[id,{rating:null,ratingCount:0,favorites:0,reviews:0}]));
+ if(!ids2.length)return stats;
+ const {data,error}=await supabaseClient.rpc("get_anime_comparison_stats",{p_anime_ids:ids2});
+ if(error){console.error("comparison stats",error);return stats;}
+ (data||[]).forEach(x=>{
+   const s=stats.get(Number(x.anime_id));
+   if(s){s.rating=x.average_rating;s.ratingCount=Number(x.rating_count||0);s.favorites=Number(x.favorite_count||0);s.reviews=Number(x.review_count||0);}
+ });
  return stats;
 }
 function valueText(a){return a.season_year?(a.season_year+"年 "+(seasonName[a.season]||a.season||"")):"—"}
@@ -95,12 +101,16 @@ async function renderComparison(rows){
  const cell=(a,fn)=>'<td>'+fn(a,stats.get(a.id))+'</td>';
  const labels=[
  ["作品名",a=>'<strong class="work-title">'+esc(titleOf(a))+'</strong>'],
- ["画像",a=>a.cover_image?'<img class="cover" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'">':'<div class="no-cover">画像なし</div>'],
- ["Animecia評価",(a,s)=>s?.rating!=null?'<strong class="score">★ '+Number(s.rating).toFixed(2)+'</strong><small>'+s.ratingCount+'件の評価</small>':"—"],
+ ["画像",a=>a.cover_image?'<img class="cover" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'">':a.banner_image?'<img class="cover" src="'+esc(a.banner_image)+'" alt="'+esc(titleOf(a))+'">':'<div class="no-cover">画像なし</div>'],
+ ["Animecia評価",(a,s)=>s?.rating!=null?'<strong class="score">★ '+Number(s.rating).toFixed(2)+'</strong><small>'+s.ratingCount.toLocaleString()+'件の評価</small>':"評価なし"],
  ["お気に入り",(a,s)=>Number(s?.favorites||0).toLocaleString()+"件"],
  ["レビュー",(a,s)=>Number(s?.reviews||0).toLocaleString()+"件"],
- ["形式",a=>esc(a.format||"—")],["放送状況",a=>esc(a.status||"—")],["放送開始",a=>esc(a.start_date||"—")],["放送終了",a=>esc(a.end_date||"—")],
- ["話数",a=>a.episodes!=null?esc(a.episodes)+"話":"—"],["1話の長さ",a=>a.duration!=null?esc(a.duration)+"分":"—"],["シーズン",a=>esc(valueText(a))],["原作",a=>esc(a.source||"—")],
+ ["サイト掲載スコア",a=>a.average_score!=null?'★ '+Number(a.average_score).toFixed(1):"—"],
+ ["人気度",a=>a.popularity!=null?Number(a.popularity).toLocaleString():"—"],
+ ["形式",a=>esc(a.format||"—")],["ジャンル",a=>esc(a.genre||"—")],["放送状況",a=>esc(a.status||"—")],
+ ["放送開始",a=>esc(a.start_date||"—")],["放送終了",a=>esc(a.end_date||"—")],
+ ["話数",a=>a.episodes!=null?esc(a.episodes)+"話":"—"],["1話の長さ",a=>a.duration!=null?esc(a.duration)+"分":"—"],
+ ["シーズン",a=>esc(valueText(a))],["原作",a=>esc(a.source||"—")],
  ["公式サイト",a=>a.official_url?'<a class="official-link" href="'+esc(a.official_url)+'" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>':"—"],
  ["詳細",a=>'<a class="detail-btn" href="anime-detail.html?id='+encodeURIComponent(a.id)+'">詳細を見る</a>']
  ];
