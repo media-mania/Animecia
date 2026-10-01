@@ -65,7 +65,7 @@ async function renderContent(){
   document.getElementById("following-link")?.addEventListener("click",()=>activateTab("user_following"));
  }
  await setupFollow(isSelf);
- const cover=document.getElementById("profile-cover");if(cover&&profile.background_url){const bx=Math.min(100,Math.max(0,Number(profile.background_position_x??50))),by=Math.min(100,Math.max(0,Number(profile.background_position_y??50))),bz=Math.min(180,Math.max(100,Number(profile.background_zoom??100)));cover.style.backgroundImage="url(\""+profile.background_url.replace(/\"/g,"%22")+"\")";cover.style.backgroundPosition=bx+"% "+by+"%";cover.style.backgroundSize=bz+"% auto";}
+ const cover=document.getElementById("profile-cover");if(cover&&profile.background_url){const bx=Math.min(100,Math.max(0,Number(profile.background_position_x??50))),by=Math.min(100,Math.max(0,Number(profile.background_position_y??50))),bz=Math.min(180,Math.max(100,Number(profile.background_zoom??100)));cover.style.backgroundImage="url(\""+mediaUrl(profile.background_url,profile.updated_at).replace(/\"/g,"%22")+"\")";cover.style.backgroundPosition=bx+"% "+by+"%";cover.style.backgroundSize=bz+"% auto";}
  if(tabs.length)await loadTab(tabs[0]);else document.getElementById("list").innerHTML='<div class="empty">公開されている項目はありません。</div>';
 }
 function activateTab(name){if(!tabs.includes(name))return;const b=document.querySelector('.tab[data-tab="'+name+'"]');if(b)b.click();}
