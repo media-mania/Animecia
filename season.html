@@ -259,7 +259,7 @@ async function load(){
  grid.innerHTML='<div class="loading">今期アニメを読み込んでいます…</div>';
  try{
    const {data,error}=await supabaseClient
-     .from("anime")
+     .from("animecia_public_anime")
      .select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,season,season_year,status,episodes")
      .eq("anime_verification_status","verified")
      .eq("season_year",year)
@@ -305,7 +305,7 @@ async function load(){
 
 async function loadYears(){
  const {data,error}=await supabaseClient
-   .from("anime")
+   .from("animecia_public_anime")
    .select("season_year")
    .eq("anime_verification_status","verified")
    .not("season_year","is",null)
