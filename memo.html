@@ -13,14 +13,28 @@
 </style>
 </head>
 <body>
-<header class="site-header"><div class="container nav">
+<header class="site-header">
+<div class="container nav">
 <a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
-<nav class="nav-links" aria-label="メインメニュー">
-<a href="index.html">ホーム</a><a href="anime.html">アニメを探す</a><a href="season.html">今期</a><a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="memo.html" aria-current="page">メモ</a><a href="community.html">コミュニティ</a>
+<nav class="nav-links animecia-main-nav" aria-label="メインメニュー">
+<a href="index.html">ホーム</a>
+<a href="anime.html">アニメを探す</a>
+<a href="season.html">今期アニメ</a>
+<a href="ranking.html">ランキング</a>
+<a href="discover.html">ジャンル</a>
+<a href="recommendations.html">おすすめ</a>
+<a href="memo.html">メモ</a>
+<a href="community.html">コミュニティ</a>
+<a href="mypage.html">マイページ</a>
 </nav>
-<form class="header-search" action="anime.html" method="get"><input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索"></form>
-<div class="nav-actions"></div>
-</div></header>
+<form class="header-search" action="anime.html" method="get" role="search">
+<input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
+</form>
+<div class="nav-actions">
+<a class="nav-btn primary" href="login.html" id="auth-link">ログイン</a>
+</div>
+</div>
+</header>
 <main class="memo-page">
 <section class="memo-hero"><span class="memo-kicker">MY ANIME MEMO</span><h1>メモ</h1><p>気になる作品を保存して、あとからすぐ確認できます。</p></section>
 <section class="memo-panel"><div class="memo-head"><div><h2>保存した作品</h2><div id="memo-count" class="memo-count"></div></div><button id="clear" class="memo-clear" type="button">すべて外す</button></div><div id="memo-grid" class="memo-grid"></div></section>
