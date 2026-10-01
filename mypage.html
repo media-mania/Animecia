@@ -472,13 +472,62 @@ async function submitMypagePost(){
    msg.textContent="投稿できませんでした。";
  }finally{button.disabled=false;}
 }
+async function getPostActionState(postId){
+ const [like,rep,book]=await Promise.all([
+  supabaseClient.from("social_post_likes").select("post_id").eq("post_id",postId).eq("user_id",currentUser.id).maybeSingle(),
+  supabaseClient.from("social_post_reposts").select("post_id").eq("post_id",postId).eq("user_id",currentUser.id).maybeSingle(),
+  supabaseClient.from("social_post_bookmarks").select("post_id").eq("post_id",postId).eq("user_id",currentUser.id).maybeSingle()
+ ]);
+ return {liked:!!like.data,reposted:!!rep.data,bookmarked:!!book.data};
+}
+async function togglePostAction(postId,kind){
+ const table=kind==="like"?"social_post_likes":kind==="repost"?"social_post_reposts":"social_post_bookmarks";
+ const state=await getPostActionState(postId);
+ const active=kind==="like"?state.liked:kind==="repost"?state.reposted:state.bookmarked;
+ if(active){
+   const {error}=await supabaseClient.from(table).delete().eq("post_id",postId).eq("user_id",currentUser.id);
+   if(error)throw error;
+ }else{
+   const {error}=await supabaseClient.from(table).insert({post_id:postId,user_id:currentUser.id});
+   if(error)throw error;
+ }
+}
+async function pinPost(postId){
+ const {data:post,error:postError}=await supabaseClient.from("social_posts").select("id,author_id,deleted_at").eq("id",postId).maybeSingle();
+ if(postError)throw postError;
+ if(!post||post.author_id!==currentUser.id||post.deleted_at)throw new Error("自分の投稿だけ固定できます");
+ const {data:profile,error:profileError}=await supabaseClient.from("profiles").select("pinned_post_id").eq("id",currentUser.id).maybeSingle();
+ if(profileError)throw profileError;
+ const next=profile?.pinned_post_id===postId?null:postId;
+ const {error}=await supabaseClient.from("profiles").update({pinned_post_id:next}).eq("id",currentUser.id);
+ if(error)throw error;
+}
+async function renderSocialPost(x,pm,counts,mode){
+ const p=pm.get(x.author_id)||{};const name=p.display_name||p.username||"Animeciaユーザー";
+ const avatar=p.avatar_url?'<img class="avatar" src="'+esc(p.avatar_url)+'" alt="">':'<div class="avatar" style="display:grid;place-items:center;font-weight:800;color:#888">'+esc(name.slice(0,1))+'</div>';
+ const c=counts[x.id]||{likes:0,reposts:0,bookmarks:0,replies:0};
+ const state=await getPostActionState(x.id);
+ const photo=x.attachment_url?'<img src="'+esc(x.attachment_url)+'" alt="投稿メディア" loading="lazy" style="display:block;width:min(420px,100%);max-height:360px;object-fit:cover;border-radius:12px;margin-top:10px">':"";
+ const mine=x.author_id===currentUser.id;
+ return '<article class="list-item social-post" data-post-id="'+esc(x.id)+'" style="align-items:flex-start">'+
+ '<div style="flex:none">'+avatar+'</div><div class="grow">'+
+ '<div><strong>'+esc(name)+'</strong>'+(p.username?' <span class="sub">@'+esc(p.username)+'</span>':"")+'<span class="sub"> · '+esc(new Date(x.created_at).toLocaleString("ja-JP"))+'</span></div>'+
+ '<a href="community.html?post='+encodeURIComponent(x.id)+'" style="display:block;color:inherit;text-decoration:none"><div style="margin-top:8px;white-space:pre-wrap;line-height:1.7">'+esc(x.body||"")+'</div>'+photo+'</a>'+
+ '<div class="post-actions" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">'+
+ '<button class="btn secondary post-action" data-kind="reply" data-id="'+esc(x.id)+'" type="button">返信 '+c.replies+'</button>'+
+ '<button class="btn secondary post-action '+(state.reposted?"active":"")+'" data-kind="repost" data-id="'+esc(x.id)+'" type="button">リポスト '+c.reposts+'</button>'+
+ '<button class="btn secondary post-action '+(state.liked?"active":"")+'" data-kind="like" data-id="'+esc(x.id)+'" type="button">いいね '+c.likes+'</button>'+
+ '<button class="btn secondary post-action '+(state.bookmarked?"active":"")+'" data-kind="bookmark" data-id="'+esc(x.id)+'" type="button">ブックマーク '+c.bookmarks+'</button>'+
+ (mine?'<button class="btn secondary post-pin" data-id="'+esc(x.id)+'" type="button">'+(p.pinned_post_id===x.id?"固定を解除":"プロフィールに固定")+'</button><button class="btn secondary my-post-delete" data-id="'+esc(x.id)+'" type="button">削除</button>':"")+
+ '</div></div></article>';
+}
 async function loadSocialPosts(mode){
  const el=document.getElementById("list");
  let query=supabaseClient.from("social_posts").select("id,author_id,body,attachment_url,attachment_path,attachment_type,reply_to_id,quote_post_id,created_at").is("deleted_at",null).order("created_at",{ascending:false}).limit(100);
  if(mode==="posts")query=query.eq("author_id",currentUser.id).is("reply_to_id",null);
  if(mode==="replies")query=query.eq("author_id",currentUser.id).not("reply_to_id","is",null);
- if(mode==="media")query=query.eq("author_id",currentUser.id).is("reply_to_id",null).not("attachment_url","is",null);
- if(mode==="likes"||mode==="bookmarks"||mode==="reposts"){
+ if(mode==="media")query=query.eq("author_id",currentUser.id).is("reply_to_id","is",null).not("attachment_url","is",null);
+ if(["likes","bookmarks","reposts"].includes(mode)){
    const table=mode==="likes"?"social_post_likes":mode==="bookmarks"?"social_post_bookmarks":"social_post_reposts";
    const {data:actions,error:actionError}=await supabaseClient.from(table).select("post_id,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);
    if(actionError)throw actionError;
@@ -486,31 +535,46 @@ async function loadSocialPosts(mode){
    if(!ids.length){el.innerHTML='<div class="empty">該当する投稿はありません。</div>';return;}
    query=supabaseClient.from("social_posts").select("id,author_id,body,attachment_url,attachment_path,attachment_type,reply_to_id,quote_post_id,created_at").in("id",ids).is("deleted_at",null);
  }
- const {data,error}=await query;
- if(error)throw error;
+ const {data,error}=await query;if(error)throw error;
  const rows=data||[];
  if(!rows.length){el.innerHTML='<div class="empty">該当する投稿はありません。</div>';return;}
  const authorIds=[...new Set(rows.map(x=>x.author_id))];
- const {data:profiles}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url").in("id",authorIds);
+ const {data:profiles}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,pinned_post_id").in("id",authorIds);
  const pm=new Map((profiles||[]).map(x=>[x.id,x]));
- const postIds=rows.map(x=>x.id);
- const counts={};
- for(const table of ["social_post_likes","social_post_reposts","social_post_bookmarks"]){
-   const {data:a}=await supabaseClient.from(table).select("post_id").in("post_id",postIds);
-   (a||[]).forEach(x=>{counts[x.post_id]??={likes:0,reposts:0,bookmarks:0};});
- }
- for(const table of ["social_post_likes","social_post_reposts","social_post_bookmarks"]){
-   const {data:a}=await supabaseClient.from(table).select("post_id").in("post_id",postIds);
-   (a||[]).forEach(x=>{const key=table==="social_post_likes"?"likes":table==="social_post_reposts"?"reposts":"bookmarks";counts[x.post_id]??={likes:0,reposts:0,bookmarks:0};counts[x.post_id][key]++;});
- }
- const label=mode==="likes"?"いいねした投稿":mode==="bookmarks"?"ブックマークした投稿":mode==="reposts"?"リポストした投稿":mode==="replies"?"返信":"投稿";
- el.innerHTML=rows.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(x=>{
-   const p=pm.get(x.author_id)||{};const name=p.display_name||p.username||"Animeciaユーザー";const avatar=p.avatar_url?'<img class="avatar" src="'+esc(p.avatar_url)+'" alt="">':'<div class="avatar" style="display:grid;place-items:center;font-weight:800;color:#888">'+esc(name.slice(0,1))+'</div>';
-   const c=counts[x.id]||{likes:0,reposts:0,bookmarks:0};
-   const photo=x.attachment_url?'<img src="'+esc(x.attachment_url)+'" alt="投稿メディア" loading="lazy" style="display:block;width:min(420px,100%);max-height:360px;object-fit:cover;border-radius:12px;margin-top:10px">':"";
-   return '<article class="list-item" style="align-items:flex-start"><div style="flex:none">'+avatar+'</div><div class="grow"><div><strong>'+esc(name)+'</strong>'+(p.username?' <span class="sub">@'+esc(p.username)+'</span>':"")+'<span class="sub"> · '+esc(new Date(x.created_at).toLocaleString("ja-JP"))+'</span></div><div style="margin-top:8px;white-space:pre-wrap;line-height:1.7">'+esc(x.body||"")+'</div>'+photo+'<div class="meta" style="margin-top:11px"><span>返信 '+(x.reply_to_id?1:0)+'</span><span>リポスト '+c.reposts+'</span><span>いいね '+c.likes+'</span><span>ブックマーク '+c.bookmarks+'</span><span class="pill">'+label+'</span></div></div></article>';
- }).join("");
+ const postIds=rows.map(x=>x.id),counts={};
+ const [likes,reposts,bookmarks,replies]=await Promise.all([
+  supabaseClient.from("social_post_likes").select("post_id").in("post_id",postIds),
+  supabaseClient.from("social_post_reposts").select("post_id").in("post_id",postIds),
+  supabaseClient.from("social_post_bookmarks").select("post_id").in("post_id",postIds),
+  supabaseClient.from("social_posts").select("reply_to_id").in("reply_to_id",postIds).is("deleted_at",null)
+ ]);
+ for(const [arr,key] of [[likes.data,"likes"],[reposts.data,"reposts"],[bookmarks.data,"bookmarks"]])(arr||[]).forEach(x=>{counts[x.post_id]??={likes:0,reposts:0,bookmarks:0,replies:0};counts[x.post_id][key]++;});
+ (replies.data||[]).forEach(x=>{counts[x.reply_to_id]??={likes:0,reposts:0,bookmarks:0,replies:0};counts[x.reply_to_id].replies++;});
+ const html=[];
+ for(const x of rows.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)))html.push(await renderSocialPost(x,pm,counts,mode));
+ el.innerHTML=html.join("");
+ el.querySelectorAll(".post-action").forEach(btn=>btn.addEventListener("click",async()=>{
+   const id=btn.dataset.id,kind=btn.dataset.kind;
+   if(kind==="reply"){location.href="community.html?post="+encodeURIComponent(id)+"#reply";return;}
+   btn.disabled=true;
+   try{await togglePostAction(id,kind);await loadSocialPosts(currentTab);}catch(e){console.error(e);alert("操作できませんでした。")}finally{btn.disabled=false;}
+ }));
+ el.querySelectorAll(".post-pin").forEach(btn=>btn.addEventListener("click",async()=>{
+   btn.disabled=true;try{await pinPost(btn.dataset.id);await loadSocialPosts(currentTab);}catch(e){console.error(e);alert(e.message||"固定できませんでした。")}finally{btn.disabled=false;}
+ }));
+ el.querySelectorAll(".my-post-delete").forEach(button=>button.addEventListener("click",async()=>{
+   if(!confirm("この投稿を削除しますか？"))return;
+   button.disabled=true;
+   const {data:post}=await supabaseClient.from("social_posts").select("attachment_path").eq("id",button.dataset.id).eq("author_id",currentUser.id).maybeSingle();
+   const {data:media}=await supabaseClient.from("social_post_media").select("storage_path").eq("post_id",button.dataset.id);
+   const {data:deleted,error}=await supabaseClient.rpc("delete_social_post",{p_post_id:button.dataset.id});
+   if(error||!deleted){alert("投稿を削除できませんでした。");button.disabled=false;return;}
+   const paths=[...(media||[]).map(x=>x.storage_path),...(post?.attachment_path?[post.attachment_path]:[])];
+   if(paths.length)await supabaseClient.storage.from("community-media").remove(paths);
+   await loadSocialPosts(currentTab);
+ }));
 }
+
 async function loadTab(){
  const el=document.getElementById("list");el.innerHTML='<div class="loading">読み込み中…</div>';
  try{
