@@ -5,249 +5,249 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Animecia｜アニメを探す、評価する、記録する</title>
 <meta name="description" content="Animeciaは、アニメを探して、評価して、レビューして、自分の視聴履歴を管理できる日本向けアニメデータベースです。">
-<link rel="canonical" href="https://media-mania.github.io/Animecia/">
+<link rel="canonical" href="https://media-manialgithublio/Animecia/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Animecia｜アニメを探す、評価する、記録する">
 <meta property="og:description" content="今期アニメから名作まで。アニメを探して、評価して、記録する。">
-<meta property="og:url" content="https://media-mania.github.io/Animecia/">
+<meta property="og:url" content="https://media-manialgithublio/Animecia/">
 <meta property="og:site_name" content="Animecia">
 <meta property="og:locale" content="ja_JP">
 <meta name="theme-color" content="#101114">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnljsdelivrlnet/npm/@supabase/supabase-js@2"></script>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"Animecia","url":"https://media-mania.github.io/Animecia/","potentialAction":{"@type":"SearchAction","target":"https://media-mania.github.io/Animecia/anime.html?search={search_term_string}","query-input":"required name=search_term_string"}}
+{"@context":"https://schemalorg","@type":"WebSite","name":"Animecia","url":"https://media-manialgithublio/Animecia/","potentialAction":{"@type":"SearchAction","target":"https://media-manialgithublio/Animecia/animelhtml?search={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
 <style>
-:root{--bg:#f4f5f7;--surface:#fff;--ink:#15171b;--muted:#70757d;--line:#e6e8eb;--accent:#5b5ce2;--accent2:#7778f0;--dark:#101114;--shadow:0 10px 30px rgba(16,17,20,.07)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;line-height:1.6}a{color:inherit}button,input{font:inherit}button{cursor:pointer}img{display:block;max-width:100%}.container{width:min(1240px,calc(100% - 32px));margin:auto}
-header{position:sticky;top:0;z-index:50;background:rgba(16,17,20,.94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.08);color:#fff}.nav{min-height:68px;display:flex;align-items:center;gap:28px}.brand{font-size:22px;font-weight:900;letter-spacing:-.04em;text-decoration:none}.nav-links{display:flex;gap:20px;align-items:center;flex:1}.nav-links a{color:#bfc2c8;text-decoration:none;font-size:13px;font-weight:650}.nav-links a:hover{color:#fff}.nav-actions{display:flex;gap:8px;align-items:center}.nav-btn{border:1px solid #3a3d44;background:#191b20;color:#fff;border-radius:9px;padding:8px 13px;text-decoration:none;font-size:12px;font-weight:750}.nav-btn.primary{background:#fff;color:#111;border-color:#fff}.mobile-nav{display:none}
-.hero{margin:26px 0 18px;border-radius:24px;overflow:hidden;background:radial-gradient(circle at 85% 10%,rgba(119,120,240,.38),transparent 32%),linear-gradient(135deg,#111217,#1a1c25);color:#fff;box-shadow:0 18px 45px rgba(16,17,20,.16)}.hero-inner{padding:58px 54px 52px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.8fr);gap:45px;align-items:end}.eyebrow{color:#aeb1ff;font-size:12px;font-weight:800;letter-spacing:.14em}.hero h1{font-size:clamp(34px,5vw,62px);line-height:1.08;letter-spacing:-.055em;margin:10px 0 18px;max-width:800px}.hero p{color:#c8cad0;margin:0;max-width:680px;font-size:15px}.hero-search{background:#fff;border-radius:15px;padding:7px;display:flex;box-shadow:0 14px 35px rgba(0,0,0,.22)}.hero-search input{border:0;outline:0;min-width:0;flex:1;padding:12px 13px;color:#111}.hero-search button{border:0;background:#111;color:#fff;border-radius:10px;padding:0 19px;font-weight:800}.hero-links{display:none}
-.hero-side{border:1px solid rgba(255,255,255,.12);border-radius:17px;padding:19px;background:rgba(255,255,255,.05)}.hero-side-label{font-size:11px;color:#9ea2ad;font-weight:800}.hero-side strong{display:block;font-size:27px;margin:4px 0}.hero-side span{font-size:12px;color:#b9bbc3}.hero-side-row{display:flex;justify-content:space-between;gap:15px;border-top:1px solid rgba(255,255,255,.1);padding-top:12px;margin-top:12px}
-.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 34px}.quick a{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:18px;text-decoration:none;transition:.18s;box-shadow:0 3px 12px rgba(0,0,0,.03)}.quick a:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:#d7d9ff}.quick small{color:#8a8e96;font-size:10px;font-weight:850;letter-spacing:.1em}.quick strong{display:block;margin-top:4px;font-size:15px}.quick span{display:block;color:var(--muted);font-size:11px;margin-top:4px}
-.section{margin:38px 0}.section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:15px}.section-title{margin:0;font-size:23px;letter-spacing:-.035em}.section-desc{margin:4px 0 0;color:var(--muted);font-size:12px}.more{font-size:12px;font-weight:750;text-decoration:none;color:#565b65}.more:hover{text-decoration:underline}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 3px 14px rgba(0,0,0,.03)}
-.cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:13px}.card{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-decoration:none;transition:.18s;box-shadow:0 3px 12px rgba(0,0,0,.035)}.card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:#d8d9f8}.poster{aspect-ratio:3/4;background:#e9eaed;position:relative;overflow:hidden}.poster img{width:100%;height:100%;object-fit:cover}.poster.noimg{display:flex;align-items:center;justify-content:center;color:#92969e;font-size:11px}.badge{position:absolute;top:8px;left:8px;background:rgba(17,18,22,.84);color:#fff;padding:4px 7px;border-radius:7px;font-size:10px;font-weight:800}.score{position:absolute;right:8px;top:8px;background:#fff;color:#111;padding:4px 7px;border-radius:7px;font-size:10px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,.14)}.card-body{padding:11px}.card-title{font-size:13px;font-weight:800;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.meta{font-size:10px;color:#858991;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.loading,.empty{grid-column:1/-1;padding:35px;text-align:center;color:#858991;font-size:12px}
-.rank-layout{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}.rank-list{padding:7px}.rank-item{display:grid;grid-template-columns:42px 58px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px;border-radius:11px;text-decoration:none}.rank-item:hover{background:#f5f6f8}.rank-no{font-size:17px;font-weight:900;text-align:center;color:#8b8f98}.rank-item:nth-child(1) .rank-no{color:#5b5ce2}.rank-thumb{width:58px;height:70px;object-fit:cover;border-radius:7px;background:#eee}.rank-title{font-size:13px;font-weight:800}.rank-meta{font-size:10px;color:#888;margin-top:3px}.rank-score{font-weight:900;font-size:14px}.rank-score span{display:block;color:#999;font-size:9px;text-align:right}
-.review-box{padding:22px}.review-intro{display:flex;justify-content:space-between;gap:20px;align-items:start}.review-quote{font-size:17px;font-weight:750;line-height:1.7;margin:0}.review-note{font-size:11px;color:#888}.review-link{display:block;margin-top:17px;padding-top:15px;border-top:1px solid var(--line);text-decoration:none}.review-link strong{font-size:12px}.review-link p{font-size:11px;color:#666;margin:4px 0 0}
-.discovery{display:grid;grid-template-columns:1fr 1fr;gap:14px}.discover-card{padding:25px;text-decoration:none;min-height:155px;position:relative;overflow:hidden}.discover-card:after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;right:-45px;bottom:-65px;background:#f0f0ff}.discover-card h3{margin:6px 0 4px;font-size:20px}.discover-card p{margin:0;color:#70747d;font-size:12px;max-width:470px}.discover-card small{font-weight:850;color:#6265d9;font-size:10px;letter-spacing:.08em}
-.genre-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.genre{padding:12px 10px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:10px;text-decoration:none;font-size:11px;font-weight:750}.genre:hover{border-color:#c9caff;background:#f8f8ff}
-.features{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.feature{padding:21px}.feature b{font-size:12px;color:#6265d9}.feature h3{font-size:16px;margin:7px 0}.feature p{font-size:11px;color:#72767e;margin:0}
-footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34px 0;display:flex;justify-content:space-between;gap:25px}.footer-brand{color:#fff;font-weight:900;font-size:19px}.footer-links{display:flex;gap:15px;flex-wrap:wrap}.footer-links a{font-size:11px;color:#aeb1b8;text-decoration:none}.footer-copy{font-size:10px;color:#777b83;margin-top:20px}
-@media(max-width:950px){.hero-inner{grid-template-columns:1fr}.hero-side{max-width:560px}.cards{grid-template-columns:repeat(4,1fr)}.rank-layout{grid-template-columns:1fr}.genre-grid{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:700px){.container{width:min(100% - 20px,1240px)}.nav{min-height:60px}.nav-links{display:none}.mobile-nav{display:block}.nav-actions .nav-btn:not(.primary){display:none}.brand{font-size:20px}.hero{margin-top:14px;border-radius:18px}.hero-inner{padding:35px 22px 25px;gap:25px}.hero h1{font-size:38px}.hero-search{width:100%}.quick{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:repeat(2,1fr);gap:10px}.rank-item{grid-template-columns:31px 48px minmax(0,1fr) auto;gap:8px}.rank-thumb{width:48px;height:60px}.discovery,.features{grid-template-columns:1fr}.genre-grid{grid-template-columns:repeat(3,1fr)}.section-title{font-size:20px}.footer-inner{display:block}.footer-links{margin-top:14px}}
-.home-hero{display:grid;grid-template-columns:minmax(0,1.55fr) 360px;gap:24px;background:#101827;color:#fff;border-radius:0 0 4px 4px;padding:58px 48px;margin-bottom:38px;position:relative;overflow:hidden}.home-hero:after{content:"";position:absolute;width:360px;height:360px;border:1px solid rgba(245,158,11,.22);border-radius:50%;right:-150px;bottom:-180px}.home-hero-copy{position:relative;z-index:1}.home-hero h1{font-size:clamp(34px,5vw,58px);line-height:1.15;letter-spacing:-.04em;margin:10px 0 20px}.home-hero h1 span{color:#f59e0b}.home-hero p{max-width:720px;color:#c9d0da;margin:0 0 25px;font-size:15px}.hero-search{display:flex;max-width:680px;background:#fff;padding:5px;border-radius:4px}.hero-search input{flex:1;border:0;outline:0;padding:13px 14px;color:#17191d;min-width:0}.hero-search button{border:0;background:#e87900;color:#fff;font-weight:800;padding:0 24px;border-radius:3px}.hero-shortcuts{display:flex;gap:16px;flex-wrap:wrap;margin-top:17px}.hero-shortcuts a{color:#dbe1e9;text-decoration:none;font-size:13px;border-bottom:1px solid #566174;padding-bottom:2px}.hero-stat-card{background:#18243a;border:1px solid #2a3850;padding:25px;align-self:stretch;position:relative;z-index:1}.hero-stat-label{font-size:10px;letter-spacing:.16em;color:#8f9bad}.hero-stat-card>strong{display:block;font-size:40px;line-height:1.1;margin:10px 0 2px}.hero-stat-card>span{font-size:12px;color:#9ca8b8}.hero-stat-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #304058;margin-top:22px;padding-top:17px;gap:12px}.hero-stat-grid b{display:block;font-size:21px}.hero-stat-grid small{color:#9ca8b8;font-size:11px}.hero-database-link{display:block;color:#fff;text-decoration:none;margin-top:20px;font-size:13px;font-weight:700}.home-section{padding:0 0 52px}.season-feature{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:14px}.feature-anime{display:grid;grid-template-columns:96px 1fr;min-height:155px;background:#fff;border:1px solid #e4e7eb;text-decoration:none;color:inherit}.feature-anime .poster{height:155px;border-radius:0}.feature-anime .poster img{height:100%;width:100%;object-fit:cover}.feature-copy{padding:16px}.feature-rank{font-size:11px;font-weight:800;color:#e87900}.feature-copy h3{font-size:15px;line-height:1.45;margin:7px 0}.feature-score{font-weight:900;font-size:20px}.feature-score span{font-size:10px;color:#7a828d;font-weight:500;margin-left:4px}.season-ranking{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;background:#fff;border:1px solid #e4e7eb}.season-row{display:grid;grid-template-columns:42px 58px 1fr auto;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #edf0f2;text-decoration:none;color:inherit;min-width:0}.season-row .rank-no{font-weight:900;color:#7c8490}.season-row img,.season-row .row-thumb{width:58px;height:76px;object-fit:cover;background:#e9edf2}.season-row .row-title{font-size:13px;font-weight:800;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.season-row .row-meta{font-size:10px;color:#818894;margin-top:3px}.season-row .row-score{text-align:right;font-size:17px;font-weight:900;color:#e87900}.season-row .row-score small{display:block;font-size:9px;color:#8b929c;font-weight:500}.home-side-panel{background:#101827;color:#fff;padding:28px;display:flex;flex-direction:column}.home-side-panel .eyebrow{color:#f59e0b}.home-side-panel h3{font-size:25px;margin:7px 0 10px}.home-side-panel p{color:#b9c2cf;font-size:13px;margin:0 0 20px}.side-action{color:#fff;text-decoration:none;border-top:1px solid #2b394e;padding:13px 0;font-size:13px;font-weight:700}.home-cta{display:flex;justify-content:space-between;align-items:center;gap:30px;background:#18243a;color:#fff;padding:34px 38px;margin:0 0 50px}.home-cta h2{margin:5px 0 7px;font-size:27px}.home-cta p{margin:0;color:#bdc6d3;font-size:13px}.cta-actions{display:flex;flex-direction:column;gap:8px;min-width:210px}.cta-actions a{color:#fff;text-decoration:none;border:1px solid #40516a;padding:10px 14px;font-size:12px;font-weight:700;text-align:center}.cta-actions a:first-child{background:#e87900;border-color:#e87900}.loading,.empty{padding:30px;text-align:center;color:#7b838e}@media(max-width:900px){.home-hero{grid-template-columns:1fr;padding:38px 28px}.season-feature{grid-template-columns:1fr}.season-ranking{grid-template-columns:1fr}.home-cta{flex-direction:column;align-items:flex-start}.cta-actions{width:100%}}@media(max-width:640px){.home-hero{padding:30px 18px;margin-left:-16px;margin-right:-16px}.home-hero h1{font-size:34px}.hero-search input{font-size:13px}.hero-search button{padding:0 16px}.hero-shortcuts{gap:11px}.feature-anime{grid-template-columns:76px 1fr}.feature-anime .poster{height:145px}.season-row{grid-template-columns:28px 48px 1fr auto;padding:9px}.season-row img,.season-row .row-thumb{width:48px;height:64px}.home-cta{padding:26px 20px}.home-cta h2{font-size:22px}}</style>
-<link rel="stylesheet" href="site-theme.css">
+:root{--bg:#f4f5f7;--surface:#fff;--ink:#15171b;--muted:#70757d;--line:#e6e8eb;--accent:#5b5ce2;--accent2:#7778f0;--dark:#101114;--shadow:0 10px 30px rgba(16,17,20,l07)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;line-height:1l6}a{color:inherit}button,input{font:inherit}button{cursor:pointer}img{display:block;max-width:100%}lcontainer{width:min(1240px,calc(100% - 32px));margin:auto}
+header{position:sticky;top:0;z-index:50;background:rgba(16,17,20,l94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,l08);color:#fff}lnav{min-height:68px;display:flex;align-items:center;gap:28px}lbrand{font-size:22px;font-weight:900;letter-spacing:-l04em;text-decoration:none}lnav-links{display:flex;gap:20px;align-items:center;flex:1}lnav-links a{color:#bfc2c8;text-decoration:none;font-size:13px;font-weight:650}lnav-links a:hover{color:#fff}lnav-actions{display:flex;gap:8px;align-items:center}lnav-btn{border:1px solid #3a3d44;background:#191b20;color:#fff;border-radius:9px;padding:8px 13px;text-decoration:none;font-size:12px;font-weight:750}lnav-btnlprimary{background:#fff;color:#111;border-color:#fff}lmobile-nav{display:none}
+lhero{margin:26px 0 18px;border-radius:24px;overflow:hidden;background:radial-gradient(circle at 85% 10%,rgba(119,120,240,l38),transparent 32%),linear-gradient(135deg,#111217,#1a1c25);color:#fff;box-shadow:0 18px 45px rgba(16,17,20,l16)}lhero-inner{padding:58px 54px 52px;display:grid;grid-template-columns:minmax(0,1l5fr) minmax(300px,l8fr);gap:45px;align-items:end}leyebrow{color:#aeb1ff;font-size:12px;font-weight:800;letter-spacing:l14em}lhero h1{font-size:clamp(34px,5vw,62px);line-height:1l08;letter-spacing:-l055em;margin:10px 0 18px;max-width:800px}lhero p{color:#c8cad0;margin:0;max-width:680px;font-size:15px}lhero-search{background:#fff;border-radius:15px;padding:7px;display:flex;box-shadow:0 14px 35px rgba(0,0,0,l22)}lhero-search input{border:0;outline:0;min-width:0;flex:1;padding:12px 13px;color:#111}lhero-search button{border:0;background:#111;color:#fff;border-radius:10px;padding:0 19px;font-weight:800}lhero-links{display:none}
+lhero-side{border:1px solid rgba(255,255,255,l12);border-radius:17px;padding:19px;background:rgba(255,255,255,l05)}lhero-side-label{font-size:11px;color:#9ea2ad;font-weight:800}lhero-side strong{display:block;font-size:27px;margin:4px 0}lhero-side span{font-size:12px;color:#b9bbc3}lhero-side-row{display:flex;justify-content:space-between;gap:15px;border-top:1px solid rgba(255,255,255,l1);padding-top:12px;margin-top:12px}
+lquick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 34px}lquick a{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:18px;text-decoration:none;transition:l18s;box-shadow:0 3px 12px rgba(0,0,0,l03)}lquick a:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:#d7d9ff}lquick small{color:#8a8e96;font-size:10px;font-weight:850;letter-spacing:l1em}lquick strong{display:block;margin-top:4px;font-size:15px}lquick span{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+lsection{margin:38px 0}lsection-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:15px}lsection-title{margin:0;font-size:23px;letter-spacing:-l035em}lsection-desc{margin:4px 0 0;color:var(--muted);font-size:12px}lmore{font-size:12px;font-weight:750;text-decoration:none;color:#565b65}lmore:hover{text-decoration:underline}
+lpanel{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 3px 14px rgba(0,0,0,l03)}
+lcards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:13px}lcard{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-decoration:none;transition:l18s;box-shadow:0 3px 12px rgba(0,0,0,l035)}lcard:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:#d8d9f8}lposter{aspect-ratio:3/4;background:#e9eaed;position:relative;overflow:hidden}lposter img{width:100%;height:100%;object-fit:cover}lposterlnoimg{display:flex;align-items:center;justify-content:center;color:#92969e;font-size:11px}lbadge{position:absolute;top:8px;left:8px;background:rgba(17,18,22,l84);color:#fff;padding:4px 7px;border-radius:7px;font-size:10px;font-weight:800}lscore{position:absolute;right:8px;top:8px;background:#fff;color:#111;padding:4px 7px;border-radius:7px;font-size:10px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,l14)}lcard-body{padding:11px}lcard-title{font-size:13px;font-weight:800;line-height:1l45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}lmeta{font-size:10px;color:#858991;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}lloading,lempty{grid-column:1/-1;padding:35px;text-align:center;color:#858991;font-size:12px}
+lrank-layout{display:grid;grid-template-columns:1l25fr l75fr;gap:14px}lrank-list{padding:7px}lrank-item{display:grid;grid-template-columns:42px 58px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px;border-radius:11px;text-decoration:none}lrank-item:hover{background:#f5f6f8}lrank-no{font-size:17px;font-weight:900;text-align:center;color:#8b8f98}lrank-item:nth-child(1) lrank-no{color:#5b5ce2}lrank-thumb{width:58px;height:70px;object-fit:cover;border-radius:7px;background:#eee}lrank-title{font-size:13px;font-weight:800}lrank-meta{font-size:10px;color:#888;margin-top:3px}lrank-score{font-weight:900;font-size:14px}lrank-score span{display:block;color:#999;font-size:9px;text-align:right}
+lreview-box{padding:22px}lreview-intro{display:flex;justify-content:space-between;gap:20px;align-items:start}lreview-quote{font-size:17px;font-weight:750;line-height:1l7;margin:0}lreview-note{font-size:11px;color:#888}lreview-link{display:block;margin-top:17px;padding-top:15px;border-top:1px solid var(--line);text-decoration:none}lreview-link strong{font-size:12px}lreview-link p{font-size:11px;color:#666;margin:4px 0 0}
+ldiscovery{display:grid;grid-template-columns:1fr 1fr;gap:14px}ldiscover-card{padding:25px;text-decoration:none;min-height:155px;position:relative;overflow:hidden}ldiscover-card:after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;right:-45px;bottom:-65px;background:#f0f0ff}ldiscover-card h3{margin:6px 0 4px;font-size:20px}ldiscover-card p{margin:0;color:#70747d;font-size:12px;max-width:470px}ldiscover-card small{font-weight:850;color:#6265d9;font-size:10px;letter-spacing:l08em}
+lgenre-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}lgenre{padding:12px 10px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:10px;text-decoration:none;font-size:11px;font-weight:750}lgenre:hover{border-color:#c9caff;background:#f8f8ff}
+lfeatures{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}lfeature{padding:21px}lfeature b{font-size:12px;color:#6265d9}lfeature h3{font-size:16px;margin:7px 0}lfeature p{font-size:11px;color:#72767e;margin:0}
+footer{margin-top:55px;background:#111217;color:#b9bbc1}lfooter-inner{padding:34px 0;display:flex;justify-content:space-between;gap:25px}lfooter-brand{color:#fff;font-weight:900;font-size:19px}lfooter-links{display:flex;gap:15px;flex-wrap:wrap}lfooter-links a{font-size:11px;color:#aeb1b8;text-decoration:none}lfooter-copy{font-size:10px;color:#777b83;margin-top:20px}
+@media(max-width:950px){lhero-inner{grid-template-columns:1fr}lhero-side{max-width:560px}lcards{grid-template-columns:repeat(4,1fr)}lrank-layout{grid-template-columns:1fr}lgenre-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:700px){lcontainer{width:min(100% - 20px,1240px)}lnav{min-height:60px}lnav-links{display:none}lmobile-nav{display:block}lnav-actions lnav-btn:not(lprimary){display:none}lbrand{font-size:20px}lhero{margin-top:14px;border-radius:18px}lhero-inner{padding:35px 22px 25px;gap:25px}lhero h1{font-size:38px}lhero-search{width:100%}lquick{grid-template-columns:repeat(2,1fr)}lcards{grid-template-columns:repeat(2,1fr);gap:10px}lrank-item{grid-template-columns:31px 48px minmax(0,1fr) auto;gap:8px}lrank-thumb{width:48px;height:60px}ldiscovery,lfeatures{grid-template-columns:1fr}lgenre-grid{grid-template-columns:repeat(3,1fr)}lsection-title{font-size:20px}lfooter-inner{display:block}lfooter-links{margin-top:14px}}
+lhome-hero{display:grid;grid-template-columns:minmax(0,1l55fr) 360px;gap:24px;background:#101827;color:#fff;border-radius:0 0 4px 4px;padding:58px 48px;margin-bottom:38px;position:relative;overflow:hidden}lhome-hero:after{content:"";position:absolute;width:360px;height:360px;border:1px solid rgba(245,158,11,l22);border-radius:50%;right:-150px;bottom:-180px}lhome-hero-copy{position:relative;z-index:1}lhome-hero h1{font-size:clamp(34px,5vw,58px);line-height:1l15;letter-spacing:-l04em;margin:10px 0 20px}lhome-hero h1 span{color:#f59e0b}lhome-hero p{max-width:720px;color:#c9d0da;margin:0 0 25px;font-size:15px}lhero-search{display:flex;max-width:680px;background:#fff;padding:5px;border-radius:4px}lhero-search input{flex:1;border:0;outline:0;padding:13px 14px;color:#17191d;min-width:0}lhero-search button{border:0;background:#e87900;color:#fff;font-weight:800;padding:0 24px;border-radius:3px}lhero-shortcuts{display:flex;gap:16px;flex-wrap:wrap;margin-top:17px}lhero-shortcuts a{color:#dbe1e9;text-decoration:none;font-size:13px;border-bottom:1px solid #566174;padding-bottom:2px}lhero-stat-card{background:#18243a;border:1px solid #2a3850;padding:25px;align-self:stretch;position:relative;z-index:1}lhero-stat-label{font-size:10px;letter-spacing:l16em;color:#8f9bad}lhero-stat-card>strong{display:block;font-size:40px;line-height:1l1;margin:10px 0 2px}lhero-stat-card>span{font-size:12px;color:#9ca8b8}lhero-stat-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #304058;margin-top:22px;padding-top:17px;gap:12px}lhero-stat-grid b{display:block;font-size:21px}lhero-stat-grid small{color:#9ca8b8;font-size:11px}lhero-database-link{display:block;color:#fff;text-decoration:none;margin-top:20px;font-size:13px;font-weight:700}lhome-section{padding:0 0 52px}lseason-feature{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:14px}lfeature-anime{display:grid;grid-template-columns:96px 1fr;min-height:155px;background:#fff;border:1px solid #e4e7eb;text-decoration:none;color:inherit}lfeature-anime lposter{height:155px;border-radius:0}lfeature-anime lposter img{height:100%;width:100%;object-fit:cover}lfeature-copy{padding:16px}lfeature-rank{font-size:11px;font-weight:800;color:#e87900}lfeature-copy h3{font-size:15px;line-height:1l45;margin:7px 0}lfeature-score{font-weight:900;font-size:20px}lfeature-score span{font-size:10px;color:#7a828d;font-weight:500;margin-left:4px}lseason-ranking{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;background:#fff;border:1px solid #e4e7eb}lseason-row{display:grid;grid-template-columns:42px 58px 1fr auto;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #edf0f2;text-decoration:none;color:inherit;min-width:0}lseason-row lrank-no{font-weight:900;color:#7c8490}lseason-row img,lseason-row lrow-thumb{width:58px;height:76px;object-fit:cover;background:#e9edf2}lseason-row lrow-title{font-size:13px;font-weight:800;line-height:1l4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}lseason-row lrow-meta{font-size:10px;color:#818894;margin-top:3px}lseason-row lrow-score{text-align:right;font-size:17px;font-weight:900;color:#e87900}lseason-row lrow-score small{display:block;font-size:9px;color:#8b929c;font-weight:500}lhome-side-panel{background:#101827;color:#fff;padding:28px;display:flex;flex-direction:column}lhome-side-panel leyebrow{color:#f59e0b}lhome-side-panel h3{font-size:25px;margin:7px 0 10px}lhome-side-panel p{color:#b9c2cf;font-size:13px;margin:0 0 20px}lside-action{color:#fff;text-decoration:none;border-top:1px solid #2b394e;padding:13px 0;font-size:13px;font-weight:700}lhome-cta{display:flex;justify-content:space-between;align-items:center;gap:30px;background:#18243a;color:#fff;padding:34px 38px;margin:0 0 50px}lhome-cta h2{margin:5px 0 7px;font-size:27px}lhome-cta p{margin:0;color:#bdc6d3;font-size:13px}lcta-actions{display:flex;flex-direction:column;gap:8px;min-width:210px}lcta-actions a{color:#fff;text-decoration:none;border:1px solid #40516a;padding:10px 14px;font-size:12px;font-weight:700;text-align:center}lcta-actions a:first-child{background:#e87900;border-color:#e87900}lloading,lempty{padding:30px;text-align:center;color:#7b838e}@media(max-width:900px){lhome-hero{grid-template-columns:1fr;padding:38px 28px}lseason-feature{grid-template-columns:1fr}lseason-ranking{grid-template-columns:1fr}lhome-cta{flex-direction:column;align-items:flex-start}lcta-actions{width:100%}}@media(max-width:640px){lhome-hero{padding:30px 18px;margin-left:-16px;margin-right:-16px}lhome-hero h1{font-size:34px}lhero-search input{font-size:13px}lhero-search button{padding:0 16px}lhero-shortcuts{gap:11px}lfeature-anime{grid-template-columns:76px 1fr}lfeature-anime lposter{height:145px}lseason-row{grid-template-columns:28px 48px 1fr auto;padding:9px}lseason-row img,lseason-row lrow-thumb{width:48px;height:64px}lhome-cta{padding:26px 20px}lhome-cta h2{font-size:22px}}</style>
+<link rel="stylesheet" href="site-themelcss">
 
 <style id="animecia-home-v4">
-.home-v4 .home-section{margin:26px 0}
-.home-v4 .home-section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:0 0 11px}
-.home-v4 .home-section-head h2{margin:0;font-size:21px;font-weight:950;letter-spacing:-.035em}
-.home-v4 .home-section-head a{font-size:12px;font-weight:850;color:#e87900;text-decoration:none}
-.home-v4 .home-section-head a:hover{text-decoration:underline}
- .home-v4 .quick-navigation a,.home-v4 .quick a{min-height:92px;padding:17px!important}
-.home-v4 .quick-navigation{gap:10px!important}
-.home-v4 .feature-grid,.home-v4 .home-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.home-v4 .home-tools{display:grid;grid-template-columns:1.35fr .65fr;gap:14px}
-.home-v4 .tool-panel{padding:20px}
-.home-v4 .tool-panel h3{margin:0 0 6px;font-size:17px}
-.home-v4 .tool-panel p{margin:0;color:#70757d;font-size:11px}
-.home-v4 .tool-links{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:13px}
-.home-v4 .tool-link{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid #e4e7eb;border-radius:9px;text-decoration:none;font-size:11px;font-weight:800;background:#fff}
-.home-v4 .tool-link:hover{border-color:#f0b36d;background:#fffaf5}
-.home-v4 .tool-link span{color:#e87900;font-size:10px}
-.home-v4 .section-card{padding:18px}
-.home-v4 .section-card .section-head{margin-bottom:12px}
-.home-v4 .database-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.home-v4 .database-stat{padding:13px;background:#f7f8fa;border:1px solid #e7e9ec;border-radius:9px}
-.home-v4 .database-stat b{display:block;font-size:18px}
-.home-v4 .database-stat span{font-size:10px;color:#777}
-@media(max-width:900px){.home-v4 .home-tools{grid-template-columns:1fr}}
-@media(max-width:470px){.home-v4 .tool-links{grid-template-columns:1fr}.home-v4 .database-stats{grid-template-columns:1fr}}
-.home-v4 .feature-grid>*{min-width:0}
-@media(max-width:900px){.home-v4 .feature-grid,.home-v4 .home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:470px){.home-v4 .feature-grid,.home-v4 .home-grid{grid-template-columns:1fr 1fr;gap:8px}}
+lhome-v4 lhome-section{margin:26px 0}
+lhome-v4 lhome-section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:0 0 11px}
+lhome-v4 lhome-section-head h2{margin:0;font-size:21px;font-weight:950;letter-spacing:-l035em}
+lhome-v4 lhome-section-head a{font-size:12px;font-weight:850;color:#e87900;text-decoration:none}
+lhome-v4 lhome-section-head a:hover{text-decoration:underline}
+ lhome-v4 lquick-navigation a,lhome-v4 lquick a{min-height:92px;padding:17px!important}
+lhome-v4 lquick-navigation{gap:10px!important}
+lhome-v4 lfeature-grid,lhome-v4 lhome-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+lhome-v4 lhome-tools{display:grid;grid-template-columns:1l35fr l65fr;gap:14px}
+lhome-v4 ltool-panel{padding:20px}
+lhome-v4 ltool-panel h3{margin:0 0 6px;font-size:17px}
+lhome-v4 ltool-panel p{margin:0;color:#70757d;font-size:11px}
+lhome-v4 ltool-links{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:13px}
+lhome-v4 ltool-link{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid #e4e7eb;border-radius:9px;text-decoration:none;font-size:11px;font-weight:800;background:#fff}
+lhome-v4 ltool-link:hover{border-color:#f0b36d;background:#fffaf5}
+lhome-v4 ltool-link span{color:#e87900;font-size:10px}
+lhome-v4 lsection-card{padding:18px}
+lhome-v4 lsection-card lsection-head{margin-bottom:12px}
+lhome-v4 ldatabase-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+lhome-v4 ldatabase-stat{padding:13px;background:#f7f8fa;border:1px solid #e7e9ec;border-radius:9px}
+lhome-v4 ldatabase-stat b{display:block;font-size:18px}
+lhome-v4 ldatabase-stat span{font-size:10px;color:#777}
+@media(max-width:900px){lhome-v4 lhome-tools{grid-template-columns:1fr}}
+@media(max-width:470px){lhome-v4 ltool-links{grid-template-columns:1fr}lhome-v4 ldatabase-stats{grid-template-columns:1fr}}
+lhome-v4 lfeature-grid>*{min-width:0}
+@media(max-width:900px){lhome-v4 lfeature-grid,lhome-v4 lhome-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:470px){lhome-v4 lfeature-grid,lhome-v4 lhome-grid{grid-template-columns:1fr 1fr;gap:8px}}
 </style>
-<link rel="stylesheet" href="site-theme.css?v=20261001-v8">
+<link rel="stylesheet" href="site-themelcss?v=20261001-v8">
 <style id="animecia-home-v8">
 /* Homepage: compact Japanese portal layout */
-.home-v4 .home-hero{grid-template-columns:minmax(0,1fr) 285px;padding:40px 38px;margin-top:18px;margin-bottom:30px}
-.home-v4 .home-hero h1{font-size:clamp(30px,4vw,48px);margin:7px 0 14px}
-.home-v4 .home-hero-copy>p{font-size:13px;max-width:610px;margin-bottom:18px}
-.home-v4 .hero-search{max-width:700px}
-.home-v4 .hero-shortcuts{gap:8px;margin-top:12px}
-.home-v4 .hero-shortcuts a{font-size:11px;padding:6px 9px;border:1px solid #334158;border-radius:999px}
-.home-v4 .hero-stat-card{padding:20px}
-.home-v4 .hero-stat-card>strong{font-size:32px}
-.home-v4 .home-section{padding-bottom:34px;margin:20px 0}
-.home-v4 .section-head{margin-bottom:9px}
-.home-v4 .section-title{font-size:19px}
-.home-v4 .home-section .section-desc{display:none}
-.home-v4 .season-feature{gap:10px;margin-bottom:9px}
-.home-v4 .feature-anime{min-height:132px;grid-template-columns:78px 1fr}
-.home-v4 .feature-anime .poster{height:132px}
-.home-v4 .feature-copy{padding:12px}
-.home-v4 .feature-copy h3{font-size:13px;margin:5px 0}
-.home-v4 .feature-score{font-size:18px}
-.home-v4 .season-ranking{grid-template-columns:1fr 1fr}
-.home-v4 .season-row{grid-template-columns:30px 45px minmax(0,1fr) auto;padding:8px 10px}
-.home-v4 .season-row img,.home-v4 .season-row .row-thumb{width:45px;height:60px}
-.home-v4 .season-row .row-title{font-size:12px}
-.home-v4 .season-row .row-score{font-size:15px}
-.home-v4 .rank-layout{grid-template-columns:minmax(0,1fr) 260px;gap:10px}
-.home-v4 .rank-list{padding:4px}
-.home-v4 .rank-item{grid-template-columns:30px 48px minmax(0,1fr) auto;padding:8px}
-.home-v4 .rank-thumb{width:48px;height:60px}
-.home-v4 .rank-title{font-size:12px}
-.home-v4 .home-side-panel{padding:20px}
-.home-v4 .home-side-panel h3{font-size:20px}
-.home-v4 .home-side-panel p{display:none}
-.home-v4 .cards{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
-.home-v4 .card-body{padding:8px}
-.home-v4 .card-title{font-size:11px}
-.home-v4 .meta{font-size:9px}
-.home-v4 .genre-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
-.home-v4 .genre{padding:9px 6px;font-size:10px}
-.home-v4 .home-cta{padding:23px 28px;margin-bottom:30px}
-.home-v4 .home-cta h2{font-size:21px;margin:3px 0}
-.home-v4 .home-cta p{display:none}
-.home-v4 .cta-actions{min-width:170px}
-.home-v4 .cta-actions a{padding:8px 11px;font-size:11px}
+lhome-v4 lhome-hero{grid-template-columns:minmax(0,1fr) 285px;padding:40px 38px;margin-top:18px;margin-bottom:30px}
+lhome-v4 lhome-hero h1{font-size:clamp(30px,4vw,48px);margin:7px 0 14px}
+lhome-v4 lhome-hero-copy>p{font-size:13px;max-width:610px;margin-bottom:18px}
+lhome-v4 lhero-search{max-width:700px}
+lhome-v4 lhero-shortcuts{gap:8px;margin-top:12px}
+lhome-v4 lhero-shortcuts a{font-size:11px;padding:6px 9px;border:1px solid #334158;border-radius:999px}
+lhome-v4 lhero-stat-card{padding:20px}
+lhome-v4 lhero-stat-card>strong{font-size:32px}
+lhome-v4 lhome-section{padding-bottom:34px;margin:20px 0}
+lhome-v4 lsection-head{margin-bottom:9px}
+lhome-v4 lsection-title{font-size:19px}
+lhome-v4 lhome-section lsection-desc{display:none}
+lhome-v4 lseason-feature{gap:10px;margin-bottom:9px}
+lhome-v4 lfeature-anime{min-height:132px;grid-template-columns:78px 1fr}
+lhome-v4 lfeature-anime lposter{height:132px}
+lhome-v4 lfeature-copy{padding:12px}
+lhome-v4 lfeature-copy h3{font-size:13px;margin:5px 0}
+lhome-v4 lfeature-score{font-size:18px}
+lhome-v4 lseason-ranking{grid-template-columns:1fr 1fr}
+lhome-v4 lseason-row{grid-template-columns:30px 45px minmax(0,1fr) auto;padding:8px 10px}
+lhome-v4 lseason-row img,lhome-v4 lseason-row lrow-thumb{width:45px;height:60px}
+lhome-v4 lseason-row lrow-title{font-size:12px}
+lhome-v4 lseason-row lrow-score{font-size:15px}
+lhome-v4 lrank-layout{grid-template-columns:minmax(0,1fr) 260px;gap:10px}
+lhome-v4 lrank-list{padding:4px}
+lhome-v4 lrank-item{grid-template-columns:30px 48px minmax(0,1fr) auto;padding:8px}
+lhome-v4 lrank-thumb{width:48px;height:60px}
+lhome-v4 lrank-title{font-size:12px}
+lhome-v4 lhome-side-panel{padding:20px}
+lhome-v4 lhome-side-panel h3{font-size:20px}
+lhome-v4 lhome-side-panel p{display:none}
+lhome-v4 lcards{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+lhome-v4 lcard-body{padding:8px}
+lhome-v4 lcard-title{font-size:11px}
+lhome-v4 lmeta{font-size:9px}
+lhome-v4 lgenre-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+lhome-v4 lgenre{padding:9px 6px;font-size:10px}
+lhome-v4 lhome-cta{padding:23px 28px;margin-bottom:30px}
+lhome-v4 lhome-cta h2{font-size:21px;margin:3px 0}
+lhome-v4 lhome-cta p{display:none}
+lhome-v4 lcta-actions{min-width:170px}
+lhome-v4 lcta-actions a{padding:8px 11px;font-size:11px}
 @media(max-width:1050px){
- .home-v4 .cards{grid-template-columns:repeat(5,minmax(0,1fr))}
- .home-v4 .genre-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+ lhome-v4 lcards{grid-template-columns:repeat(5,minmax(0,1fr))}
+ lhome-v4 lgenre-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
 }
 @media(max-width:820px){
- .home-v4 .home-hero{grid-template-columns:1fr;padding:30px 24px}
- .home-v4 .hero-stat-card{display:none}
- .home-v4 .rank-layout{grid-template-columns:1fr}
- .home-v4 .home-side-panel{display:none}
- .home-v4 .cards{grid-template-columns:repeat(4,minmax(0,1fr))}
- .home-v4 .genre-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+ lhome-v4 lhome-hero{grid-template-columns:1fr;padding:30px 24px}
+ lhome-v4 lhero-stat-card{display:none}
+ lhome-v4 lrank-layout{grid-template-columns:1fr}
+ lhome-v4 lhome-side-panel{display:none}
+ lhome-v4 lcards{grid-template-columns:repeat(4,minmax(0,1fr))}
+ lhome-v4 lgenre-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 }
 @media(max-width:600px){
- .home-v4 .season-ranking{grid-template-columns:1fr}
- .home-v4 .cards{grid-template-columns:repeat(3,minmax(0,1fr))}
- .home-v4 .genre-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
- .home-v4 .home-hero{margin-left:-11px;margin-right:-11px;border-radius:0 0 12px 12px}
+ lhome-v4 lseason-ranking{grid-template-columns:1fr}
+ lhome-v4 lcards{grid-template-columns:repeat(3,minmax(0,1fr))}
+ lhome-v4 lgenre-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ lhome-v4 lhome-hero{margin-left:-11px;margin-right:-11px;border-radius:0 0 12px 12px}
 }
 @media(max-width:430px){
- .home-v4 .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
- .home-v4 .genre-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
- .home-v4 .home-hero h1{font-size:30px}
+ lhome-v4 lcards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ lhome-v4 lgenre-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ lhome-v4 lhome-hero h1{font-size:30px}
 }
 </style>
 </head>
 <body>
 <header class="site-header">
 <div class="container nav">
-<a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
+<a class="brand" href="indexlhtml" aria-label="Animecia ホーム">Animecia</a>
 <nav class="nav-links" aria-label="メインメニュー">
-<a href="index.html">ホーム</a>
-<a href="anime.html">アニメを探す</a>
-<a href="season.html">今期</a>
-<a href="ranking.html">ランキング</a>
-<a href="discover.html">ジャンル</a>
-<a href="recommendations.html">おすすめ</a>
-<a href="community.html">コミュニティ</a>
-<a href="compare.html">比較</a>
+<a href="indexlhtml">ホーム</a>
+<a href="animelhtml">アニメを探す</a>
+<a href="seasonlhtml">今期</a>
+<a href="rankinglhtml">ランキング</a>
+<a href="discoverlhtml">ジャンル</a>
+<a href="recommendationslhtml">おすすめ</a>
+<a href="communitylhtml">コミュニティ</a>
+<a href="comparelhtml">比較</a>
 </nav>
-<form class="header-search" action="anime.html" method="get" role="search">
+<form class="header-search" action="animelhtml" method="get" role="search">
 <input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
 </form>
 <div class="nav-actions">
-<a class="nav-btn" href="mypage.html" id="mypage-link">マイページ</a>
-<a class="nav-btn primary" href="login.html" id="auth-link">ログイン</a>
+<a class="nav-btn" href="mypagelhtml" id="mypage-link">マイページ</a>
+<a class="nav-btn primary" href="loginlhtml" id="auth-link">ログイン</a>
 </div>
 </div>
 </header>
 
 <main class="container home-v4">
-<section class="home-hero"><div class="home-hero-copy"><div class="eyebrow">JAPAN ANIME DATABASE</div><h1>観たいアニメを、<br><span>見つける。</span>記録する。</h1><p>今期アニメ、ランキング、ジャンル、過去作品をまとめて探せる日本向けアニメデータベース。</p><form class="hero-search" id="search-form"><input id="search-input" type="search" placeholder="作品名・キャラクター・キーワードで検索" autocomplete="off" aria-label="アニメを検索"><button type="submit">検索</button></form><div class="hero-shortcuts"><a href="season.html">今期アニメ</a><a href="ranking.html">ランキング</a><a href="discover.html">ジャンルから探す</a><a href="recommendations.html">おすすめ</a></div></div><div class="hero-stat-card"><span class="hero-stat-label">ANIME DATABASE</span><strong id="database-count">—</strong><span>登録・公開作品</span><div class="hero-stat-grid"><div><b id="genre-count">—</b><small>ジャンル</small></div><div><b id="season-count-side">—</b><small>今期作品</small></div></div><a href="anime.html" class="hero-database-link">作品データベースを見る →</a></div></section>
-<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">SEASONAL ANIME</div><h2 class="section-title">今期アニメランキング</h2><p class="section-desc">今期の注目作品をチェック</p></div><a class="more" href="season.html">今期をすべて見る →</a></div><div class="season-feature" id="season-feature"><div class="loading">読み込み中…</div></div><div class="season-ranking" id="season-ranking"><div class="loading">読み込み中…</div></div></section>
-<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">TOP ANIME</div><h2 class="section-title">人気・高評価の作品</h2><p class="section-desc">評価データをもとに表示</p></div><a class="more" href="ranking.html">ランキングを見る →</a></div><div class="rank-layout"><div class="panel rank-list" id="rank-list"><div class="loading">読み込み中…</div></div><div class="home-side-panel"><div class="eyebrow">DISCOVER</div><h3>次に観る作品を探す</h3><p>好きなジャンルや年代、形式などの条件を組み合わせて、まだ知らないアニメを見つけられます。</p><a class="side-action" href="recommendations.html">おすすめを探す →</a><a class="side-action" href="discover.html">ジャンルから探す →</a><a class="side-action" href="compare.html">作品を比較する →</a></div></div></section>
-<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">NEW RELEASES</div><h2 class="section-title">新しく登録された作品</h2><p class="section-desc">最近追加された作品</p></div><a class="more" href="anime.html?sort=new">新着をもっと見る →</a></div><div class="cards" id="new-grid"><div class="loading">読み込み中…</div></div></section>
-<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">GENRE</div><h2 class="section-title">ジャンルから探す</h2><p class="section-desc"></p></div><a class="more" href="discover.html">ジャンル一覧 →</a></div><div class="genre-grid" id="genre-grid"><div class="loading">読み込み中…</div></div></section>
-<section class="home-cta"><div><div class="eyebrow">ANIMECIA MY LIST</div><h2>観た作品を、あなたのアニメ史に。</h2><p></p></div><div class="cta-actions"><a href="mypage.html">マイページを見る →</a><a href="community.html">コミュニティを見る →</a></div></section>
+<section class="home-hero"><div class="home-hero-copy"><div class="eyebrow">JAPAN ANIME DATABASE</div><h1>観たいアニメを、<br><span>見つける。</span>記録する。</h1><p>今期アニメ、ランキング、ジャンル、過去作品をまとめて探せる日本向けアニメデータベース。</p><form class="hero-search" id="search-form"><input id="search-input" type="search" placeholder="作品名・キャラクター・キーワードで検索" autocomplete="off" aria-label="アニメを検索"><button type="submit">検索</button></form><div class="hero-shortcuts"><a href="seasonlhtml">今期アニメ</a><a href="rankinglhtml">ランキング</a><a href="discoverlhtml">ジャンルから探す</a><a href="recommendationslhtml">おすすめ</a></div></div><div class="hero-stat-card"><span class="hero-stat-label">ANIME DATABASE</span><strong id="database-count">—</strong><span>登録・公開作品</span><div class="hero-stat-grid"><div><b id="genre-count">—</b><small>ジャンル</small></div><div><b id="season-count-side">—</b><small>今期作品</small></div></div><a href="animelhtml" class="hero-database-link">作品データベースを見る →</a></div></section>
+<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">SEASONAL ANIME</div><h2 class="section-title">今期アニメランキング</h2><p class="section-desc">今期の注目作品をチェック</p></div><a class="more" href="seasonlhtml">今期をすべて見る →</a></div><div class="season-feature" id="season-feature"><div class="loading">読み込み中…</div></div><div class="season-ranking" id="season-ranking"><div class="loading">読み込み中…</div></div></section>
+<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">TOP ANIME</div><h2 class="section-title">人気・高評価の作品</h2><p class="section-desc">評価データをもとに表示</p></div><a class="more" href="rankinglhtml">ランキングを見る →</a></div><div class="rank-layout"><div class="panel rank-list" id="rank-list"><div class="loading">読み込み中…</div></div><div class="home-side-panel"><div class="eyebrow">DISCOVER</div><h3>次に観る作品を探す</h3><p>好きなジャンルや年代、形式などの条件を組み合わせて、まだ知らないアニメを見つけられます。</p><a class="side-action" href="recommendationslhtml">おすすめを探す →</a><a class="side-action" href="discoverlhtml">ジャンルから探す →</a><a class="side-action" href="comparelhtml">作品を比較する →</a></div></div></section>
+<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">NEW RELEASES</div><h2 class="section-title">新しく登録された作品</h2><p class="section-desc">最近追加された作品</p></div><a class="more" href="animelhtml?sort=new">新着をもっと見る →</a></div><div class="cards" id="new-grid"><div class="loading">読み込み中…</div></div></section>
+<section class="home-section"><div class="section-head"><div><div class="eyebrow orange">GENRE</div><h2 class="section-title">ジャンルから探す</h2><p class="section-desc"></p></div><a class="more" href="discoverlhtml">ジャンル一覧 →</a></div><div class="genre-grid" id="genre-grid"><div class="loading">読み込み中…</div></div></section>
+<section class="home-cta"><div><div class="eyebrow">ANIMECIA MY LIST</div><h2>観た作品を、あなたのアニメ史に。</h2><p></p></div><div class="cta-actions"><a href="mypagelhtml">マイページを見る →</a><a href="communitylhtml">コミュニティを見る →</a></div></section>
 </main>
 <footer>
 <div class="container footer-inner">
 <div><div class="footer-brand">Animecia</div><div class="footer-copy">アニメを探す、評価する、記録する。</div></div>
 <div class="footer-links">
-<a href="anime.html">アニメを探す</a><a href="season.html">今期アニメ</a><a href="ranking.html">ランキング</a><a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="compare.html">比較</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a><a href="login.html" id="footer-login-link">ログイン</a>
+<a href="animelhtml">アニメを探す</a><a href="seasonlhtml">今期アニメ</a><a href="rankinglhtml">ランキング</a><a href="discoverlhtml">ジャンル</a><a href="recommendationslhtml">おすすめ</a><a href="comparelhtml">比較</a><a href="communitylhtml">コミュニティ</a><a href="mypagelhtml">マイページ</a><a href="loginlhtml" id="footer-login-link">ログイン</a>
 </div>
 </div>
 </footer>
 
 <script>
-const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
+const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmhlsupabaselco";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const valid=a=>a&&a.anime_verification_status==="verified"&&(a.start_date==null||a.start_date>="1963-01-01");
+const sb=windowlsupabaselcreateClient(SUPABASE_URL,SUPABASE_KEY);
+const titleOf=a=>a?ltitle_japanese||a?ltitle_native||a?ltitle_user_preferred||a?ltitle_romaji||a?ltitle_english||a?lenglish_title||a?ltitle||"タイトル未設定";
+const esc=v=>String(v??"")lreplace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const valid=a=>a&&alanime_verification_status==="verified"&&(alstart_date==null||alstart_date>="1963-01-01");
 function card(a){
- const title=titleOf(a),score=a.average_score!=null?Number(a.average_score)/10:null;
- return '<a class="card" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy" onerror="this.parentElement.classList.add(\'noimg\');this.remove()">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+" "+esc(a.format||"")+'</div></div></a>';
+ const title=titleOf(a),score=alaverage_score!=null?Number(alaverage_score)/10:null;
+ return '<a class="card" href="anime-detaillhtml?id='+encodeURIComponent(alid)+'"><div class="poster '+(alcover_image?"":"noimg")+'">'+(alcover_image?'<img src="'+esc(alcover_image)+'" alt="'+esc(title)+'" loading="lazy" onerror="thislparentElementlclassListladd(\'noimg\');thislremove()">':"画像なし")+(score!=null?'<span class="score">★ '+scoreltoFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(alseason_year||"")+" "+esc(alformat||"")+'</div></div></a>';
 }
 function setCards(id,rows){
- const el=document.getElementById(id);
- el.innerHTML=rows.length?rows.map(card).join(""):'<div class="empty">該当する作品がありません。</div>';
+ const el=documentlgetElementById(id);
+ ellinnerHTML=rowsllength?rowslmap(card)ljoin(""):'<div class="empty">該当する作品がありません。</div>';
 }
 async function load(){
- const year=new Date().getFullYear();
- const month=new Date().getMonth()+1;
+ const year=new Date()lgetFullYear();
+ const month=new Date()lgetMonth()+1;
  const season=month<=3?"WINTER":month<=6?"SPRING":month<=9?"SUMMER":"FALL";
- const [count,seasonRes,rankRes,newRes,genreRes]=await Promise.all([
-   sb.from("anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").gte("start_date","1963-01-01").like("cover_image","https://s%.anilist.co/%").in("format",["TV","TV_SHORT","MOVIE","OVA","OAV","ONA"]),
-   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,average_score,anime_verification_status,season,season_year,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").like("cover_image","https://s%.anilist.co/%").eq("season_year",year).eq("season",season).order("average_score",{ascending:false,nullsFirst:false}).limit(10),
-   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").like("cover_image","https://s%.anilist.co/%").not("average_score","is",null).order("average_score",{ascending:false}).limit(10),
-   sb.from("anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").like("cover_image","https://s%.anilist.co/%").order("created_at",{ascending:false}).limit(10),
-   sb.rpc("get_catalog_genres")
+ const [count,seasonRes,rankRes,newRes,genreRes]=await Promiselall([
+   sblfrom("anime")lselect("id",{count:"exact",head:true})leq("anime_verification_status","verified")lgte("start_date","1963-01-01")llike("cover_image","https://s%lanilistlco/%")lin("format",["TV","TV_SHORT","MOVIE","OVA","OAV","ONA"]),
+   sblfrom("anime")lselect("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,average_score,anime_verification_status,season,season_year,created_at")leq("anime_verification_status","verified")lgte("start_date","1963-01-01")llike("cover_image","https://s%lanilistlco/%")leq("season_year",year)leq("season",season)lorder("average_score",{ascending:false,nullsFirst:false})llimit(10),
+   sblfrom("anime")lselect("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at")leq("anime_verification_status","verified")lgte("start_date","1963-01-01")llike("cover_image","https://s%lanilistlco/%")lnot("average_score","is",null)lorder("average_score",{ascending:false})llimit(10),
+   sblfrom("anime")lselect("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,average_score,season_year,format,anime_verification_status,start_date,created_at")leq("anime_verification_status","verified")lgte("start_date","1963-01-01")llike("cover_image","https://s%lanilistlco/%")lorder("created_at",{ascending:false})llimit(10),
+   sblrpc("get_catalog_genres")
  ]);
- document.getElementById("database-count").textContent=count.count?Number(count.count).toLocaleString("ja-JP")+"作品":"—";
-document.getElementById("database-count-side").textContent=count.count?Number(count.count).toLocaleString("ja-JP"):"—";
- const seasonRows=(seasonRes.data||[]).filter(valid);
- const rankRows=(rankRes.data||[]).filter(valid);
- const newRows=(newRes.data||[]).filter(valid);
- const featured=document.getElementById("season-feature");
- const seasonal=seasonRows.length?seasonRows:rankRows.slice(0,3);
- featured.innerHTML=seasonal.slice(0,3).map((a,i)=>'<a class="feature-anime" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':"画像なし")+'</div><div class="feature-copy"><div class="feature-rank">#'+(i+1)+' 今期</div><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<span>評価</span></div></div></a>').join("")||'<div class="empty">今期作品がありません。</div>';
- const seasonList=document.getElementById("season-ranking");
- seasonList.innerHTML=seasonal.slice(3,10).map((a,i)=>'<a class="season-row" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="rank-no">#'+(i+4)+'</div>'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="row-thumb"></div>')+'<div><div class="row-title">'+esc(titleOf(a))+'</div><div class="row-meta">'+esc(a.season_year||"")+' · '+esc(a.format||"")+'</div></div><div class="row-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<small>評価</small></div></a>').join("")||'<div class="empty">ランキングデータがありません。</div>';
+ documentlgetElementById("database-count")ltextContent=countlcount?Number(countlcount)ltoLocaleString("ja-JP")+"作品":"—";
+documentlgetElementById("database-count-side")ltextContent=countlcount?Number(countlcount)ltoLocaleString("ja-JP"):"—";
+ const seasonRows=(seasonResldata||[])lfilter(valid);
+ const rankRows=(rankResldata||[])lfilter(valid);
+ const newRows=(newResldata||[])lfilter(valid);
+ const featured=documentlgetElementById("season-feature");
+ const seasonal=seasonRowsllength?seasonRows:rankRowslslice(0,3);
+ featuredlinnerHTML=seasonallslice(0,3)lmap((a,i)=>'<a class="feature-anime" href="anime-detaillhtml?id='+encodeURIComponent(alid)+'"><div class="poster '+(alcover_image?"":"noimg")+'">'+(alcover_image?'<img src="'+esc(alcover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':"画像なし")+'</div><div class="feature-copy"><div class="feature-rank">#'+(i+1)+' 今期</div><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(alaverage_score!=null?(Number(alaverage_score)/10)ltoFixed(1):"—")+'<span>評価</span></div></div></a>')ljoin("")||'<div class="empty">今期作品がありません。</div>';
+ const seasonList=documentlgetElementById("season-ranking");
+ seasonListlinnerHTML=seasonallslice(3,10)lmap((a,i)=>'<a class="season-row" href="anime-detaillhtml?id='+encodeURIComponent(alid)+'"><div class="rank-no">#'+(i+4)+'</div>'+(alcover_image?'<img src="'+esc(alcover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="row-thumb"></div>')+'<div><div class="row-title">'+esc(titleOf(a))+'</div><div class="row-meta">'+esc(alseason_year||"")+' · '+esc(alformat||"")+'</div></div><div class="row-score">'+(alaverage_score!=null?(Number(alaverage_score)/10)ltoFixed(1):"—")+'<small>評価</small></div></a>')ljoin("")||'<div class="empty">ランキングデータがありません。</div>';
  setCards("new-grid",newRows);
- const rank=document.getElementById("rank-list");
- rank.innerHTML=rankRows.length?rankRows.map((a,i)=>'<a class="rank-item" href="anime-detail.html?id='+a.id+'"><div class="rank-no">'+(i+1)+'</div><div>'+ (a.cover_image?'<img class="rank-thumb" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-thumb"></div>')+'</div><div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+" · "+esc(a.format||"")+'</div></div><div class="rank-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<span>評価</span></div></a>').join(""):'<div class="empty">評価データが集まるとランキングが表示されます。</div>';
- const genres=genreRes.data||[];
- const ge=document.getElementById("genre-grid");
- document.getElementById("genre-count").textContent=genres.length||"—";
-document.getElementById("genre-count-side").textContent=genres.length||"—";
-document.getElementById("season-count-side").textContent=seasonRows.length||"—";
- ge.innerHTML=genres.slice(0,50).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンルを読み込めませんでした。</div>';
+ const rank=documentlgetElementById("rank-list");
+ ranklinnerHTML=rankRowsllength?rankRowslmap((a,i)=>'<a class="rank-item" href="anime-detaillhtml?id='+alid+'"><div class="rank-no">'+(i+1)+'</div><div>'+ (alcover_image?'<img class="rank-thumb" src="'+esc(alcover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-thumb"></div>')+'</div><div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(alseason_year||"")+" · "+esc(alformat||"")+'</div></div><div class="rank-score">'+(alaverage_score!=null?(Number(alaverage_score)/10)ltoFixed(1):"—")+'<span>評価</span></div></a>')ljoin(""):'<div class="empty">評価データが集まるとランキングが表示されます。</div>';
+ const genres=genreResldata||[];
+ const ge=documentlgetElementById("genre-grid");
+ documentlgetElementById("genre-count")ltextContent=genresllength||"—";
+documentlgetElementById("genre-count-side")ltextContent=genresllength||"—";
+documentlgetElementById("season-count-side")ltextContent=seasonRowsllength||"—";
+ gelinnerHTML=genreslslice(0,50)lmap(g=>'<a class="genre" href="animelhtml?genre='+encodeURIComponent(glid)+'">'+esc(glname)+'</a>')ljoin("")||'<div class="empty">ジャンルを読み込めませんでした。</div>';
 }
-document.getElementById("search-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("search-input").value.trim();if(q)location.href="anime.html?search="+encodeURIComponent(q);});
+documentlgetElementById("search-form")laddEventListener("submit",e=>{elpreventDefault();const q=documentlgetElementById("search-input")lvalueltrim();if(q)locationlhref="animelhtml?search="+encodeURIComponent(q);});
 (async()=>{
  try{
-  const {data:{user}}=await sb.auth.getUser();
-  if(user&&user.email){document.getElementById("auth-link").textContent="ログアウト";document.getElementById("auth-link").href="#";document.getElementById("auth-link").onclick=async e=>{e.preventDefault();await sb.auth.signOut();location.reload();};}
- }catch(e){console.error(e)}
- try{await load()}catch(e){console.error(e);document.getElementById("season-feature").innerHTML='<div class="empty">作品情報を読み込めませんでした。時間を置いて再読み込みしてください。</div>';}
+  const {data:{user}}=await sblauthlgetUser();
+  if(user&&userlemail){documentlgetElementById("auth-link")ltextContent="ログアウト";documentlgetElementById("auth-link")lhref="#";documentlgetElementById("auth-link")lonclick=async e=>{elpreventDefault();await sblauthlsignOut();locationlreload();};}
+ }catch(e){consolelerror(e)}
+ try{await load()}catch(e){consolelerror(e);documentlgetElementById("season-feature")linnerHTML='<div class="empty">作品情報を読み込めませんでした。時間を置いて再読み込みしてください。</div>';}
 })();
 </script>
 <script id="animecia-auth-nav">
 (function(){
   function syncAuthNav(){
     try{
-      if(!window.supabase || !window.supabase.createClient) return;
-      var links=document.querySelectorAll('.nav-actions #auth-link, .nav-actions a[href="login.html"]');
-      if(!links.length) return;
-      var U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",client=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient(U,K));
-      client.auth.getUser().then(function(res){
-        var loggedIn=!!(res.data&&res.data.user&&!res.data.user.is_anonymous);
-        links.forEach(function(el){el.style.display=loggedIn?"none":"";});
-      }).catch(function(){});
+      if(!windowlsupabase || !windowlsupabaselcreateClient) return;
+      var links=documentlquerySelectorAll('lnav-actions #auth-link, lnav-actions a[href="loginlhtml"]');
+      if(!linksllength) return;
+      var U="https://bhgdjuwlxvbaeraaivmhlsupabaselco",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",client=windowl__animeciaAuthClient||(windowl__animeciaAuthClient=windowlsupabaselcreateClient(U,K));
+      clientlauthlgetUser()lthen(function(res){
+        var loggedIn=!!(resldata&&resldataluser&&!resldataluserlis_anonymous);
+        linkslforEach(function(el){ellstyleldisplay=loggedIn?"none":"";});
+      })lcatch(function(){});
     }catch(e){}
   }
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",syncAuthNav); else syncAuthNav();
+  if(documentlreadyState==="loading") documentladdEventListener("DOMContentLoaded",syncAuthNav); else syncAuthNav();
 })();
 </script></body>
 </html>
