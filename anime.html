@@ -2924,6 +2924,7 @@
     ========================================= */
 
     async function createYearOptions() {
+        const selectedYear = yearFilter.value;
         try {
             const { data, error } = await supabaseClient.rpc("get_catalog_years");
             if (error) throw error;
@@ -2939,9 +2940,20 @@
                 option.textContent = String(year) + "年";
                 yearFilter.appendChild(option);
             });
+
+            if (selectedYear && [...yearFilter.options].some(option => option.value === selectedYear)) {
+                yearFilter.value = selectedYear;
+            }
         } catch (error) {
             console.error("Year option loading error:", error);
             yearFilter.innerHTML = '<option value="">すべて</option>';
+            if (selectedYear) {
+                const option = document.createElement("option");
+                option.value = selectedYear;
+                option.textContent = selectedYear + "年";
+                yearFilter.appendChild(option);
+                yearFilter.value = selectedYear;
+            }
         }
     }
 
@@ -4268,25 +4280,20 @@
 
     async function initializeAnimePage() {
         /*
-         * フィルターの選択肢を先に取得してからURLパラメータを復元する。
-         * これを逆順にすると、URLに指定された放送年・ジャンル・スタジオが
-         * <select> に存在しない状態で上書きされ、見た目上選択できない問題が起きる。
+         * フィルター候補の非同期取得が、ユーザー操作中に<select>を書き換えないよう、
+         * 候補を先に読み込んでからURLの条件を復元する。
          */
-        // 作品一覧を最優先で取得し、フィルター候補の取得を待たない。
-        // これにより初回表示をブロックせず、作品カードを先に表示できる。
+        await Promise.allSettled([
+            createYearOptions(),
+            createGenreOptions(),
+            createStudioOptions()
+        ]);
+
         loadURLParameters();
         bindCompareButtons();
         updateCompareUI();
 
         await loadAnime();
-
-        // フィルター候補は作品表示後に並列で読み込む。
-        // 失敗しても作品一覧の表示には影響させない。
-        Promise.allSettled([
-            createYearOptions(),
-            createGenreOptions(),
-            createStudioOptions()
-        ]);
     }
 
     initializeAnimePage();
