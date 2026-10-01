@@ -119,7 +119,7 @@ async function loadImportedWorks(q=""){
  let query=supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,season_year,season");
  if(term.length>=1){
   const safe=term.replace(/[,%()]/g," ");
-  query=query.or("title_japanese.ilike.%"+safe+"%,title_native.ilike.%"+safe+"%,title_user_preferred.ilike.%"+safe+"%,title_romaji.ilike.%"+safe+"%,title_english.ilike.%"+safe+"%,english_title.ilike.%"+safe+"%");
+  query=query.or("title.ilike.%"+safe+"%,title_japanese.ilike.%"+safe+"%,title_native.ilike.%"+safe+"%,title_user_preferred.ilike.%"+safe+"%,title_romaji.ilike.%"+safe+"%,title_english.ilike.%"+safe+"%,english_title.ilike.%"+safe+"%");
  }
  const {data,error}=await query.order("id",{ascending:false}).limit(term.length?30:18);
  if(error){console.error(error);box.innerHTML='<div class="search-loading">取り込んだ作品を読み込めませんでした。Supabaseの公開設定を確認してください。</div>';return;}
@@ -140,7 +140,10 @@ function addId(rawId){
  loadImportedWorks();
 }
 async function searchWorks(q){ return loadImportedWorks(q); }
-document.getElementById("compare-search").addEventListener("input",e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadImportedWorks(e.target.value),220);});
+const compareSearch=document.getElementById("compare-search");
+compareSearch.addEventListener("input",e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadImportedWorks(e.target.value),180);});
+compareSearch.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(searchTimer);loadImportedWorks(e.target.value);}});
+
 document.getElementById("clear").onclick=()=>{ids=[];save();history.replaceState({}, "", "compare.html");render();};
 render();
 loadImportedWorks();
