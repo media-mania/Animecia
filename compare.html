@@ -140,20 +140,6 @@ function addId(rawId){
  loadImportedWorks();
 }
 async function searchWorks(q){ return loadImportedWorks(q); }
-document.getElementById("compare-search").value="";document.getElementById("search-results").innerHTML="";render();loadImportedWorks();}
-async function searchWorks(q){
- const box=document.getElementById("search-results");
- q=q.trim();
- if(q.length<2){box.innerHTML="";return;}
- box.innerHTML='<div class="search-loading">検索中…</div>';
- const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,season_year,season").or("title_japanese.ilike.%"+q+"%,title_native.ilike.%"+q+"%,title_user_preferred.ilike.%"+q+"%,title_romaji.ilike.%"+q+"%,title_english.ilike.%"+q+"%").order("title_japanese").limit(12);
- if(error){box.innerHTML='<div class="search-loading">検索に失敗しました。</div>';return;}
- box.innerHTML=(data||[]).map(a=>{
-  const selected=ids.includes(Number(a.id));
-  return '<div class="search-result"><img src="'+esc(a.cover_image||"")+'" alt="" onerror="this.style.visibility=\'hidden\'"><div><strong>'+esc(titleOf(a))+'</strong><small>'+esc(a.season_year||"")+" "+esc(seasonName[a.season]||"")+'</small></div><button type="button" data-add="'+a.id+'" '+(selected||ids.length>=5?"disabled":"")+'>'+ (selected?"選択中":ids.length>=5?"上限":"比較に追加")+'</button></div>';
- }).join("")||'<div class="search-loading">該当する作品がありません。</div>';
- box.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>addId(b.dataset.add));
-}
 document.getElementById("compare-search").addEventListener("input",e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadImportedWorks(e.target.value),220);});
 document.getElementById("clear").onclick=()=>{ids=[];save();history.replaceState({}, "", "compare.html");render();};
 render();
