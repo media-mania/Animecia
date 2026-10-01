@@ -346,7 +346,7 @@
         .active-filter-label{color:#8a8f98;font-size:12px;font-weight:800}
         @media(max-width:700px){.active-filters{margin-top:-4px}.active-filter{font-size:11px}}
 
-        .compare-toolbar {
+        .memo-toolbar {
             display:flex;
             align-items:center;
             flex-wrap:wrap;
@@ -360,9 +360,9 @@
             font-size:13px;
         }
 
-        .compare-open,
-        .compare-clear,
-        .anime-compare-button {
+        .memo-open,
+        .memo-clear,
+        .anime-memo-button {
             display:inline-flex;
             align-items:center;
             justify-content:center;
@@ -377,24 +377,24 @@
             text-decoration:none;
         }
 
-        .compare-open {
+        .memo-open {
             margin-left:auto;
             background:#111;
             color:#fff;
             border-color:#111;
         }
 
-        .compare-clear,
-        .anime-compare-button {
+        .memo-clear,
+        .anime-memo-button {
             cursor:pointer;
         }
 
-        .anime-compare-button {
+        .anime-memo-button {
             width:100%;
             margin-top:12px;
         }
 
-        .anime-compare-button.selected {
+        .anime-memo-button.selected {
             background:#111;
             border-color:#111;
             color:#fff;
@@ -1056,7 +1056,7 @@
 <a href="discover.html">ジャンル</a>
 <a href="recommendations.html">おすすめ</a>
 <a href="community.html">コミュニティ</a>
-<a href="compare.html">比較</a>
+<a href="memo.html">メモ</a>
 </nav>
 <form class="header-search" action="anime.html" method="get" role="search">
 <input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
@@ -1334,10 +1334,10 @@
 
                 <a
                     class="reset-button"
-                    href="compare.html"
+                    href="memo.html"
                     style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;"
                 >
-                    作品比較
+                    メモ
                 </a>
 
                 <button
@@ -1357,10 +1357,10 @@
             aria-label="アニメ作品一覧"
         >
 
-            <div id="compare-toolbar" class="compare-toolbar" style="display:none;">
-                <span><strong id="compare-count">0</strong>作品を比較に選択中</span>
-                <a id="compare-open" class="compare-open" href="compare.html">比較する</a>
-                <button id="compare-clear" class="compare-clear" type="button">クリア</button>
+            <div id="memo-toolbar" class="memo-toolbar" style="display:none;">
+                <span><strong id="memo-count">0</strong>作品をメモに追加中</span>
+                <a id="memo-open" class="memo-open" href="memo.html">メモを見る</a>
+                <button id="memo-clear" class="memo-clear" type="button">クリア</button>
             </div>
 
             <div class="result-header">
@@ -2640,8 +2640,8 @@
             renderActiveFilters();
             await initUserAnimeActions();
             renderPagination(Math.ceil(serverTotal / PAGE_SIZE));
-            bindCompareButtons();
-            updateCompareUI();
+            bindMemoButtons();
+            updateMemoUI();
         } catch (error) {
             console.error("Anime loading error:", error);
             showLoadError(error);
@@ -3153,8 +3153,8 @@
             totalPages
         );
 
-        bindCompareButtons();
-        updateCompareUI();
+        bindMemoButtons();
+        updateMemoUI();
 
     }
 
@@ -3588,10 +3588,10 @@
 
                     <button
                         type="button"
-                        class="anime-compare-button"
+                        class="anime-memo-button"
                         data-compare-id="${anime.id}"
                     >
-                        比較に追加
+                        メモに追加
                     </button>
 
                     <a
@@ -4219,9 +4219,9 @@
        Start
     ========================================= */
 
-    function getCompareIds() {
+    function getMemoIds() {
         try {
-            const raw = localStorage.getItem("animecia_compare");
+            const raw = localStorage.getItem("animecia_memo");
             if (!raw) return [];
             const ids = JSON.parse(raw);
             if (!Array.isArray(ids)) return [];
@@ -4231,36 +4231,36 @@
         }
     }
 
-    function updateCompareUI() {
-        const ids = getCompareIds();
-        const toolbar = document.getElementById("compare-toolbar");
-        const count = document.getElementById("compare-count");
-        const open = document.getElementById("compare-open");
+    function updateMemoUI() {
+        const ids = getMemoIds();
+        const toolbar = document.getElementById("memo-toolbar");
+        const count = document.getElementById("memo-count");
+        const open = document.getElementById("memo-open");
         if (!toolbar) return;
         toolbar.style.display = ids.length ? "flex" : "none";
         if (count) count.textContent = String(ids.length);
         if (open) open.href = ids.length ? "compare.html?ids=" + ids.join(",") : "compare.html";
-        document.querySelectorAll(".anime-compare-button").forEach(button => {
+        document.querySelectorAll(".anime-memo-button").forEach(button => {
             const id = Number(button.dataset.compareId);
             const selected = ids.includes(id);
             button.classList.toggle("selected", selected);
-            button.textContent = selected ? "比較から外す" : "比較に追加";
+            button.textContent = selected ? "メモから外す" : "メモに追加";
         });
     }
 
-    function setCompareIds(ids) {
+    function setMemoIds(ids) {
         const clean = [...new Set(ids.map(Number).filter(Number.isInteger))].slice(0,5);
-        localStorage.setItem("animecia_compare", JSON.stringify(clean));
-        updateCompareUI();
+        localStorage.setItem("animecia_memo", JSON.stringify(clean));
+        updateMemoUI();
     }
 
-    function bindCompareButtons() {
-        document.querySelectorAll(".anime-compare-button").forEach(button => {
+    function bindMemoButtons() {
+        document.querySelectorAll(".anime-memo-button").forEach(button => {
             button.onclick = event => {
                 event.preventDefault();
                 event.stopPropagation();
                 const id = Number(button.dataset.compareId);
-                let ids = getCompareIds();
+                let ids = getMemoIds();
                 if (ids.includes(id)) {
                     ids = ids.filter(value => value !== id);
                 } else {
@@ -4270,14 +4270,14 @@
                     }
                     ids.push(id);
                 }
-                setCompareIds(ids);
+                setMemoIds(ids);
             };
         });
     }
 
-    document.getElementById("compare-clear")?.addEventListener(
+    document.getElementById("memo-clear")?.addEventListener(
         "click",
-        () => setCompareIds([])
+        () => setMemoIds([])
     );
 
     async function initializeAnimePage() {
@@ -4292,8 +4292,8 @@
         ]);
 
         loadURLParameters();
-        bindCompareButtons();
-        updateCompareUI();
+        bindMemoButtons();
+        updateMemoUI();
 
         await loadAnime();
     }
