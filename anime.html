@@ -340,6 +340,12 @@
         }
 
 
+        .active-filters{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:-10px 0 18px;min-height:0}
+        .active-filter{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #e1e4e8;border-radius:999px;background:#fff;color:#444;font-size:12px;font-weight:700;box-shadow:0 3px 10px rgba(16,20,26,.04)}
+        .active-filter button{border:0;background:transparent;color:#888;cursor:pointer;font-size:15px;line-height:1;padding:0}
+        .active-filter-label{color:#8a8f98;font-size:12px;font-weight:800}
+        @media(max-width:700px){.active-filters{margin-top:-4px}.active-filter{font-size:11px}}
+
         .compare-toolbar {
             display:flex;
             align-items:center;
@@ -1111,6 +1117,7 @@
 
         </section>
 
+        <div id="active-filters" class="active-filters" aria-live="polite" aria-label="現在の検索条件"></div>
 
         <section
             class="filter-area"
@@ -1591,6 +1598,11 @@
     const studioFilter =
         document.getElementById(
             "studio-filter"
+        );
+
+    const activeFilters =
+        document.getElementById(
+            "active-filters"
         );
 
 
@@ -2542,6 +2554,48 @@
     }
 
 
+    function renderActiveFilters() {
+        if (!activeFilters) return;
+        const items = [];
+        const add = (key,label,value,clear) => {
+            if (!value) return;
+            items.push('<span class="active-filter"><span>'+escapeHTML(label)+': '+escapeHTML(value)+'</span><button type="button" data-clear-filter="'+escapeHTML(key)+'" aria-label="'+escapeHTML(label)+'を解除">×</button></span>');
+        };
+        add("search","検索",searchInput.value.trim(),()=>searchInput.value="");
+        add("year","年",yearFilter.options[yearFilter.selectedIndex]?.textContent.trim(),()=>yearFilter.value="");
+        add("season","季節",seasonFilter.options[seasonFilter.selectedIndex]?.textContent.trim(),()=>seasonFilter.value="");
+        add("status","状態",statusFilter.options[statusFilter.selectedIndex]?.textContent.trim(),()=>statusFilter.value="");
+        add("format","形式",formatFilter.options[formatFilter.selectedIndex]?.textContent.trim(),()=>formatFilter.value="");
+        add("genre","ジャンル",genreFilter.options[genreFilter.selectedIndex]?.textContent.trim(),()=>genreFilter.value="");
+        add("studio","制作会社",studioFilter.options[studioFilter.selectedIndex]?.textContent.trim(),()=>studioFilter.value="");
+        if (sortFilter.value && sortFilter.value !== "default") {
+            add("sort","並び順",sortFilter.options[sortFilter.selectedIndex]?.textContent.trim(),()=>sortFilter.value="default");
+        }
+        activeFilters.innerHTML = items.length
+            ? '<span class="active-filter-label">検索条件</span>'+items.map(x=>x).join("")
+            : "";
+        activeFilters.querySelectorAll("[data-clear-filter]").forEach(btn=>{
+            btn.addEventListener("click",()=>{
+                const key=btn.dataset.clearFilter;
+                const clearMap={
+                    search:()=>searchInput.value="",
+                    year:()=>yearFilter.value="",
+                    season:()=>seasonFilter.value="",
+                    status:()=>statusFilter.value="",
+                    format:()=>formatFilter.value="",
+                    genre:()=>genreFilter.value="",
+                    studio:()=>studioFilter.value="",
+                    sort:()=>sortFilter.value="default"
+                };
+                clearMap[key]?.();
+                currentPage=1;
+                updateURL();
+                loadAnime();
+                renderActiveFilters();
+            });
+        });
+    }
+
     /* =========================================
        Load anime
     ========================================= */
@@ -2585,6 +2639,7 @@
 
             resultPage.textContent = `${currentPage} / ${Math.ceil(serverTotal / PAGE_SIZE)} ページ`;
             animeGrid.innerHTML = animeData.map(createAnimeCard).join("");
+            renderActiveFilters();
             await initUserAnimeActions();
             renderPagination(Math.ceil(serverTotal / PAGE_SIZE));
             bindCompareButtons();
