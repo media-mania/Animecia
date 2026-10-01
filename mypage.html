@@ -559,7 +559,7 @@ async function pinPost(postId){
  const {error}=await supabaseClient.from("profiles").update({pinned_post_id:next}).eq("id",currentUser.id);
  if(error)throw error;
 }
-async async function renderSocialPost(x,pm,counts,mode){
+async function renderSocialPost(x,pm,counts,mode){
  const p=pm.get(x.author_id)||{};const name=p.display_name||p.username||"Animeciaユーザー";
  const avatar=p.avatar_url?'<img class="avatar" src="'+esc(p.avatar_url)+'" alt="">':'<div class="avatar" style="display:grid;place-items:center;font-weight:800;color:#888">'+esc(name.slice(0,1))+'</div>';
  const c=counts[x.id]||{likes:0,reposts:0,bookmarks:0,replies:0};
