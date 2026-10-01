@@ -2573,8 +2573,7 @@
 
             // 公開基準をフロント側でも再確認し、古いキャッシュや将来のRPC変更でも1963年以前を表示しない
             animeData = (data || []).filter(anime => {
-                if (!anime?.start_date) return false;
-                return anime.start_date >= "1963-01-01" && /^https:\/\/s[^/]+\.anilist\.co\//.test(anime.cover_image || "");
+                return anime?.start_date && anime.start_date >= "1963-01-01";
             });
             filteredAnime = animeData;
             serverTotal = Number(animeData[0]?.total_count || 0);
