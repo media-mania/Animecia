@@ -69,7 +69,7 @@ function save(){localStorage.setItem("animecia_compare",JSON.stringify(ids));}
 function updateCount(){document.getElementById("compare-count").textContent=ids.length+" / 5";}
 async function fetchAnimeByIds(){
  if(!ids.length)return[];
- const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,banner_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url,average_score,popularity,genre").eq("anime_verification_status","verified").in("id",ids); if(error) throw error;
+ const {data,error}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,banner_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url,average_score,popularity,genre").eq("anime_verification_status","verified").eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).in("id",ids); if(error) throw error;
  const map=new Map((data||[]).map(a=>[Number(a.id),a]));
  return ids.map(id=>map.get(id)).filter(Boolean);
 }
@@ -152,12 +152,16 @@ function addId(rawId){
  loadImportedWorks();
 }
 async function searchWorks(q){ return loadImportedWorks(q); }
+document.getElementById("search-results").addEventListener("click",e=>{
+ const btn=e.target.closest("[data-add]");
+ if(btn && !btn.disabled) addId(btn.dataset.add);
+});
 const compareSearch=document.getElementById("compare-search");
 compareSearch.addEventListener("input",e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadImportedWorks(e.target.value),180);});
 compareSearch.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(searchTimer);loadImportedWorks(e.target.value);}});
 
 document.getElementById("clear").onclick=()=>{ids=[];save();history.replaceState({}, "", "compare.html");render();};
-render();
+render().catch(e=>{console.error("compare render",e);document.getElementById("app").innerHTML='<div class="error">比較データを読み込めませんでした。時間をおいて再度お試しください。</div>';});
 loadImportedWorks();
 </script>
 <script id="animecia-auth-nav">(function(){function sync(){try{var links=document.querySelectorAll('.nav-actions a[href="login.html"]');if(!links.length)return;var c=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient("https://bhgdjuwlxvbaeraaivmh.supabase.co","sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c"));c.auth.getUser().then(function(r){var u=r.data&&r.data.user;links.forEach(function(x){x.style.display=u&&!u.is_anonymous?"none":"";});}).catch(function(){});}catch(e){}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync);else sync();})();</script>
