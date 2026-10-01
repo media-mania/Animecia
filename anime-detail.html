@@ -3815,8 +3815,8 @@
                 "description"
             )
             .textContent =
-            (anime.synopsis || anime.description) ||
-            "あらすじは登録されていません。";
+            anime.synopsis ||
+            "";
 
 
         document
@@ -3824,14 +3824,7 @@
                 "hero-description"
             )
             .textContent =
-            cleanText(
-                anime.description
-            )
-                .slice(
-                    0,
-                    300
-                ) ||
-            "作品情報は準備中です。";
+            "";
 
 
         /* =====================================
