@@ -55,16 +55,15 @@
 <section class="ranking-hero">
 <div class="kicker">ANIME RANKING</div>
 <h1>アニメランキング</h1>
-<p>Animeciaに登録された作品の評価・お気に入り・レビューのデータを切り替えて確認できます。</p>
+<p>Animeciaに登録された作品を、評価数・お気に入り数・レビュー数の3つの基準でそれぞれランキング表示します。</p>
 </section>
 <div class="ranking-tabs" role="tablist" aria-label="ランキングの種類">
-<button class="ranking-tab active" data-mode="overall">総合</button>
 <button class="ranking-tab" data-mode="rating">評価数</button>
 <button class="ranking-tab" data-mode="favorites">お気に入り数</button>
 <button class="ranking-tab" data-mode="reviews">レビュー数</button>
 </div>
 <section class="ranking-list" id="ranking-list"><div class="state">ランキングを読み込んでいます…</div></section>
-<p class="ranking-note">※表示対象は確認済み（verified）の作品のうち、評価・お気に入り・レビューのいずれかが1件以上ある作品です。同じ件数の作品は同順位です。</p>
+<p class="ranking-note">※各ランキングは、その基準の件数が1件以上ある確認済み（verified）の作品のみを対象とします。同じ件数の作品は同順位です。</p>
 </main>
 <footer><div class="container footer-inner"><div><div class="footer-brand">Animecia</div><div class="footer-copy">アニメを探す、評価する、記録する。</div></div><div class="footer-links"><a href="anime.html">アニメを探す</a><a href="season.html">今期アニメ</a><a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="memo.html">メモ</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a></div></div></footer>
 <script>
@@ -78,14 +77,12 @@ let engagement=new Map();
 let anime=new Map();
 let mode="rating";
 function valueFor(a,e){
- if(mode==="overall") return Number(e?.engagement_count||0);
  if(mode==="rating") return Number(e?.rating_count||0);
  if(mode==="favorites") return Number(e?.favorite_count||0);
  if(mode==="reviews") return Number(e?.review_count||0);
  return 0;
 }
 function labelFor(){
- if(mode==="overall") return "総合件数";
  if(mode==="rating") return "評価数";
  if(mode==="favorites") return "お気に入り数";
  return "レビュー数";
