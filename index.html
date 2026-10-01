@@ -240,7 +240,11 @@ document.getElementById("database-count-side").textContent=count.count?Number(co
  const seasonRows=(seasonRes.data||[]).filter(valid);
  const rankRows=(rankRes.data||[]).filter(valid);
  const newRows=(newRes.data||[]).filter(valid);
- setCards("season-grid",seasonRows.length?seasonRows:rankRows.slice(0,10));
+ const featured=document.getElementById("season-feature");
+ const seasonal=seasonRows.length?seasonRows:rankRows.slice(0,3);
+ featured.innerHTML=seasonal.slice(0,3).map((a,i)=>'<a class="feature-anime" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':"画像なし")+'</div><div class="feature-copy"><div class="feature-rank">#'+(i+1)+' 今期</div><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<span>評価</span></div></div></a>').join("")||'<div class="empty">今期作品がありません。</div>';
+ const seasonList=document.getElementById("season-ranking");
+ seasonList.innerHTML=seasonal.slice(3,10).map((a,i)=>'<a class="season-row" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="rank-no">#'+(i+4)+'</div>'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="row-thumb"></div>')+'<div><div class="row-title">'+esc(titleOf(a))+'</div><div class="row-meta">'+esc(a.season_year||"")+' · '+esc(a.format||"")+'</div></div><div class="row-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<small>評価</small></div></a>').join("")||'<div class="empty">ランキングデータがありません。</div>';
  setCards("new-grid",newRows);
  const rank=document.getElementById("rank-list");
  rank.innerHTML=rankRows.length?rankRows.map((a,i)=>'<a class="rank-item" href="anime-detail.html?id='+a.id+'"><div class="rank-no">'+(i+1)+'</div><div>'+ (a.cover_image?'<img class="rank-thumb" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-thumb"></div>')+'</div><div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+" · "+esc(a.format||"")+'</div></div><div class="rank-score">'+(a.average_score!=null?(Number(a.average_score)/10).toFixed(1):"—")+'<span>評価</span></div></a>').join(""):'<div class="empty">評価データが集まるとランキングが表示されます。</div>';
@@ -257,7 +261,7 @@ document.getElementById("search-form").addEventListener("submit",e=>{e.preventDe
   const {data:{user}}=await sb.auth.getUser();
   if(user&&user.email){document.getElementById("auth-link").textContent="ログアウト";document.getElementById("auth-link").href="#";document.getElementById("auth-link").onclick=async e=>{e.preventDefault();await sb.auth.signOut();location.reload();};}
  }catch(e){console.error(e)}
- try{await load()}catch(e){console.error(e);document.getElementById("season-grid").innerHTML='<div class="empty">作品情報を読み込めませんでした。時間を置いて再読み込みしてください。</div>';}
+ try{await load()}catch(e){console.error(e);document.getElementById("season-feature").innerHTML='<div class="empty">作品情報を読み込めませんでした。時間を置いて再読み込みしてください。</div>';}
 })();
 </script>
 <script id="animecia-auth-nav">
