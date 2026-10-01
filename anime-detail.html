@@ -1696,6 +1696,68 @@
   }
 }
 </style>
+<style id="animecia-global-header-fix">
+/* 全ページ共通ヘッダー：トップページと同じレイアウト */
+.site-header{
+  position:sticky!important;top:0!important;z-index:9999!important;
+  background:rgba(16,17,20,.94)!important;
+  backdrop-filter:blur(16px)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  color:#fff!important;
+}
+.site-header .container.nav{
+  width:min(1240px,calc(100% - 32px))!important;
+  min-height:68px!important;margin:auto!important;
+  display:flex!important;align-items:center!important;gap:28px!important;
+}
+.site-header .brand{
+  font-size:22px!important;font-weight:900!important;letter-spacing:-.04em!important;
+  text-decoration:none!important;color:#fff!important;white-space:nowrap!important;
+}
+.site-header .nav-links{
+  display:flex!important;gap:20px!important;align-items:center!important;flex:1!important;
+}
+.site-header .nav-links a{
+  color:#bfc2c8!important;text-decoration:none!important;font-size:13px!important;font-weight:650!important;
+  white-space:nowrap!important;
+}
+.site-header .nav-links a:hover{color:#fff!important}
+.site-header .header-search{
+  display:flex!important;align-items:center!important;flex:0 1 250px!important;
+  min-width:140px!important;margin:0!important;
+}
+.site-header .header-search input{
+  width:100%!important;min-width:0!important;height:36px!important;
+  border:1px solid #3a3d44!important;border-radius:9px!important;
+  background:#191b20!important;color:#fff!important;padding:8px 11px!important;
+  outline:none!important;
+}
+.site-header .header-search input::placeholder{color:#8f939b!important}
+.site-header .nav-actions{
+  display:flex!important;gap:8px!important;align-items:center!important;flex-shrink:0!important;
+}
+.site-header .nav-btn{
+  border:1px solid #3a3d44!important;background:#191b20!important;color:#fff!important;
+  border-radius:9px!important;padding:8px 13px!important;text-decoration:none!important;
+  font-size:12px!important;font-weight:750!important;white-space:nowrap!important;
+}
+.site-header .nav-btn.primary{background:#fff!important;color:#111!important;border-color:#fff!important}
+@media(max-width:1100px){
+  .site-header .nav-links{gap:12px!important}
+  .site-header .nav-links a{font-size:12px!important}
+  .site-header .header-search{flex-basis:190px!important}
+}
+@media(max-width:700px){
+  .site-header .container.nav{
+    width:min(100% - 20px,1240px)!important;min-height:60px!important;gap:10px!important;
+  }
+  .site-header .nav-links{display:none!important}
+  .site-header .header-search{flex:1 1 auto!important;min-width:0!important}
+  .site-header .header-search input{height:36px!important;font-size:12px!important}
+  .site-header .brand{font-size:20px!important}
+  .site-header .nav-actions .nav-btn:not(.primary){display:none!important}
+}
+</style>
 </head>
 
 
