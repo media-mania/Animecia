@@ -3497,115 +3497,85 @@
             }
 
 
-            currentAnime =
-                data;
-
-
+            currentAnime = data;
             currentAnime._japanese_aliases = [];
+
+            // 最優先: 作品本体の1件取得が成功した時点で、基本情報を即時表示する。
             renderAnime(currentAnime);
+            updateSEO(currentAnime);
+            loadingElement.style.display = "none";
+            detailElement.style.display = "block";
 
-            // 基本情報を先に描画し、補助データはバックグラウンドで補完する
-            const genrePromise = loadGenres();
-
-            try {
-                const aliasResult = await supabaseClient
-                    .from("anime_aliases")
-                    .select("title,language")
-                    .eq("anime_id", Number(currentAnimeId));
-
-                if (aliasResult.error) throw aliasResult.error;
-
-                currentAnime._japanese_aliases =
-                    (aliasResult.data || [])
-                        .filter(row =>
-                            String(row.language || "").toLowerCase() === "japanese" ||
-                            /[ぁ-んァ-ン一-龯]/.test(String(row.title || ""))
-                        )
-                        .map(row => String(row.title || "").trim())
-                        .filter(Boolean);
-            } catch (error) {
-                console.error("日本語タイトル補完取得エラー:", error);
-            }
-
-            if (!currentAnime.cover_image) {
+            // 以下はすべて補助情報。基本情報の表示を待たせない。
+            const enrichmentPromise = (async () => {
                 try {
-                    const sourceResult = await supabaseClient
-                        .from("anime_sources")
-                        .select("image_url,last_synced_at")
-                        .eq("anime_id", Number(currentAnimeId))
-                        .not("image_url", "is", null)
-                        .order("last_synced_at", { ascending: false, nullsFirst: false });
+                    const [aliasResult, sourceResult] = await Promise.all([
+                        supabaseClient
+                            .from("anime_aliases")
+                            .select("title,language")
+                            .eq("anime_id", Number(currentAnimeId)),
+                        !currentAnime.cover_image
+                            ? supabaseClient
+                                .from("anime_sources")
+                                .select("image_url,last_synced_at")
+                                .eq("anime_id", Number(currentAnimeId))
+                                .not("image_url", "is", null)
+                                .order("last_synced_at", { ascending: false, nullsFirst: false })
+                            : Promise.resolve({ data: [], error: null })
+                    ]);
 
-                    if (sourceResult.error) throw sourceResult.error;
+                    if (!aliasResult.error) {
+                        currentAnime._japanese_aliases = (aliasResult.data || [])
+                            .filter(row =>
+                                String(row.language || "").toLowerCase() === "japanese" ||
+                                /[ぁ-んァ-ン一-龯]/.test(String(row.title || ""))
+                            )
+                            .map(row => String(row.title || "").trim())
+                            .filter(Boolean);
+                    }
 
-                    const sourceImage = (sourceResult.data || []).find(row =>
-                        /^https?:\/\//i.test(String(row.image_url || ""))
-                    );
+                    if (!currentAnime.cover_image && !sourceResult.error) {
+                        const sourceImage = (sourceResult.data || []).find(row =>
+                            /^https?:\/\//i.test(String(row.image_url || ""))
+                        );
+                        if (sourceImage) currentAnime.cover_image = sourceImage.image_url;
+                    }
 
-                    if (sourceImage) {
-                        currentAnime.cover_image = sourceImage.image_url;
+                    if (currentAnime.cover_image || currentAnime._japanese_aliases.length) {
+                        renderAnime(currentAnime);
+                        updateSEO(currentAnime);
                     }
                 } catch (error) {
-                    console.error("画像補完取得エラー:", error);
+                    console.error("作品補助情報取得エラー:", error);
                 }
-            }
+            })();
 
-            // 外部ソースから画像を補完できた場合はヒーローだけ再描画
-            renderAnime(currentAnime);
-
-            updateSEO(
-                currentAnime
-            );
-
+            const genrePromise = loadGenres();
+            const userStatePromise = (async () => {
+                await loadAuth();
+                await loadUserState();
+            })();
 
             await Promise.allSettled([
-
+                enrichmentPromise,
                 genrePromise,
                 loadStudios(),
-
                 loadCharacters(),
-
                 loadStaff(),
-
                 loadVoiceActors(),
-
                 loadStreamingLinks(),
-
                 loadAffiliateLinks(),
-
                 loadExternalLinks(),
-
                 loadAliases(),
-
                 loadSources(),
-
                 loadEngagementSummary(),
-
                 loadEpisodes(),
-
                 loadTags(),
-
                 loadRelatedAnime(),
-
                 loadReviews(),
-
-                loadAdvertisement()
-
+                loadAdvertisement(),
+                userStatePromise
             ]);
-
-
-            await loadAuth();
-
-
-            await loadUserState();
-
-
-            loadingElement.style.display =
-                "none";
-
-
-            detailElement.style.display =
-                "block";
 
 
         } catch (error) {
