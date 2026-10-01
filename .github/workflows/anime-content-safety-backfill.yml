@@ -77,7 +77,7 @@ jobs:
                       raise
 
           rows=sb("/rest/v1/anime",params={
-              "select":"id,source_id,source_provider",
+              "select":"id,source_id,source_provider,is_adult,is_kids,is_sensitive_visual",
               "source_provider":"eq.anilist",
               "source_id":"not.is.null",
               "limit":"10000"
@@ -86,7 +86,7 @@ jobs:
           ids=[]
           for row in rows:
               try:
-                  ids.append((int(row["id"]),int(row["source_id"])))
+                  ids.append((int(row["id"]),int(row["source_id"]),bool(row.get("is_adult")),bool(row.get("is_kids")),bool(row.get("is_sensitive_visual"))))
               except (TypeError,ValueError):
                   pass
 
@@ -95,7 +95,7 @@ jobs:
               batch=ids[start:start+50]
               media=anilist([x[1] for x in batch])
               by_source={int(m["id"]):m for m in media if m.get("id") is not None}
-              for anime_id,source_id in batch:
+              for anime_id,source_id,current_adult,current_kids,current_sensitive in batch:
                   m=by_source.get(source_id)
                   if not m:
                       continue
@@ -105,7 +105,8 @@ jobs:
                       "児童","児童向け","子供向け","こども向け","子ども向け"
                   }))
                   adult=bool(m.get("isAdult") is True)
-                  sb("/rest/v1/anime",method="PATCH",body={"is_adult":adult,"is_kids":kids},params={"id":f"eq.{anime_id}"})
+                  sensitive=bool(tags.intersection({"ecchi","hentai","nudity","sexual content","sexual themes","erotica","erotic","fanservice","性的","性的描写","性的な内容","裸","ヌード","エッチ","お色気","成人向け"}))
+                  sb("/rest/v1/anime",method="PATCH",body={"is_adult":(current_adult or adult),"is_kids":(current_kids or kids),"is_sensitive_visual":(current_sensitive or sensitive)},params={"id":f"eq.{anime_id}"})
                   updated += 1
               time.sleep(.15)
 
