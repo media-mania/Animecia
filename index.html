@@ -389,7 +389,7 @@ async function load(){
  const [countRes,seasonRes,titleIndexRes,genreRes,engRes,reviewRes]=await Promise.all([
    sb.rpc("search_anime_catalog",{p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"default",p_limit:1,p_offset:0}),
    sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season).order("id",{ascending:false}).limit(12),
-   sb.rpc("search_anime_catalog",{p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"title",p_limit:12,p_offset:0}),
+   sb.rpc("search_anime_catalog",{p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"title",p_limit:24,p_offset:0}),
    sb.rpc("get_catalog_genres"),
    sb.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").order("average_rating",{ascending:false,nullsFirst:false}).limit(100),
    sb.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at").order("created_at",{ascending:false}).limit(6)
