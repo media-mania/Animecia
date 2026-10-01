@@ -1016,7 +1016,6 @@
 
     </style>
 
-<link rel="stylesheet" href="site-theme.css">
 <style>.user-anime-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.user-anime-actions button,.watch-select{padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-weight:700}.user-anime-actions button.active{background:#222;color:#fff;border-color:#222}</style>
 <style id="animecia-page-v4">
 /* Animecia page-level v4 polish */
@@ -3292,9 +3291,7 @@
                             title
                         )}のキービジュアル"
                         loading="lazy"
-                        onerror="
-                            this.closest('.anime-card')?.remove();
-                        "
+                        onerror="this.style.visibility='hidden';this.nextElementSibling&&(this.nextElementSibling.style.display='grid');"
                     >
 
                     <div
