@@ -34,15 +34,28 @@ main{max-width:1240px;margin:auto;padding:34px 20px 80px}
 </style>
 </head>
 <body>
-<header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav class="main-nav">
+<header class="site-header">
+<div class="container nav">
+<a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
+<nav class="nav-links" aria-label="メインメニュー">
 <a href="index.html">ホーム</a>
-<a href="discover.html">探す</a>
-<a href="ranking.html">ランキング</a>
+<a href="anime.html">アニメを探す</a>
 <a href="season.html">今期</a>
+<a href="ranking.html">ランキング</a>
+<a href="discover.html">ジャンル</a>
 <a href="recommendations.html">おすすめ</a>
 <a href="community.html">コミュニティ</a>
-<a href="mypage.html">マイページ</a>
-</nav></div></header>
+<a href="compare.html">比較</a>
+</nav>
+<form class="header-search" action="anime.html" method="get" role="search">
+<input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
+</form>
+<div class="nav-actions">
+<a class="nav-btn" href="mypage.html">マイページ</a>
+<a class="nav-btn primary" href="login.html">ログイン</a>
+</div>
+</div>
+</header>
 <main>
 <section class="hero"><div class="hero-kicker">DISCOVER YOUR NEXT ANIME</div><h1>次に観る作品を、探す。</h1><p>ジャンル、形式、年代、放送状況、評価、キーワードを組み合わせて、観たい作品まで絞り込めます。</p><div class="chips" style="margin-top:18px"><a class="chip" href="anime.html">全作品</a><a class="chip" href="season.html">今期アニメ</a><a class="chip" href="ranking.html">ランキング</a><a class="chip" href="recommendations.html">おすすめ</a></div></section>
 
