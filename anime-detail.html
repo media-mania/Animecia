@@ -1678,6 +1678,21 @@
     line-height:1.55!important;
   }
 }
+<style id="animecia-official-button-center">
+/* 公式サイトボタン：単独表示でも中央配置 */
+.anime-detail-page #official-button{
+  margin-inline:auto!important;
+  justify-content:center;
+  text-align:center;
+}
+@media(max-width:560px){
+  .anime-detail-page #official-button{
+    grid-column:1/-1;
+    justify-self:center;
+    width:min(100%,320px)!important;
+  }
+}
+</style>
 </style>
 </head>
 
