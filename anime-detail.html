@@ -7662,22 +7662,7 @@
 
 </script>
 
-<script>
-(function(){
- const params=new URLSearchParams(location.search), animeId=Number(params.get("id"));
- if(!Number.isInteger(animeId)) return;
- document.addEventListener("DOMContentLoaded",()=>{
-  const target=document.querySelector("h1");
-  if(!target||!target.parentElement) return;
-  const add=document.createElement("button");
-  add.type="button"; add.className="btn secondary"; add.textContent="比較に追加"; add.style.marginTop="10px";
-  const read=()=>{try{const x=JSON.parse(localStorage.getItem("animecia_compare")||"[]");return Array.isArray(x)?x.map(Number).filter(Number.isInteger):[]}catch(e){return[]}};
-  const refresh=()=>{const ids=read();add.textContent=ids.includes(animeId)?"比較から外す":"比較に追加";const old=target.parentElement.querySelector("[data-detail-compare-open]");if(old)old.remove();if(ids.length>=2){const link=document.createElement("a");link.dataset.detailCompareOpen="1";link.href="compare.html?ids="+ids.slice(0,5).join(",");link.textContent="選択した作品を比較";link.className="btn";link.style.margin="10px 0 0 8px";add.after(link);}};
-  add.onclick=()=>{let ids=read();if(ids.includes(animeId))ids=ids.filter(x=>x!==animeId);else{if(ids.length>=5){alert("比較できる作品は5作品まで選択できます。");return;}ids.push(animeId)}localStorage.setItem("animecia_compare",JSON.stringify([...new Set(ids)].slice(0,5)));refresh();};
-  target.parentElement.appendChild(add);refresh();
- });
-})();
-</script>
+
 <script id="animecia-auth-nav">
 (function(){
   function syncAuthNav(){
