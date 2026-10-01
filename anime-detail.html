@@ -1384,10 +1384,7 @@
 
     </style>
 
-<link rel="stylesheet" href="site-theme.css">
-    <link rel="stylesheet" href="site-theme.css">
-
-    <style>
+<style>
         .affiliate-disclosure {
             margin: 6px 0 12px;
             color: #666;
@@ -1622,6 +1619,25 @@
 @media(max-width:800px){.anime-detail-page .hero-content{grid-template-columns:145px minmax(0,1fr)!important;padding:20px!important;gap:17px!important}.anime-detail-page .hero-cover{width:145px!important}.anime-detail-page .content-layout{grid-template-columns:1fr!important}.detail-v7-summary{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.anime-detail-page .hero-content{grid-template-columns:1fr!important}.anime-detail-page .hero-cover{width:150px!important}.detail-v7-nav{top:56px}.anime-detail-page .content-section{padding:16px!important}.anime-detail-page .info-table{grid-template-columns:105px minmax(0,1fr)!important}}
 </style><link rel="stylesheet" href="site-theme.css?v=20261001-v8">
+<style id="animecia-detail-v8">
+.anime-detail-page{width:100%}
+.detail-v8-nav{display:flex;gap:6px;overflow-x:auto;padding:7px 0;margin:0 0 12px;position:sticky;top:68px;z-index:20;background:rgba(245,246,248,.94);backdrop-filter:blur(10px)}
+.detail-v8-nav a{flex:0 0 auto;padding:7px 12px;border:1px solid #e0e4e9;border-radius:7px;background:#fff;color:#3e4651;text-decoration:none;font-size:11px;font-weight:800}
+.detail-v8-nav a:hover{border-color:#e87900;color:#b85b00}
+.anime-detail-page .hero-cover img{background:#e9edf2}
+.anime-detail-page .hero-background{background-color:#111827}
+.anime-detail-page .hero-stats{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));max-width:640px}
+.anime-detail-page .hero-stat{min-width:0!important}
+.anime-detail-page .action-area{display:flex;align-items:center}
+.anime-detail-page .content-section{scroll-margin-top:125px}
+.anime-detail-page .content-section h2{scroll-margin-top:125px}
+.anime-detail-page .review-item{border-top:1px solid #edf0f2}
+.anime-detail-page .review-rating{font-size:13px}
+.anime-detail-page .review-like-button{border-color:#dfe3e8}
+.anime-detail-page .related-item{min-height:68px}
+@media(max-width:800px){.detail-v8-nav{top:60px}.anime-detail-page .hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.detail-v8-nav{top:56px}.anime-detail-page .hero-stats{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}.anime-detail-page .action-area{display:grid!important;grid-template-columns:1fr 1fr}.anime-detail-page #favorite-button{grid-column:1/-1}}
+</style>
 </head>
 
 
@@ -1677,7 +1693,15 @@
             作品詳細
         </span>
 
-    </div>
+    </div><nav class="detail-v8-nav" aria-label="作品内メニュー">
+<a href="#description">概要</a>
+<a href="#info-title">作品情報</a>
+<a href="#character-section">キャラクター</a>
+<a href="#staff-section">スタッフ</a>
+<a href="#related-section">関連作品</a>
+<a href="#review-list">レビュー</a>
+</nav>
+
 
 
     <section
@@ -3477,9 +3501,11 @@
                 data;
 
 
-            await loadGenres();
-
             currentAnime._japanese_aliases = [];
+            renderAnime(currentAnime);
+
+            // 基本情報を先に描画し、補助データはバックグラウンドで補完する
+            const genrePromise = loadGenres();
 
             try {
                 const aliasResult = await supabaseClient
@@ -3524,24 +3550,17 @@
                 }
             }
 
-            if (!/^https:\/\/s[^/]+\.anilist\.co\//.test(currentAnime.cover_image || "")) {
-                document.getElementById("detail").innerHTML =
-                    '<div class="error-state"><h2>この作品は現在表示対象外です</h2><p>公式作品ビジュアルとして確認できるカバー画像を取得できないため、作品ページを表示していません。</p></div>';
-                return;
-            }
+            // 外部ソースから画像を補完できた場合はヒーローだけ再描画
+            renderAnime(currentAnime);
 
             updateSEO(
                 currentAnime
             );
 
 
-            renderAnime(
-                currentAnime
-            );
-
-
             await Promise.allSettled([
 
+                genrePromise,
                 loadStudios(),
 
                 loadCharacters(),
