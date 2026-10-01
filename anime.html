@@ -1497,6 +1497,9 @@
     let currentPage =
         1;
 
+    // 非同期検索の古いレスポンスが新しい検索結果を上書きしないための世代番号
+    let loadRequestVersion = 0;
+
     let serverTotal = 0;
 
 
