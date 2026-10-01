@@ -101,6 +101,7 @@ jobs:
                 bannerImage
                 siteUrl
                 externalLinks{url site language type}\n                isAdult
+                tags { name }
               }
             }
           }"""
@@ -147,6 +148,9 @@ jobs:
           for m in candidates.values():
               if m.get("isAdult") is True:
                   continue
+              tag_names={str(t.get("name") or "").strip().lower() for t in (m.get("tags") or [])}
+              if tag_names.intersection({"kids","preschool","kindergarten","幼児向け","子供向け","こども向け"}):
+                  continue
               title=m.get("title") or {}
               jp=title.get("native") or title.get("userPreferred") or title.get("romaji") or "タイトル未設定"
               desc=re.sub(r"<[^>]+>"," ",m.get("description") or "")
@@ -173,6 +177,7 @@ jobs:
                 "genres":m.get("genres") or [],
                 "studios":[],
                 "is_adult":bool(m.get("isAdult") is True),
+                "is_kids":bool(tag_names.intersection({"kids","preschool","kindergarten","幼児向け","子供向け","こども向け"})),
                 "source_provider":"anilist",
                 "source_id":str(m["id"]),
                 "cover_image":(m.get("coverImage") or {}).get("large"),
