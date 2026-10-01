@@ -69,6 +69,10 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <link rel="stylesheet" href="site-theme.css?v=20261001-v8">
 <style id="animecia-mypage-v10">
 .user-search-panel{display:flex;gap:8px;margin-bottom:14px}.user-search-panel input{flex:1;min-width:0;padding:10px 12px;border:1px solid #dfe3e8;border-radius:9px;background:#fff}.user-search-panel button{padding:10px 14px;border:0;border-radius:9px;background:#101827;color:#fff;font-weight:800}.my-rank-item{display:grid;grid-template-columns:38px 58px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid #e7e9ec;border-radius:11px;background:#fff;text-decoration:none;color:inherit}.my-rank-no{font-weight:950;text-align:center;color:#747b86}.my-rank-score{font-weight:950;color:#e87900}.my-rank-score small{display:block;color:#8a919b;font-weight:500;font-size:9px;text-align:right}.my-rank-thumb{width:58px;height:78px;object-fit:cover;border-radius:7px;background:#e5e7eb}@media(max-width:560px){.my-rank-item{grid-template-columns:28px 46px minmax(0,1fr) auto;gap:8px}.my-rank-thumb{width:46px;height:62px}.user-search-panel{display:grid;grid-template-columns:1fr auto}}
+</style>
+<style id="animecia-mypage-ui-v11">
+.section-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:14px}.section-heading h2{margin:2px 0 0;font-size:19px;letter-spacing:-.025em}.eyebrow{font-size:10px;letter-spacing:.14em;font-weight:900;color:#d9002b}.section-note{font-size:11px;color:#8a919b}.activity-panel,.profile-editor-panel,.settings-panel{overflow:hidden}.activity-panel{padding-top:18px}.profile-editor-panel,.settings-panel{margin-top:16px}.profile-editor-panel .profile-editor{margin-top:18px}.profile-editor-panel .crop-editor{background:#f7f8fa}.profile-editor-panel input:not([type=file]):focus,.profile-editor-panel textarea:focus{border-color:#9da5af;box-shadow:0 0 0 3px rgba(16,24,39,.06);outline:none}.profile-editor-panel input,.profile-editor-panel textarea{transition:border-color .15s,box-shadow .15s}.settings-panel .visibility-grid{margin-top:8px}.settings-panel .visibility-grid label{transition:background .15s,border-color .15s}.settings-panel .visibility-grid label:has(input:checked){background:#fff5f6;border-color:#f0b5bf}.settings-panel .visibility-grid input{accent-color:#d9002b}.profile-card{box-shadow:0 10px 30px rgba(17,24,39,.07)}
+@media(max-width:600px){.section-heading{align-items:flex-start}.section-note{display:none}.section-heading h2{font-size:17px}}
 </style></head>
 <body>
 <header class="site-header">
@@ -110,7 +114,8 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 </div>
 </section>
 
-<section class="panel">
+<section class="panel activity-panel">
+<div class="section-heading"><div><span class="eyebrow">ACTIVITY</span><h2>あなたの活動</h2></div><span class="section-note">投稿・作品記録・通知</span></div>
 <div class="composer" style="padding:16px 14px;border-bottom:1px solid #e5e7eb">
   <div style="display:flex;gap:12px;align-items:flex-start">
     <div id="composer-avatar" class="avatar" style="display:grid;place-items:center;font-weight:900;color:#888;flex:none">A</div>
@@ -171,8 +176,8 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 </div>
 <button id="save-profile" class="btn" type="button">プロフィールを保存</button><span id="profile-msg" class="message"></span>
 </div>
-<section class="panel">
-<h2>公開範囲の設定</h2>
+<section class="panel settings-panel">
+<div class="section-heading"><div><span class="eyebrow">PRIVACY</span><h2>公開範囲</h2></div><span class="section-note">プロフィールの表示項目</span></div>
 <p class="sub">ユーザーホームで他のユーザーに表示する項目を個別に設定できます。オフにした項目は自分以外のユーザーには表示されません。</p>
 <div class="visibility-grid">
 <label><input type="checkbox" id="show-favorites"> お気に入り</label>
