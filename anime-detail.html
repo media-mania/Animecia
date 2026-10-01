@@ -4836,7 +4836,7 @@
                 const name = document.createElement("p");
                 name.className = "item-name";
                 const link = document.createElement("a");
-                link.href = "anime/" + encodeURIComponent(anime.id) + "/";
+                link.href = "anime-detail.html?id=" + encodeURIComponent(anime.id);
                 link.textContent = title;
                 name.appendChild(link);
                 body.appendChild(name);
@@ -5277,7 +5277,7 @@
                 )
                 .value =
                 data.status ||
-                "plan_to_watch";
+                "want_to_watch";
 
 
             document
