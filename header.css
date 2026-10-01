@@ -1,0 +1,16 @@
+/* Animecia 共通ヘッダー */
+.site-header{position:sticky;top:0;z-index:9999;background:rgba(16,17,20,.94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.08);color:#fff}
+.site-header .container.nav{width:min(1240px,calc(100% - 32px));min-height:68px;margin:auto;display:flex;align-items:center;gap:28px}
+.site-header .brand{flex:0 0 auto;font-size:22px;font-weight:900;letter-spacing:-.04em;text-decoration:none;color:#fff;white-space:nowrap}
+.site-header .nav-links{display:flex;align-items:center;gap:20px;flex:1 1 auto;min-width:0}
+.site-header .nav-links a{color:#bfc2c8;text-decoration:none;font-size:13px;font-weight:650;white-space:nowrap}
+.site-header .nav-links a:hover{color:#fff}
+.site-header .header-search{flex:0 1 250px;min-width:150px;margin:0;display:flex;align-items:center}
+.site-header .header-search input{width:100%;min-width:0;height:36px;padding:8px 11px;border:1px solid #3a3d44;border-radius:9px;outline:0;background:#191b20;color:#fff;font-size:13px}
+.site-header .header-search input::placeholder{color:#8f939b}
+.site-header .nav-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.site-header .nav-btn{border:1px solid #3a3d44;background:#191b20;color:#fff;border-radius:9px;padding:8px 13px;text-decoration:none;font-size:12px;font-weight:750;white-space:nowrap}
+.site-header .nav-btn.primary{background:#fff;color:#111;border-color:#fff}
+@media(max-width:1100px){.site-header .container.nav{gap:20px}.site-header .nav-links{gap:15px}.site-header .header-search{flex-basis:210px;min-width:130px}}
+@media(max-width:700px){.site-header .container.nav{width:calc(100% - 20px);min-height:60px;gap:14px}.site-header .brand{font-size:20px}.site-header .nav-links{display:none}.site-header .header-search{flex:1 1 auto;min-width:0}.site-header .header-search input{height:36px;font-size:12px;padding:7px 10px}.site-header .nav-actions{gap:6px}.site-header .nav-btn{padding:8px 11px}.site-header .nav-actions .nav-btn:not(.primary){display:none}}
+@media(max-width:390px){.site-header .container.nav{gap:10px}.site-header .brand{font-size:19px}.site-header .header-search input{padding-left:9px;padding-right:9px}.site-header .nav-btn.primary{padding-left:10px;padding-right:10px}}
