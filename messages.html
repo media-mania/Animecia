@@ -57,7 +57,10 @@ async function openThread(id){
  document.getElementById("chat-avatar").innerHTML=t.is_group?"":avatar(p);document.getElementById("chat-title").innerHTML='<b>'+esc(title)+'</b><span>'+esc(t.is_group?((ms||[]).length+"人のグループ"):(p?.username?"@"+p.username:"1対1"))+'</span>';
  const pl=document.getElementById("profile-link");if(p){pl.style.display="inline-block";pl.href="profile.html?id="+encodeURIComponent(p.id)}else pl.style.display="none";
  document.getElementById("composer").style.display="flex";await loadMessages();
- channel=sb.channel("messages-"+id).on("postgres_changes",{event:"INSERT",schema:"public",table:"thread_messages",filter:"thread_id=eq."+id},loadMessages).subscribe();
+ channel=sb.channel("messages-"+id)
+  .on("postgres_changes",{event:"INSERT",schema:"public",table:"thread_messages",filter:"thread_id=eq."+id},async payload=>{await loadMessages();if(payload?.new?.attachment_url)setTimeout(()=>{if(currentThread===id)loadMessages()},500)})
+  .on("postgres_changes",{event:"DELETE",schema:"public",table:"thread_messages",filter:"thread_id=eq."+id},loadMessages)
+  .subscribe();
 }
 async function loadMessages(){
  if(!currentThread)return;
