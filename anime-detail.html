@@ -7425,13 +7425,13 @@
         let ids = getMemoIds();
         if (ids.includes(currentId)) {
             if (ids.length >= 2) {
-                location.href = "compare.html?ids=" + encodeURIComponent(ids.join(","));
+                location.href = "memo.html" + encodeURIComponent(ids.join(","));
                 return;
             }
             ids = ids.filter(id => id !== currentId);
         } else {
             if (ids.length >= 5) {
-                alert("比較できる作品は5作品までです。");
+                alert("メモできる作品は5作品までです。");
                 return;
             }
             ids.push(currentId);
