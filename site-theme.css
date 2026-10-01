@@ -533,3 +533,21 @@ main{min-height:calc(100vh - 120px)}
 /* Text-density controls: keep pages information-rich without becoming text-heavy. */
 .home-hero-copy>p,.hero>p:not(.hero-kicker),.page-intro>div>p:not(.page-kicker),.section-desc{max-width:680px}
 .home-hero-copy>p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Animecia responsive hardening — PC / tablet / smartphone */
+html,body{max-width:100%;overflow-x:hidden}
+img,video,iframe,svg{max-width:100%}
+table{max-width:100%;display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+pre,code{max-width:100%;overflow-x:auto}
+button,input,select,textarea{max-width:100%}
+.page-shell,.home-v4,.anime-page,.season-v7,.ranking-v6,.discover-v6,.recommendations-v6,.compare-page,.anime-detail-page,.layout,.profile-card{min-width:0}
+.content-layout,.anime-detail-page .content-layout,.rank-layout,.discovery,.features,.home-hero,.hero-inner{min-width:0}
+.home-hero>*,.hero>*{min-width:0}
+.site-header .nav{min-width:0}
+.site-header .nav-links{min-width:0;overflow:hidden}
+.site-header .header-search{min-width:0}
+.site-header .nav-actions{flex:0 0 auto}
+@media (max-width:1050px){.site-header .nav{gap:10px}.site-header .nav-links{gap:0}.site-header .nav-links a{padding-inline:7px;font-size:12px}.site-header .header-search{max-width:230px}.container{width:min(100% - 24px,1180px)}.home-hero{grid-template-columns:1fr}.hero-inner{grid-template-columns:1fr}}
+@media (max-width:760px){.container{width:min(100% - 20px,1180px)}.site-header .nav{min-height:56px}.site-header .brand{font-size:20px}.site-header .nav-links,.site-header .header-search{display:none}.site-header .nav-actions{margin-left:auto;gap:5px}.site-header .nav-actions .nav-btn{display:inline-flex!important;min-height:34px;padding:0 9px;font-size:11px}main{min-height:calc(100vh - 56px)}.home-hero,.hero{border-radius:12px}.home-hero{padding:20px}.hero-inner{padding:25px 18px 20px}.content-layout,.anime-detail-page .content-layout{grid-template-columns:1fr}.anime-detail-page .side-column{order:2}.anime-detail-page .main-column{order:1}.anime-detail-page .content-section{padding:15px}.anime-detail-page .info-row{grid-template-columns:105px minmax(0,1fr)}.podium,.ranking-v7-top,.rank-layout,.discovery,.features{grid-template-columns:1fr}.section-head{flex-wrap:wrap}}
+@media (max-width:560px){.container{width:calc(100% - 16px)}.site-header .brand{font-size:19px}.site-header .nav-actions .nav-btn{padding:0 8px}.home-hero h1,.hero h1{font-size:30px}.hero-search{display:flex}.hero-search input{min-width:0}.hero-search button{flex:0 0 auto}.anime-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.genre-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.anime-card-body{padding:9px}.anime-card-title{font-size:12px}.anime-card-subtitle{font-size:10px}.meta-tag,.genre-tag,.pill{font-size:9px;padding:3px 6px}.anime-detail-page .hero-content{padding:16px}.anime-detail-page .hero-stats{gap:10px}.anime-detail-page .info-row{grid-template-columns:88px minmax(0,1fr);font-size:11px}.profile-main{padding-inline:12px}.profile-actions{justify-content:flex-start;flex-wrap:wrap;margin-top:8px}.quick-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.quick-action{padding:10px 6px;font-size:11px}.search-box{gap:7px}}
+@media (max-width:380px){.site-header .nav-actions .nav-btn{font-size:10px;padding:0 6px}.home-hero h1,.hero h1{font-size:27px}.anime-grid{gap:7px!important}.anime-card-body{padding:8px}.anime-card-title{font-size:11px}}
