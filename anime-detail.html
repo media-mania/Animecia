@@ -3300,6 +3300,12 @@
                 }
             }
 
+            if (!/^https:\/\/s[^/]+\.anilist\.co\//.test(currentAnime.cover_image || "")) {
+                document.getElementById("anime-content").innerHTML =
+                    '<div class="error-state"><h2>この作品は現在表示対象外です</h2><p>公式作品ビジュアルとして確認できるカバー画像を取得できないため、作品ページを表示していません。</p></div>';
+                return;
+            }
+
             updateSEO(
                 currentAnime
             );
