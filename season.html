@@ -35,7 +35,44 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 .page-kicker{display:block;color:#e87900;font-size:10px;font-weight:900;letter-spacing:.16em}.page-kicker.dark{color:#e87900}.panel-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:16px}.panel-heading h2{margin:3px 0 4px}.panel-heading p{margin:0;color:#737780;font-size:13px}.section-link{color:#e87900;text-decoration:none;font-size:12px;font-weight:800;white-space:nowrap}.section-link:hover{text-decoration:underline}.section-card{box-shadow:0 8px 28px rgba(16,20,26,.055)!important}.anime-detail-page .anime-hero{box-shadow:0 18px 48px rgba(0,0,0,.18)}
 @media(max-width:760px){.panel-heading{display:block}.section-link{display:inline-block;margin-top:10px}}
 </style>
-</head>
+<style id="animecia-season-v6">
+.season-v6{padding-bottom:10px}
+.season-v6 .hero{
+ padding:26px 28px!important;border-radius:16px!important;
+ background:linear-gradient(135deg,#101827 0%,#18243a 58%,#26344d 100%)!important;
+ box-shadow:0 16px 40px rgba(16,24,39,.14)
+}
+.season-v6 .hero h1{color:#fff!important;font-size:clamp(26px,3.2vw,38px)!important;letter-spacing:-.045em}
+.season-v6 .hero p{color:#c7ced8!important;max-width:760px}
+.season-v6 .hero-kicker{color:#f59e0b!important;font-size:10px;font-weight:950;letter-spacing:.18em}
+.season-v6 .quick-navigation{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important}
+.season-v6 .quick-card{border-radius:9px!important;padding:12px 14px!important;transition:.2s}
+.season-v6 .quick-card:hover{transform:translateY(-2px);border-color:rgba(245,158,11,.45)!important}
+.season-v6 .season-toolbar{display:flex;gap:6px;align-items:center;overflow:auto;padding:4px;background:#f1f3f5;border-radius:10px}
+.season-v6 .season-button{flex:1;min-width:68px;border-radius:7px!important;background:transparent!important;color:#68717d!important;padding:10px 12px!important}
+.season-v6 .season-button.active{background:#101827!important;color:#fff!important;box-shadow:0 3px 9px rgba(16,24,39,.14)}
+.season-v6 .filters{margin-top:14px!important;padding:14px;border:1px solid #e4e7eb;border-radius:10px;background:#f8f9fa}
+.season-v6 .field input,.season-v6 .field select{height:40px!important;border-radius:7px!important;border-color:#dce1e7!important;font-size:12px}
+.season-v6 .season-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.season-v6 .summary-card{padding:13px 14px;border:1px solid #e2e6eb;border-radius:10px;background:#fff}
+.season-v6 .summary-label{font-size:10px;font-weight:800;color:#8a929c;letter-spacing:.08em}
+.season-v6 .summary-value{margin-top:3px;font-size:20px;font-weight:950;color:#101827}
+.season-v6 .section-divider{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:2px 0 13px}
+.season-v6 .section-divider h2{margin:0;font-size:18px}
+.season-v6 .section-divider p{margin:3px 0 0;color:#7b838d;font-size:12px}
+.season-v6 .grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))!important;gap:12px!important}
+.season-v6 .card{border:1px solid #e0e4e9!important;border-radius:10px!important;box-shadow:0 4px 14px rgba(16,24,39,.045);transition:.2s;overflow:hidden}
+.season-v6 .card:hover{transform:translateY(-3px);border-color:#cbd1d8!important;box-shadow:0 10px 24px rgba(16,24,39,.09)}
+.season-v6 .cover{aspect-ratio:3/4!important}
+.season-v6 .pad{padding:11px!important}
+.season-v6 .title{font-size:13px!important;line-height:1.45!important}
+.season-v6 .sub{font-size:10px!important}
+.season-v6 .meta{font-size:10px!important;gap:5px!important}
+.season-v6 .pill{background:#fff3e4!important;color:#a84f00!important;border-radius:5px!important;padding:4px 6px!important}
+.season-v6 .empty,.season-v6 .loading,.season-v6 .error{border:1px dashed #dfe3e8;border-radius:9px;background:#fafbfc}
+@media(max-width:700px){.season-v6 .quick-navigation{grid-template-columns:1fr!important}.season-v6 .season-summary{grid-template-columns:1fr 1fr}.season-v6 .grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr))!important}}
+@media(max-width:480px){.season-v6 .hero{padding:20px!important}.season-v6 .season-summary{grid-template-columns:1fr}.season-v6 .filters{grid-template-columns:1fr!important;padding:10px}.season-v6 .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.season-v6 .title{font-size:12px!important}.season-v6 .meta span:not(.pill){display:none}}
+</style></head>
 <body>
 <header class="site-header">
 <div class="container nav">
@@ -59,7 +96,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 </div>
 </div>
 </header>
-<main>
+<main class="season-v6">
 <section class="hero">
 <div class="hero-kicker">SEASONAL ANIME</div>
 <h1 id="page-title">今期アニメ</h1>
@@ -71,19 +108,25 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 </section>
 <section class="panel section-card">
 <div class="panel-heading"><div><span class="page-kicker dark">SEASON</span><h2>シーズンを選択</h2><p>現在のクールから過去の放送シーズンまで切り替えられます。</p></div><a class="section-link" href="anime.html">全作品を見る →</a></div>
-<div class="season-switch">
+<div class="season-toolbar"><div class="season-switch">
 <button class="season-button" data-season="WINTER" type="button">冬</button>
 <button class="season-button" data-season="SPRING" type="button">春</button>
 <button class="season-button" data-season="SUMMER" type="button">夏</button>
 <button class="season-button" data-season="FALL" type="button">秋</button>
-</div>
+</div></div>
 <div class="filters">
 <div class="field"><label for="year">放送年</label><select id="year"></select></div>
 <div class="field"><label for="sort">並び順</label><select id="sort"><option value="default">おすすめ順</option><option value="rating">Animecia評価順</option><option value="favorites">お気に入り順</option><option value="reviews">レビュー数順</option><option value="newest">放送開始順</option></select></div>
 <div class="field"><label for="search">作品検索</label><input id="search" type="search" placeholder="作品名を入力"></div>
 </div>
+<div class="season-summary">
+<div class="summary-card"><div class="summary-label">TOTAL WORKS</div><div class="summary-value" id="summary-total">—</div></div>
+<div class="summary-card"><div class="summary-label">RATED WORKS</div><div class="summary-value" id="summary-rated">—</div></div>
+<div class="summary-card"><div class="summary-label">AVERAGE SCORE</div><div class="summary-value" id="summary-average">—</div></div>
+</div>
 </section>
 <section class="panel">
+<div class="section-divider"><div><h2>今期の作品</h2><p>評価・お気に入り・レビューなどをもとに並べ替えできます。</p></div></div>
 <p id="count" class="count"></p>
 <div id="grid" class="grid"></div>
 </section>
@@ -137,6 +180,12 @@ function repairImages(root){
 
 function render(){
  let rows=allRows.filter(x=>Number(x.anime.season_year)===year&&x.anime.season===season);
+ const baseRows=rows.slice();
+ const rated=baseRows.filter(x=>x.average_rating!=null);
+ document.getElementById("summary-total").textContent=baseRows.length+"作品";
+ document.getElementById("summary-rated").textContent=rated.length+"作品";
+ const avg=rated.length?rated.reduce((s,x)=>s+Number(x.average_rating),0)/rated.length:null;
+ document.getElementById("summary-average").textContent=avg!=null?avg.toFixed(2):"—";
  const q=search.trim().toLowerCase();
  if(q)rows=rows.filter(x=>[titleOf(x.anime),x.anime.title||"",x.anime.title_romaji||"",x.anime.title_english||""].join(" ").toLowerCase().includes(q));
  rows.sort((a,b)=>{
