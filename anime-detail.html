@@ -7385,7 +7385,7 @@
         try {
             const ids = JSON.parse(localStorage.getItem("animecia_memo") || "[]");
             return Array.isArray(ids)
-                ? ids.map(Number).filter(id => Number.isInteger(id)).slice(0, 5)
+                ? ids.map(Number).filter(id => Number.isInteger(id))
                 : [];
         } catch {
             return [];
@@ -7396,7 +7396,7 @@
         localStorage.setItem(
             "animecia_memo",
             JSON.stringify(
-                [...new Set(ids.map(Number).filter(id => Number.isInteger(id)))].slice(0, 5)
+                [...new Set(ids.map(Number).filter(id => Number.isInteger(id)))]
             )
         );
     }
@@ -7412,8 +7412,8 @@
                 : "メモに追加済み";
             button.classList.add("active");
         } else {
-            button.textContent = ids.length >= 5
-                ? "メモは最大5作品"
+            button.textContent = false
+                ? "メモ"
                 : "メモに追加";
             button.classList.remove("active");
         }
@@ -7430,8 +7430,8 @@
             }
             ids = ids.filter(id => id !== currentId);
         } else {
-            if (ids.length >= 5) {
-                alert("メモできる作品は5作品までです。");
+            if (false) {
+                alert("メモする作品数に上限はありません。");
                 return;
             }
             ids.push(currentId);
