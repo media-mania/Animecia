@@ -63,7 +63,7 @@
 <button class="ranking-tab" data-mode="reviews">レビュー数</button>
 </div>
 <section class="ranking-list" id="ranking-list"><div class="state">ランキングを読み込んでいます…</div></section>
-<p class="ranking-note">※評価は平均評価値で順位付けします。各ランキングは対象データがない作品を除外し、同じ値の作品は同順位です。</p>
+<p class="ranking-note">※評価は平均評価値で順位付けします。各ランキングは対象データがない作品を除外し、同じ値の作品は同順位とし、次の順位は1つだけ進みます。</p>
 </main>
 <footer><div class="container footer-inner"><div><div class="footer-brand">Animecia</div><div class="footer-copy">アニメを探す、評価する、記録する。</div></div><div class="footer-links"><a href="anime.html">アニメを探す</a><a href="season.html">今期アニメ</a><a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="memo.html">メモ</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a></div></div></footer>
 <script>
@@ -91,12 +91,13 @@ function render(rows){
  const box=document.getElementById("ranking-list");
  if(!rows.length){box.innerHTML='<div class="state">このランキングに表示できる作品データがありません。</div>';return;}
  let previous=null;
- let previousRank=0;
+ let currentRank=0;
  box.innerHTML=rows.map((a,i)=>{
    const e=engagement.get(String(a.id)),v=valueFor(a,e);
-   const rank=v===previous?previousRank:i+1;
+   if(i===0) currentRank=1;
+   else if(v!==previous) currentRank++;
+   const rank=currentRank;
    previous=v;
-   previousRank=rank;
    const display=v.toLocaleString("ja-JP");
    return '<a class="ranking-row" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><span class="rank-number">'+rank+'</span>'+(a.cover_image?'<img class="rank-cover" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-cover"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-stats">'+display+'<small>'+labelFor()+'</small></div></a>';
  }).join("");
