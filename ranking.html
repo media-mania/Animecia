@@ -59,12 +59,12 @@
 </section>
 <div class="ranking-tabs" role="tablist" aria-label="ランキングの種類">
 <button class="ranking-tab active" data-mode="overall">総合</button>
-<button class="ranking-tab" data-mode="rating">評価数</button>
+<button class="ranking-tab" data-mode="rating">評価</button>
 <button class="ranking-tab" data-mode="favorites">お気に入り数</button>
 <button class="ranking-tab" data-mode="reviews">レビュー数</button>
 </div>
 <section class="ranking-list" id="ranking-list"><div class="state">ランキングを読み込んでいます…</div></section>
-<p class="ranking-note">※総合は評価・お気に入り・レビューの件数を合算します。各ランキングは、その基準の件数が1件以上ある確認済み（verified）の作品のみを対象とし、同じ件数の作品は同順位です。</p>
+<p class="ranking-note">※総合は評価・お気に入り・レビューの件数を合算します。評価は平均評価値で順位付けします。各ランキングは対象データがない作品を除外し、同じ値の作品は同順位です。</p>
 </main>
 <footer><div class="container footer-inner"><div><div class="footer-brand">Animecia</div><div class="footer-copy">アニメを探す、評価する、記録する。</div></div><div class="footer-links"><a href="anime.html">アニメを探す</a><a href="season.html">今期アニメ</a><a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="memo.html">メモ</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a></div></div></footer>
 <script>
@@ -79,14 +79,14 @@ let anime=new Map();
 let mode="overall";
 function valueFor(a,e){
  if(mode==="overall") return Number(e?.rating_count||0)+Number(e?.favorite_count||0)+Number(e?.review_count||0);
- if(mode==="rating") return Number(e?.rating_count||0);
+ if(mode==="rating") return Number(e?.average_rating||0);
  if(mode==="favorites") return Number(e?.favorite_count||0);
  if(mode==="reviews") return Number(e?.review_count||0);
  return 0;
 }
 function labelFor(){
  if(mode==="overall") return "総合件数";
- if(mode==="rating") return "評価数";
+ if(mode==="rating") return "評価";
  if(mode==="favorites") return "お気に入り数";
  return "レビュー数";
 }
@@ -123,7 +123,7 @@ async function load(){
  sortAndRender();
 }
 function sortAndRender(){
- let rows=[...anime.values()].filter(a=>valueFor(a,engagement.get(String(a.id)))>0);
+ let rows=[...anime.values()].filter(a=>{const e=engagement.get(String(a.id));if(mode==="rating") return Number(e?.rating_count||0)>0 && Number(e?.average_rating||0)>0;return valueFor(a,e)>0;});
  rows.sort((a,b)=>{
    const av=valueFor(a,engagement.get(String(a.id))),bv=valueFor(b,engagement.get(String(b.id)));
    if(bv!==av) return bv-av;
