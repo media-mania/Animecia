@@ -1678,26 +1678,9 @@
     line-height:1.55!important;
   }
 }
-<style id="animecia-official-button-text-center">
-/* 公式サイト：ボタンの大きさは変更せず、文字だけ中央揃え */
-.anime-detail-page #official-button{
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  text-align:center!important;
-}
-@media(max-width:560px){
-  .anime-detail-page #official-button{
-    justify-self:auto!important;
-    margin-left:0!important;
-    margin-right:0!important;
-    width:auto!important;
-  }
-}
 </style>
-</style>
-<style id="animecia-official-button-final">
-/* 公式サイト：枠は既存サイズを維持し、文字を枠の完全な中央へ */
+<style id="animecia-official-button-fix">
+/* 公式サイト：共有・メモと同じボタン枠の大きさを維持し、文字だけ完全に中央揃え */
 .anime-detail-page .action-area #official-button{
   display:flex!important;
   align-items:center!important;
@@ -1707,9 +1690,9 @@
 }
 @media(max-width:560px){
   .anime-detail-page .action-area #official-button{
-    grid-column:1/-1!important;
+    width:auto!important;
     justify-self:stretch!important;
-    width:100%!important;
+    grid-column:auto!important;
   }
 }
 </style>
