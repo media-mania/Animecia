@@ -93,7 +93,7 @@ async function fetchAllRows(table, columns, orderColumn, batchSize=1000){
 }
 async function init(){
  const [ar,gr,ag,auth]=await Promise.all([
-  fetchAllRows("anime","id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes,anime_verification_status","id"),
+  fetchAllRows("animecia_public_anime","id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes,anime_verification_status","id"),
   s.from("genres").select("id,name").order("name"),
   fetchAllRows("anime_genres","anime_id,genre_id","anime_id"),
   s.auth.getUser()
