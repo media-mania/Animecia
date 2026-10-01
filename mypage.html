@@ -548,7 +548,7 @@ async function loadUserFollowList(mode){
    el.innerHTML='<div class="empty">'+(isFollowers?"フォロワーはいません。":"フォロー中のユーザーはいません。")+'</div>';
    return;
  }
- const {data:profiles,error:profileError}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio").in("id",ids);
+ const {data:profiles,error:profileError}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,avatar_position_x,avatar_position_y,avatar_zoom,updated_at,bio").in("id",ids);
  if(profileError)throw profileError;
  const map=new Map((profiles||[]).map(p=>[p.id,p]));
  el.innerHTML=rows.map(row=>{
@@ -648,7 +648,7 @@ async function loadSocialPosts(mode){
  const rows=data||[];
  if(!rows.length){el.innerHTML='<div class="empty">該当する投稿はありません。</div>';return;}
  const authorIds=[...new Set(rows.map(x=>x.author_id))];
- const {data:profiles}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,pinned_post_id").in("id",authorIds);
+ const {data:profiles}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,avatar_position_x,avatar_position_y,avatar_zoom,updated_at,pinned_post_id").in("id",authorIds);
  const pm=new Map((profiles||[]).map(x=>[x.id,x]));
  const postIds=rows.map(x=>x.id),counts={};
  const [likes,reposts,bookmarks,replies]=await Promise.all([
@@ -725,7 +725,7 @@ async function loadUserSearch(){
   result.innerHTML='<div class="loading">ユーザーを検索しています…</div>';
   try{
    const pattern="%"+q.replace(/[%_\\]/g,m=>"\\$&")+"%";
-   const {data,error}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,bio").or("username.ilike."+pattern+",display_name.ilike."+pattern).limit(30);
+   const {data,error}=await supabaseClient.from("profiles").select("id,username,display_name,avatar_url,updated_at,bio").or("username.ilike."+pattern+",display_name.ilike."+pattern).limit(30);
    if(error)throw error;
    const rows=data||[];
    result.innerHTML=rows.length?rows.map(p=>{
