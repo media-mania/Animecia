@@ -133,4 +133,9 @@ function render(){
 ["q","format","year","status","rating","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));
 document.getElementById("reset").onclick=()=>{document.getElementById("q").value="";["format","year","status","rating","sort"].forEach((id,i)=>document.getElementById(id).value=i===4?"rating":"");selectedGenres.clear();document.querySelectorAll(".chip.active").forEach(x=>x.classList.remove("active"));render()};
 load().catch(err=>{console.error(err);document.getElementById("count").textContent="";document.getElementById("grid").innerHTML="<div class=\"error\">作品データの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>";});
-</script></body></html>
+</script><footer class="site-footer"><div class="container footer-inner">
+<div><strong>Animecia</strong><p>アニメを探す、評価する、記録する。</p></div>
+<nav class="footer-nav" aria-label="フッターナビゲーション">
+<a href="index.html">ホーム</a><a href="anime.html">アニメを探す</a><a href="season.html">今期アニメ</a><a href="ranking.html">ランキング</a><a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="terms.html">利用規約</a><a href="privacy.html">プライバシー</a>
+</nav></div><p class="copyright">© 2026 Animecia</p></footer>
+</body></html>
