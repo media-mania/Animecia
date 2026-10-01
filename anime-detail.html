@@ -1638,6 +1638,47 @@
 @media(max-width:800px){.detail-v8-nav{top:60px}.anime-detail-page .hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.detail-v8-nav{top:56px}.anime-detail-page .hero-stats{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}.anime-detail-page .action-area{display:grid!important;grid-template-columns:1fr 1fr}.anime-detail-page #favorite-button{grid-column:1/-1}}
 </style>
+<style id="animecia-info-table-fix">
+/* 作品情報：スマホでも各項目を1行ずつ横並びにする */
+.anime-detail-page .info-table{
+  display:block!important;
+  width:100%;
+  min-width:0;
+}
+.anime-detail-page .info-row{
+  display:grid!important;
+  grid-template-columns:minmax(105px,30%) minmax(0,1fr)!important;
+  width:100%;
+  min-width:0;
+}
+.anime-detail-page .info-label,
+.anime-detail-page .info-value{
+  box-sizing:border-box;
+  min-width:0;
+  width:auto!important;
+  overflow:visible;
+}
+.anime-detail-page .info-label{
+  white-space:nowrap;
+  word-break:keep-all;
+}
+.anime-detail-page .info-value{
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  white-space:normal;
+}
+@media(max-width:560px){
+  .anime-detail-page .info-row{
+    grid-template-columns:minmax(105px,32%) minmax(0,68%)!important;
+  }
+  .anime-detail-page .info-label,
+  .anime-detail-page .info-value{
+    padding:10px 8px!important;
+    font-size:13px!important;
+    line-height:1.55!important;
+  }
+}
+</style>
 </head>
 
 
