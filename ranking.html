@@ -98,11 +98,11 @@ async function load(){
  const ids=(e.data||[]).map(x=>x.anime_id).filter(Boolean);
  let rows=[];
  if(ids.length){
-   const a=await sb.from("anime").select(base).eq("anime_verification_status","verified").in("id",ids);
+   const a=await sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").in("id",ids);
    if(a.error) throw a.error;
    rows=a.data||[];
  }else{
-   const a=await sb.from("anime").select(base).eq("anime_verification_status","verified").order("created_at",{ascending:false}).limit(100);
+   const a=await sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").order("created_at",{ascending:false}).limit(100);
    if(a.error) throw a.error;
    rows=a.data||[];
  }
