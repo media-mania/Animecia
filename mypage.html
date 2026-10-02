@@ -873,41 +873,61 @@ async function loadTab(){
  }catch(e){console.error("mypage tab error",e);el.innerHTML='<div class="error">この項目を読み込めませんでした。</div>';}
 }
 async function start(){
+ const warning=document.getElementById("auth-warning");
+ const content=document.getElementById("content");
  try{
-  if(!window.supabase){throw new Error("Supabase library not loaded");}
+  if(!window.supabase)throw new Error("Supabase library not loaded");
   supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  const {data,error}=await supabaseClient.auth.getSession();if(error)throw error;
+  const {data,error}=await supabaseClient.auth.getSession();
+  if(error)throw error;
   const user=data?.session?.user||null;
-  const userNameEl=document.getElementById("user-name");if(userNameEl)userNameEl.textContent=user?.email||"";
-  if(!user||!user.email_confirmed_at){
-   document.getElementById("auth-warning").style.display="block";
-   document.getElementById("auth-btn").onclick=()=>location.href="login.html?redirect=mypage.html";
+  if(!user){
+   if(warning)warning.style.display="block";
+   if(warning)warning.innerHTML='<div class="error">ログインが必要です。<a href="login.html?redirect=mypage.html">ログインページへ</a></div>';
+   return;
+  }
+  if(!user.email_confirmed_at){
+   if(warning)warning.style.display="block";
+   if(warning)warning.innerHTML='<div class="error">メールアドレスの確認が必要です。確認メールをご確認ください。</div>';
    return;
   }
   currentUser=user;
-  const profileLink=document.getElementById("my-profile-link");if(profileLink)profileLink.href="profile.html?id="+encodeURIComponent(currentUser.id);
-  document.getElementById("content").style.display="block";
-  document.getElementById("auth-btn").textContent="ログアウト";
-  document.getElementById("auth-btn").onclick=async()=>{await supabaseClient.auth.signOut();location.href="mypage.html";};
-  await Promise.all([loadProfile(),loadStats(),loadSocialStats(),updateNotificationBadge()]);
-  subscribeNotifications();
-  await refreshNotifications();
+  const profileLink=document.getElementById("my-profile-link");
+  if(profileLink)profileLink.href="profile.html?id="+encodeURIComponent(currentUser.id);
+  if(content)content.style.display="block";
+  // 必須のプロフィール取得を先に行い、統計・通知の一部が失敗してもマイページ本体は表示する。
+  try{await loadProfile();}catch(e){console.error("mypage profile load error",e);}
+  const optional=[
+   ["stats",loadStats],
+   ["socialStats",loadSocialStats],
+   ["notificationBadge",updateNotificationBadge]
+  ];
+  const results=await Promise.allSettled(optional.map(([,fn])=>fn()));
+  results.forEach((r,i)=>{if(r.status==="rejected")console.error("mypage optional init error",optional[i][0],r.reason);});
+  try{subscribeNotifications();}catch(e){console.error("notification subscription error",e);}
+  try{await refreshNotifications();}catch(e){console.error("notification refresh error",e);}
   const initialTab=String(location.hash||"").replace(/^#/,"").trim();
   if(initialTab&&document.querySelector(".tab[data-tab=\""+CSS.escape(initialTab)+"\"]")){
    currentTab=initialTab;
    document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===currentTab));
   }
   await loadTab();
- }catch(e){console.error("mypage start error",e);document.getElementById("auth-warning").style.display="block";document.getElementById("auth-warning").innerHTML='<div class="error">マイページを読み込めませんでした。ページを再読み込みしてください。</div>';}
+ }catch(e){
+  console.error("mypage start error",e);
+  if(warning){
+   warning.style.display="block";
+   warning.innerHTML='<div class="error">マイページの初期化に失敗しました。ページを再読み込みしてください。</div>';
+  }
+ }
 }
 document.addEventListener("DOMContentLoaded",()=>{
  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentTab=b.dataset.tab;history.replaceState(null,"","#"+currentTab);await loadTab();if(currentTab==="notifications")await updateNotificationBadge();}));
 document.querySelectorAll("[data-quick-tab]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();const tab=a.dataset.quickTab;const b=document.querySelector(".tab[data-tab=\""+tab+"\"]");if(b)b.click();document.getElementById("list")?.scrollIntoView({behavior:"smooth",block:"start"});}));
  document.getElementById("mypage-post-submit")?.addEventListener("click",submitMypagePost);
  document.getElementById("mypage-post-body")?.addEventListener("input",e=>{document.getElementById("post-length").textContent=e.target.value.length+" / 500";});
- document.getElementById("save-profile").addEventListener("click",saveProfile);
+ document.getElementById("save-profile")?.addEventListener("click",saveProfile);
 document.getElementById("save-visibility")?.addEventListener("click",saveVisibility);
- document.getElementById("upload-avatar").addEventListener("click",uploadAvatar);
+ document.getElementById("upload-avatar")?.addEventListener("click",uploadAvatar);
  document.getElementById("upload-background")?.addEventListener("click",uploadBackground);
  bindCropControls();
  document.getElementById("notification-side-link")?.addEventListener("click",async e=>{e.preventDefault();const b=document.querySelector('.tab[data-tab="notifications"]');if(b)b.click();document.getElementById("list")?.scrollIntoView({behavior:"smooth",block:"start"});});
