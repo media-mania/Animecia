@@ -333,6 +333,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <label><input type="checkbox" id="show-ratings"> 評価</label>
 <label><input type="checkbox" id="show-reviews"> レビュー</label>
 <label><input type="checkbox" id="show-user_follows"> フォロー・フォロワー</label>
+<label><input type="checkbox" id="show-ranking"> ランキング</label>
 <label><input type="checkbox" id="show-posts"> 投稿</label>
 </div>
 <button id="save-visibility" class="btn" type="button" style="margin-top:14px">公開範囲を保存</button>
@@ -464,7 +465,8 @@ async function uploadAvatar(){
  const cacheBusted=url+"?v="+Date.now();
  document.getElementById("avatar_url").value=cacheBusted;
  setAvatar("avatar-preview","avatar-preview-fallback",cacheBusted,document.getElementById("display_name").value.trim()||"Animeciaユーザー");setAvatar("profile-avatar-large","profile-avatar-fallback",cacheBusted,document.getElementById("display_name").value.trim()||"Animeciaユーザー");
- const {error:saveError}=await supabaseClient.from("profiles").update({avatar_url:cacheBusted,avatar_position_x:Number(document.getElementById("avatar-x")?.value||50),avatar_position_y:Number(document.getElementById("avatar-y")?.value||50),avatar_zoom:Number(document.getElementById("avatar-zoom")?.value||100),updated_at:new Date().toISOString()}).eq("id",currentUser.id);
+ const {data:saveRow,error:saveError}=await supabaseClient.from("profiles").update({avatar_url:cacheBusted,avatar_position_x:Number(document.getElementById("avatar-x")?.value||50),avatar_position_y:Number(document.getElementById("avatar-y")?.value||50),avatar_zoom:Number(document.getElementById("avatar-zoom")?.value||100),updated_at:new Date().toISOString()}).eq("id",currentUser.id).select("id").maybeSingle();
+ if(saveError||!saveRow){console.error(saveError||"profile row not updated");msg.textContent="画像はアップロードされましたが、プロフィールへの保存を確認できませんでした。";button.disabled=false;return;}
  if(saveError){console.error(saveError);msg.textContent="画像は保存されましたがプロフィール更新に失敗しました。";button.disabled=false;return;}
  msg.textContent="プロフィール画像を更新しました。";
  button.disabled=false;
@@ -482,7 +484,8 @@ async function uploadBackground(){
  const {data}=supabaseClient.storage.from("profile-backgrounds").getPublicUrl(path),url=data?.publicUrl;
  if(!url){msg.textContent="背景画像URLを取得できませんでした。";button.disabled=false;return;}
  const cacheBusted=url+"?v="+Date.now();
- const {error:saveError}=await supabaseClient.from("profiles").update({background_url:cacheBusted,background_position_x:Number(document.getElementById("background-x")?.value||50),background_position_y:Number(document.getElementById("background-y")?.value||50),background_zoom:Number(document.getElementById("background-zoom")?.value||100),updated_at:new Date().toISOString()}).eq("id",currentUser.id);
+ const {data:saveRow,error:saveError}=await supabaseClient.from("profiles").update({background_url:cacheBusted,background_position_x:Number(document.getElementById("background-x")?.value||50),background_position_y:Number(document.getElementById("background-y")?.value||50),background_zoom:Number(document.getElementById("background-zoom")?.value||100),updated_at:new Date().toISOString()}).eq("id",currentUser.id).select("id").maybeSingle();
+ if(saveError||!saveRow){console.error(saveError||"profile row not updated");msg.textContent="画像はアップロードされましたが、プロフィールへの保存を確認できませんでした。";button.disabled=false;return;}
  if(saveError){console.error(saveError);msg.textContent="画像は保存されましたがプロフィール更新に失敗しました。";button.disabled=false;return;}
  document.getElementById("profile-background-url").value=cacheBusted;
  const cover=document.getElementById("profile-cover");if(cover){cover.style.backgroundImage="url(\""+cacheBusted.replace(/"/g,"%22")+"\")";applyCoverStyle(cover,document.getElementById("background-x")?.value,document.getElementById("background-y")?.value,document.getElementById("background-zoom")?.value);} applyCropState("background",document.getElementById("background-x")?.value,document.getElementById("background-y")?.value,document.getElementById("background-zoom")?.value,cacheBusted);
@@ -510,17 +513,21 @@ async function saveProfile(){
   show_watch_status:document.getElementById("show-watch_status")?.checked!==false,
   show_ratings:document.getElementById("show-ratings")?.checked!==false,
   show_reviews:document.getElementById("show-reviews")?.checked!==false,
-  show_user_follows:document.getElementById("show-user_follows")?.checked!==false,  show_posts:document.getElementById("show-posts")?.checked!==false,
+  show_user_follows:document.getElementById("show-user_follows")?.checked!==false,
+  show_ranking:document.getElementById("show-ranking")?.checked!==false,
+  show_posts:document.getElementById("show-posts")?.checked!==false,
   updated_at:new Date().toISOString()
  };
  button.disabled=true;
  msg.textContent="プロフィールを保存しています…";
  try{
-  const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
-  if(error){
-   console.error("profile save error",error);
-   msg.textContent=error.code==="23505"?"そのユーザー名はすでに使用されています。":"プロフィールを保存できませんでした。";
-   return;
+  // 既存行はUPDATEし、行が存在しない場合だけINSERTする。
+  // upsert任せにせず、RLS下で実際に本人の行が更新されたことを確認する。
+  const {data:updated,error:updateError}=await supabaseClient.from("profiles").update(payload).eq("id",currentUser.id).select("id").maybeSingle();
+  if(updateError)throw updateError;
+  if(!updated){
+   const {error:insertError}=await supabaseClient.from("profiles").insert(payload);
+   if(insertError)throw insertError;
   }
   // DB保存後に必ずサーバーから再取得し、表示・入力欄を同じ値へ同期する
   await loadProfile();
@@ -534,9 +541,13 @@ async function saveProfile(){
 }
 async function saveVisibility(){
  const msg=document.getElementById("profile-msg");
- const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_posts:document.getElementById("show-posts").checked,updated_at:new Date().toISOString()};
- const {error}=await supabaseClient.from("profiles").upsert(payload,{onConflict:"id"});
- if(error){console.error(error);msg.textContent="公開範囲を保存できませんでした。";return;}
+ const payload={id:currentUser.id,show_favorites:document.getElementById("show-favorites").checked,show_anime_follows:document.getElementById("show-anime_follows").checked,show_watch_status:document.getElementById("show-watch_status").checked,show_ratings:document.getElementById("show-ratings").checked,show_reviews:document.getElementById("show-reviews").checked,show_user_follows:document.getElementById("show-user_follows").checked,show_ranking:document.getElementById("show-ranking")?.checked!==false,show_posts:document.getElementById("show-posts").checked,updated_at:new Date().toISOString()};
+ const {data:updated,error:updateError}=await supabaseClient.from("profiles").update(payload).eq("id",currentUser.id).select("id").maybeSingle();
+ if(updateError){console.error(updateError);msg.textContent=updateError.code==="23505"?"公開範囲を保存できませんでした。":"公開範囲を保存できませんでした。";return;}
+ if(!updated){
+  const {error:insertError}=await supabaseClient.from("profiles").insert(payload);
+  if(insertError){console.error(insertError);msg.textContent="公開範囲を保存できませんでした。";return;}
+ }
  await loadProfile();
  msg.textContent="公開範囲を保存しました。";
 }
