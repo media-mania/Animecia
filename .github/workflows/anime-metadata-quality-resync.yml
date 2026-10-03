@@ -111,7 +111,7 @@ jobs:
 
           # Public viewと同じ公開条件。成人・幼児向け・センシティブ・重複・未検証作品は触らない。
           rows = sb("/rest/v1/anime", params={
-              "select": "id,title,source_provider,source_id,external_id,description,synopsis,synopsis_source,official_url,cover_image,duration,episodes,streaming_links,site_url,format",
+              "select": "id,title,source_provider,source_id,external_id,description,synopsis,synopsis_source,official_url,cover_image,duration,episodes,streaming_links,site_url,format,average_score,popularity,favourites_count",
               "anime_verification_status": "eq.verified",
               "duplicate_status": "eq.unique",
               "is_adult": "eq.false",
@@ -141,6 +141,9 @@ jobs:
               media(id_in:$ids,type:ANIME){
                 id
                 format
+                averageScore
+                popularity
+                favourites
                 episodes
                 duration
                 description(asHtml:false)
@@ -177,6 +180,9 @@ jobs:
           episodes_fixed = 0
           cover_fixed = 0
           streaming_added = 0
+          score_synced = 0
+          popularity_synced = 0
+          favourites_synced = 0
           unavailable = 0
 
           def official_candidate(media):
@@ -237,6 +243,20 @@ jobs:
                   continue
 
               patch = {}
+
+              # AniListの評価・人気指標を基礎データとして同期。0/nullは未評価として扱う。
+              average_score = media.get("averageScore")
+              if isinstance(average_score, (int, float)) and average_score > 0 and row.get("average_score") != average_score:
+                  patch["average_score"] = average_score
+                  score_synced += 1
+              popularity = media.get("popularity")
+              if isinstance(popularity, int) and popularity >= 0 and row.get("popularity") != popularity:
+                  patch["popularity"] = popularity
+                  popularity_synced += 1
+              favourites = media.get("favourites")
+              if isinstance(favourites, int) and favourites >= 0 and row.get("favourites_count") != favourites:
+                  patch["favourites_count"] = favourites
+                  favourites_synced += 1
 
               # 作品説明はsynopsisに保存。既存の手動・公式由来データは上書きしない。
               synopsis = clean_text(media.get("description"))
@@ -302,6 +322,9 @@ jobs:
               "cover_fixed": cover_fixed,
               "official_added": official_added,
               "streaming_added": streaming_added,
+              "score_synced": score_synced,
+              "popularity_synced": popularity_synced,
+              "favourites_synced": favourites_synced,
               "source_unavailable": unavailable
           }, ensure_ascii=False))
           PY
