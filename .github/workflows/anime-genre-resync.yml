@@ -31,8 +31,7 @@ jobs:
       SUPABASE_KEY: ${{ secrets.SUPABASE_SECRET_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size || '500' }}
       ANILIST_URL: https://graphql.anilist.co
-      MAL_API: https://api.jikan.moe/v4
-      CLASSIFICATION_VERSION: "animecia-cross-source-v16-higher-precision"
+      CLASSIFICATION_VERSION: "animecia-anilist-only-v17-full-audit"
 
     steps:
       - name: Classify anime using evidence scoring
@@ -246,7 +245,7 @@ jobs:
                       return 0.52
               return 0.0
 
-          def classify(media, existing_ids=None, mal_genres=None):
+          def classify(media, existing_ids=None):
               genres = {norm(x) for x in media.get("genres") or []}
               tags = [
                   t for t in (media.get("tags") or [])
@@ -270,21 +269,6 @@ jobs:
                               scores[name] = max(scores[name], score)
                               reasons[name].append("AniList genre: " + source)
 
-
-              # 1.5 MyAnimeListのジャンル。AniListと一致する場合は確信度を上げ、
-              # 一方だけに存在する場合も補助根拠として利用する。
-              MAL_GENRE = {
-                  "Action":"アクション","Adventure":"冒険","Comedy":"コメディ","Drama":"ドラマ",
-                  "Fantasy":"ファンタジー","Horror":"ホラー","Mystery":"推理","Romance":"恋愛",
-                  "Sci-Fi":"SF","Sports":"スポーツ","School":"学園",
-                  "Slice of Life":"日常","Music":"音楽","Military":"ミリタリー","Historical":"歴史",
-                  "Mecha":"メカ","Supernatural":"ファンタジー","Suspense":"サスペンス"
-              }
-              for mg in mal_genres or []:
-                  target = MAL_GENRE.get(str(mg).strip())
-                  if target in scores:
-                      scores[target] = max(scores[target], 0.88)
-                      reasons[target].append("MyAnimeList genre: " + str(mg))
 
               # 2. AniList tag。rankを重みとして利用。
               for name, rules in TAG_RULES.items():
@@ -458,22 +442,6 @@ jobs:
               time.sleep(0.4)
 
 
-          # MyAnimeList照合。JikanはMyAnimeListのデータを取得するAPIで、
-          # 作品ページから公式タイトル・ジャンル等を取得できる。
-          # リクエスト間隔を空け、取得失敗時はAniListだけで分類する。
-          mal_genres_by_id = {}
-          for m in media_by_id.values():
-              mid = m.get("idMal")
-              if not mid:
-                  continue
-              try:
-                  response = http(MAL_API + "/anime/" + str(int(mid)))
-                  data = response.get("data") or {}
-                  mal_genres_by_id[int(m["id"])] = [g.get("name") for g in (data.get("genres") or []) if g.get("name")]
-              except Exception as e:
-                  print("MAL lookup failed", mid, str(e)[:120])
-              time.sleep(0.35)
-
           updates = []
           skipped_source = 0
           no_evidence = 0
@@ -489,7 +457,7 @@ jobs:
                   skipped_source += 1
                   continue
 
-              names, confidence, reasons = classify(media, EXISTING.get(int(row["id"]), []), mal_genres_by_id.get(int(row["_anilist_id"]), []))
+              names, confidence, reasons = classify(media, EXISTING.get(int(row["id"]), []))
               genre_ids = [GENRE_ID[n] for n in names if n in GENRE_ID]
 
               # 3件未満しか根拠を取得できない作品は更新しない。
@@ -520,7 +488,6 @@ jobs:
           print(json.dumps({
               "candidate_count": len(rows),
               "anilist_records": len(ani_rows),
-              "mal_records": len(mal_genres_by_id),
               "classified_records": len(updates),
               "db_changed": changed,
               "no_evidence": no_evidence,
