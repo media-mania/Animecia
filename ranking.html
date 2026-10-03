@@ -141,7 +141,7 @@
 <button class="ranking-tab" data-mode="season">今期</button>
 </div>
 <section class="ranking-list" id="ranking-list"><div class="state">ランキングを読み込んでいます…</div></section>
-<p class="ranking-note">※評価は平均評価値で順位付けします。各ランキングは対象データがない作品を除外し、同じ値の作品は同順位とし、次の順位は1つだけ進みます。</p>
+<p class="ranking-note">※評価はAnimecia内の平均評価値と評価者数を表示します。外部評価を使う場合は「参考評価」と明記します。同じ値は同順位とし、次の順位は1つだけ進む順位方式です。</p>
 </main>
 <footer><div class="container footer-inner"><div><div class="footer-brand">Animecia</div><div class="footer-copy">アニメを探す、評価する、記録する。</div></div><div class="footer-links"><a href="anime.html">アニメを探す</a><a href="season.html">今期アニメ</a><a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="memo.html">メモ</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a></div></div></footer>
 <script>
@@ -196,11 +196,19 @@ async function load(){
    .limit(1000);
  if(e.error) throw e.error;
  engagement=new Map((e.data||[]).map(x=>[String(x.anime_id),x]));
- const a=await sb.from("animecia_public_anime").select(base)
+ const recent=await sb.from("animecia_public_anime").select(base)
    .eq("anime_verification_status","verified")
+   .order("created_at",{ascending:false})
    .limit(1000);
- if(a.error) throw a.error;
- anime=new Map((a.data||[]).map(x=>[String(x.id),x]));
+ if(recent.error) throw recent.error;
+ const ids=(e.data||[]).map(x=>x.anime_id).filter(Boolean);
+ let engaged=[];
+ if(ids.length){
+   const er=await sb.from("animecia_public_anime").select(base).in("id",ids);
+   if(er.error) throw er.error;
+   engaged=er.data||[];
+ }
+ anime=new Map([...(recent.data||[]),...engaged].map(x=>[String(x.id),x]));
  sortAndRender();
 }
 function sortAndRender(){
@@ -209,6 +217,7 @@ function sortAndRender(){
    if(mode==="rating") return Number(e?.rating_count||0)>0 && Number(e?.average_rating||0)>0;
    if(mode==="favorites") return Number(e?.favorite_count||0)>0;
    if(mode==="reviews") return Number(e?.review_count||0)>0;
+   if(mode==="overall") return Number(e?.engagement_count||0)>0;
    if(mode==="season"){
      const now=new Date(),year=now.getFullYear(),m=now.getMonth()+1,season=m<=3?"WINTER":m<=6?"SPRING":m<=9?"SUMMER":"FALL";
      return Number(a.season_year)===year && a.season===season;
