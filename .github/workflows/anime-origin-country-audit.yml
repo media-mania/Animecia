@@ -75,6 +75,7 @@ jobs:
           rows = sb("/rest/v1/anime", params={
               "select": "id,title,source_provider,source_id,external_id,original_source,original_title,original_authors,original_country_code,original_country_status",
               "anime_verification_status": "eq.verified",
+              "original_country_status": "in.(unknown,manual_review)",
               "order": "id.asc",
               "limit": str(BATCH),
           }) or []
