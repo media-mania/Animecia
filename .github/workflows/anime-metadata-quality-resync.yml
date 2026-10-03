@@ -110,7 +110,17 @@ jobs:
               return None
 
           # Public viewと同じ公開条件。成人・幼児向け・センシティブ・重複・未検証作品は触らない。
-          rows = sb("/rest/v1/anime", params={
+          # バッチが常に先頭250件に戻らないよう、automation_stateにカーソルを保存する。
+          state_key = "anime_metadata_quality_cursor"
+          state_rows = sb("/rest/v1/anime_automation_state", params={
+              "select": "value",
+              "key": "eq." + state_key,
+              "limit": "1",
+          }) or []
+          cursor = int((state_rows[0] or {}).get("value") or 0) if state_rows else 0
+
+          def fetch_batch(after_id):
+              return sb("/rest/v1/anime", params={
               "select": "id,title,source_provider,source_id,external_id,description,synopsis,synopsis_source,official_url,cover_image,duration,episodes,streaming_links,site_url,format,average_score,popularity,favourites_count",
               "anime_verification_status": "eq.verified",
               "duplicate_status": "eq.unique",
@@ -120,9 +130,15 @@ jobs:
               "is_japanese": "eq.true",
               "start_date": "gte.1963-01-01",
               "format": "in.(TV,TV_SHORT,MOVIE,OVA,OAV,ONA)",
+              "id": "gt." + str(after_id),
               "order": "id.asc",
               "limit": str(BATCH),
           }) or []
+
+          if not rows:
+              # 末尾まで到達したら次の実行で先頭から新しい監査サイクルを開始。
+              cursor = 0
+              rows = fetch_batch(0)
 
           candidates = []
           for row in rows:
@@ -312,7 +328,17 @@ jobs:
                   )
                   updated += 1
 
+          if rows:
+              last_id = max(int(r["id"]) for r in rows if r.get("id") is not None)
+              state_payload = {"key": state_key, "value": last_id, "updated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()}
+              if state_rows:
+                  sb("/rest/v1/anime_automation_state", "PATCH", state_payload, {"key": "eq." + state_key})
+              else:
+                  sb("/rest/v1/anime_automation_state", "POST", state_payload)
+
           print(json.dumps({
+              "cursor_before": cursor,
+              "cursor_after": (max(int(r["id"]) for r in rows if r.get("id") is not None) if rows else cursor),
               "candidate_count": len(candidates),
               "anilist_records": len(media_by_id),
               "updated": updated,
