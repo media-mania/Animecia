@@ -1,0 +1,304 @@
+# Animecia metadata quality resync
+name: Animecia Metadata Quality Resync
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: "一度に監査する作品数（最大250）"
+        required: false
+        default: "250"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: animecia-metadata-quality
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SECRET_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BATCH_SIZE: ${{ inputs.batch_size || '250' }}
+      ANILIST_URL: https://graphql.anilist.co
+      USER_AGENT: Animecia-MetadataQuality/1.0
+
+    steps:
+      - name: Sync verified public anime metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import html
+          import json
+          import os
+          import re
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          BASE = os.environ["SUPABASE_URL"].rstrip("/")
+          KEY = os.environ["SUPABASE_KEY"]
+          ANI = os.environ["ANILIST_URL"]
+          BATCH = max(25, min(250, int(os.environ.get("BATCH_SIZE", "250"))))
+          UA = os.environ["USER_AGENT"]
+
+          def http(url, method="GET", body=None, headers=None, retries=4, timeout=60):
+              data = None if body is None else json.dumps(body, ensure_ascii=False).encode("utf-8")
+              h = {
+                  "apikey": KEY,
+                  "Authorization": "Bearer " + KEY,
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                  "User-Agent": UA,
+              }
+              if headers:
+                  h.update(headers)
+              for attempt in range(retries):
+                  try:
+                      req = urllib.request.Request(url, data=data, method=method, headers=h)
+                      with urllib.request.urlopen(req, timeout=timeout) as r:
+                          raw = r.read()
+                          return json.loads(raw.decode("utf-8")) if raw else None
+                  except urllib.error.HTTPError as e:
+                      if e.code in (408, 425, 429, 500, 502, 503, 504) and attempt < retries - 1:
+                          time.sleep(min(20, 2 ** attempt))
+                          continue
+                      raise
+                  except (urllib.error.URLError, TimeoutError):
+                      if attempt < retries - 1:
+                          time.sleep(min(20, 2 ** attempt))
+                          continue
+                      raise
+
+          def sb(path, method="GET", body=None, params=None):
+              url = BASE + path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params, doseq=True)
+              return http(url, method, body)
+
+          def clean_text(value):
+              if not value:
+                  return None
+              value = re.sub(r"<[^>]+>", " ", str(value))
+              value = html.unescape(value)
+              value = re.sub(r"\\s+", " ", value).strip()
+              return value or None
+
+          def resolve_anilist_id(row):
+              provider = (row.get("source_provider") or "").lower()
+              values = []
+              for key in ("source_id", "external_id"):
+                  v = row.get(key)
+                  if v is not None and str(v).isdigit():
+                      values.append(int(v))
+              for value in values:
+                  if provider == "anilist":
+                      return value - 2000000000 if value > 2000000000 else value
+                  if not provider:
+                      return value - 2000000000 if value > 2000000000 else value
+              return None
+
+          # Public viewと同じ公開条件。成人・幼児向け・センシティブ・重複・未検証作品は触らない。
+          rows = sb("/rest/v1/anime", params={
+              "select": "id,title,source_provider,source_id,external_id,description,synopsis,synopsis_source,official_url,cover_image,duration,episodes,streaming_links,site_url,format",
+              "anime_verification_status": "eq.verified",
+              "duplicate_status": "eq.unique",
+              "is_adult": "eq.false",
+              "is_kids": "eq.false",
+              "is_sensitive_visual": "eq.false",
+              "is_japanese": "eq.true",
+              "start_date": "gte.1963-01-01",
+              "format": "in.(TV,TV_SHORT,MOVIE,OVA,OAV,ONA)",
+              "order": "id.asc",
+              "limit": str(BATCH),
+          }) or []
+
+          candidates = []
+          for row in rows:
+              aid = resolve_anilist_id(row)
+              if aid:
+                  row["_anilist_id"] = aid
+                  candidates.append(row)
+
+          if not candidates:
+              print("No public anime metadata candidates remain in this batch.")
+              raise SystemExit(0)
+
+          query = """
+          query($ids:[Int],$page:Int,$perPage:Int){
+            Page(page:$page,perPage:$perPage){
+              media(id_in:$ids,type:ANIME){
+                id
+                format
+                episodes
+                duration
+                description(asHtml:false)
+                title { native romaji english userPreferred }
+                coverImage { extraLarge large }
+                siteUrl
+                externalLinks { url site type language }
+                streamingEpisodes { title url site }
+              }
+            }
+          }
+          """
+
+          media_by_id = {}
+          for start in range(0, len(candidates), 50):
+              chunk = candidates[start:start+50]
+              response = http(ANI, "POST", {
+                  "query": query,
+                  "variables": {
+                      "ids": [int(r["_anilist_id"]) for r in chunk],
+                      "page": 1,
+                      "perPage": 50
+                  }
+              }, headers={"User-Agent": "Animecia-AniListMetadata/1.0"})
+              media = ((response.get("data") or {}).get("Page") or {}).get("media") or []
+              for media_row in media:
+                  media_by_id[int(media_row["id"])] = media_row
+              time.sleep(0.4)
+
+          updated = 0
+          official_added = 0
+          synopsis_added = 0
+          duration_fixed = 0
+          episodes_fixed = 0
+          cover_fixed = 0
+          streaming_added = 0
+          unavailable = 0
+
+          def official_candidate(media):
+              links = media.get("externalLinks") or []
+              preferred = []
+              fallback = []
+              for link in links:
+                  if not link.get("url"):
+                      continue
+                  kind = (link.get("type") or "").upper()
+                  lang = (link.get("language") or "").lower()
+                  site = (link.get("site") or "").lower()
+                  if kind not in ("INFO", ""):
+                      continue
+                  score = 0
+                  if lang in ("ja", "japanese"):
+                      score += 100
+                  if "official" in site:
+                      score += 40
+                  if "公式" in site:
+                      score += 40
+                  if score:
+                      preferred.append((score, link["url"]))
+                  else:
+                      fallback.append(link["url"])
+              if preferred:
+                  preferred.sort(reverse=True)
+                  return preferred[0][1]
+              return fallback[0] if fallback else None
+
+          def streaming_candidates(media):
+              links = []
+              for link in media.get("externalLinks") or []:
+                  url = link.get("url")
+                  if not url or (link.get("type") or "").upper() != "STREAMING":
+                      continue
+                  links.append({
+                      "site": link.get("site"),
+                      "url": url,
+                      "type": "STREAMING",
+                      "language": link.get("language")
+                  })
+              # streamingEpisodes are episode URLs, not work-level pages, so do not
+              # expose them as the work's streaming destination.
+              unique = []
+              seen = set()
+              for item in links:
+                  key = (item.get("site"), item.get("url"))
+                  if key not in seen:
+                      seen.add(key)
+                      unique.append(item)
+              return unique
+
+          for row in candidates:
+              media = media_by_id.get(int(row["_anilist_id"]))
+              if not media:
+                  unavailable += 1
+                  continue
+
+              patch = {}
+
+              # 作品説明はsynopsisに保存。既存の手動・公式由来データは上書きしない。
+              synopsis = clean_text(media.get("description"))
+              if synopsis and not row.get("synopsis"):
+                  patch["synopsis"] = synopsis
+                  patch["synopsis_source"] = "AniList"
+                  synopsis_added += 1
+
+              # AniListが持つ1話の標準尺・話数を同期。
+              duration = media.get("duration")
+              if isinstance(duration, int) and duration > 0 and row.get("duration") != duration:
+                  patch["duration"] = duration
+                  duration_fixed += 1
+
+              episodes = media.get("episodes")
+              if isinstance(episodes, int) and episodes > 0 and row.get("episodes") != episodes:
+                  patch["episodes"] = episodes
+                  episodes_fixed += 1
+              elif (media.get("format") == "MOVIE") and row.get("episodes") is None:
+                  patch["episodes"] = 1
+                  episodes_fixed += 1
+
+              # AniListの高解像度coverを標準画像として使用。
+              cover = (media.get("coverImage") or {}).get("extraLarge") or (media.get("coverImage") or {}).get("large")
+              if cover and cover != row.get("cover_image"):
+                  patch["cover_image"] = cover
+                  patch["cover_image_refresh_version"] = 2
+                  cover_fixed += 1
+
+              official = official_candidate(media)
+              if official and official != row.get("official_url"):
+                  patch["official_url"] = official
+                  official_added += 1
+
+              stream = streaming_candidates(media)
+              if stream:
+                  patch["streaming_links"] = stream
+                  streaming_added += 1
+
+              site_url = media.get("siteUrl")
+              if site_url and not row.get("site_url"):
+                  patch["site_url"] = site_url
+
+              if patch:
+                  sb(
+                      "/rest/v1/anime",
+                      "PATCH",
+                      patch,
+                      {
+                          "id": "eq." + str(row["id"]),
+                          "duplicate_status": "eq.unique"
+                      }
+                  )
+                  updated += 1
+
+          print(json.dumps({
+              "candidate_count": len(candidates),
+              "anilist_records": len(media_by_id),
+              "updated": updated,
+              "synopsis_added": synopsis_added,
+              "duration_fixed": duration_fixed,
+              "episodes_fixed": episodes_fixed,
+              "cover_fixed": cover_fixed,
+              "official_added": official_added,
+              "streaming_added": streaming_added,
+              "source_unavailable": unavailable
+          }, ensure_ascii=False))
+          PY
