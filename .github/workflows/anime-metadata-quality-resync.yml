@@ -2,6 +2,9 @@
 name: Animecia Metadata Quality Resync
 
 on:
+  push:
+    paths:
+      - '.github/workflows/anime-metadata-quality-resync.yml'
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
