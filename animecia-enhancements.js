@@ -56,10 +56,23 @@ function retryStates(){
     }
   });
 }
+
+function syncAuthLink(){
+  if(location.pathname.endsWith("/index.html")||location.pathname==="/"||location.pathname==="")return;
+  const links=document.querySelectorAll('a[href="login.html"],a[href^="login.html?"],#auth-link');
+  if(!links.length)return;
+  try{
+    const client=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase?.createClient(SUPABASE_URL,SUPABASE_KEY));
+    if(!client)return;
+    const apply=user=>links.forEach(link=>{link.hidden=!!user;link.setAttribute("aria-hidden",user?"true":"false");});
+    client.auth.getUser().then(({data})=>apply(data?.user||null)).catch(()=>{});
+    client.auth.onAuthStateChange((_event,session)=>apply(session?.user||null));
+  }catch(e){}
+}
 function pwa(){
   if("serviceWorker" in navigator)navigator.serviceWorker.register(BASE+"service-worker.js").catch(()=>{});
 }
-function init(){addTheme();hideAdmin();autocomplete();retryStates();pwa()}
+function init(){addTheme();hideAdmin();autocomplete();retryStates();syncAuthLink();pwa()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 window.addEventListener("load",retryStates);
 })();
