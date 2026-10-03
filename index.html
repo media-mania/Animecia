@@ -400,7 +400,7 @@ async function load(){
  ]);
  const val=i=>results[i].status==="fulfilled"?results[i].value:null;
  const err=i=>results[i].status==="rejected";
- const countRes=val(0),seasonRes=val(1),titleIndexRes=val(2),genreRes=val(3),engRes=val(4),reviewRes=val(5),recentRes=val(6),recommendRes=val(7);
+ const countRes=val(0),seasonRes=val(1),titleIndexRes=val(2),genreRes=val(3),engRes=val(4),reviewRes=val(5),recentRes=val(6),
  const showError=(id,msg)=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="load-error"><span>'+esc(msg)+'</span><button type="button" onclick="location.reload()">再読み込み</button></div>';};
  const catalog=countRes?.data?.[0]?.total_count;
  if(catalog!=null) document.getElementById("database-count").textContent=Number(catalog).toLocaleString("ja-JP")+"作品";
