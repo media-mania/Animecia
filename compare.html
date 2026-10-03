@@ -1,1 +1,154 @@
-<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>メモ | Animecia</title><meta http-equiv="refresh" content="0;url=memo.html"><link rel="canonical" href="https://media-mania.github.io/Animecia/memo.html"><link rel="manifest" href="manifest.webmanifest"><script defer src="animecia-enhancements.js"></script></head><body><p><a href="memo.html">メモへ移動</a></p><script>location.replace("memo.html"+location.search);</script></body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>作品比較 | Animecia</title>
+<meta name="description" content="Animeciaでアニメ作品を比較できます。">
+<link rel="canonical" href="https://media-mania.github.io/Animecia/compare.html">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#687386;--line:#e2e6ee;--accent:#5b5ce2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+a{color:inherit;text-decoration:none}.wrap{max-width:1200px;margin:auto;padding:0 18px}
+header{background:#fff;border-bottom:1px solid var(--line)}.head{height:66px;display:flex;align-items:center;gap:24px}.logo{font-size:24px;font-weight:800;color:var(--accent)}nav{display:flex;gap:18px;flex:1}nav a{font-weight:700;color:#536074}
+main{padding:32px 0 60px}.hero h1{margin:0 0 7px;font-size:32px}.hero p{margin:0;color:var(--muted)}
+.toolbar{margin:22px 0;display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 14px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer}.btn.secondary{background:#eef0ff;color:var(--accent)}
+.table-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:16px}.compare{border-collapse:collapse;width:100%;min-width:760px}.compare th,.compare td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:15px;vertical-align:top;text-align:left}.compare th:last-child,.compare td:last-child{border-right:0}.label{width:150px;background:#f8f9fc;font-weight:800;color:#5a6474}.cover{width:150px;aspect-ratio:3/4;object-fit:cover;border-radius:10px;background:#edf0f6}.title{font-size:19px;font-weight:900}.muted{color:var(--muted);font-size:13px;margin-top:5px}.pill{display:inline-block;background:#eef0ff;color:var(--accent);border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800}
+.empty,.error{padding:30px;text-align:center;color:var(--muted)}.error{color:#b33}
+@media(max-width:760px){nav{display:none}.hero h1{font-size:26px}}
+</style>
+<style id="compare-search-fix">
+.compare-page{padding:0 0 60px}.compare-hero{padding:38px 0 26px}.compare-hero span,.page-kicker{font-size:12px;font-weight:900;letter-spacing:.12em;color:#e87900}.compare-hero h1{margin:8px 0;font-size:38px;color:#101827}.compare-hero p,.picker-note{color:#69717d}.compare-picker{background:#fff;border:1px solid #e4e7eb;border-radius:18px;padding:24px;box-shadow:0 8px 30px rgba(16,24,39,.06)}.picker-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.picker-head h2{margin:5px 0;font-size:22px}.picker-note{margin:0}.clear-btn{border:1px solid #e4e7eb;background:#fff;border-radius:10px;padding:9px 13px;font-weight:800;cursor:pointer}.picker-row{display:flex;gap:10px;margin-top:18px}.picker-row input{width:100%;height:48px;border:2px solid #dfe4eb;border-radius:11px;padding:0 15px;font-size:16px;outline:none}.picker-row input:focus{border-color:#e87900;box-shadow:0 0 0 3px rgba(232,121,0,.12)}.count-badge{display:flex;align-items:center;justify-content:center;min-width:58px;background:#101827;color:#fff;border-radius:10px;font-weight:900}.search-results{display:grid;gap:8px;margin-top:12px;max-height:430px;overflow:auto}.search-result{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid #e4e7eb;border-radius:12px;background:#fafbfc}.search-result img{width:44px;height:60px;object-fit:cover;border-radius:7px;background:#edf0f6;flex:none}.search-result>div{min-width:0;flex:1}.search-result strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.search-result small{display:block;margin-top:4px;color:#69717d}.search-result button{border:0;border-radius:9px;background:#e87900;color:#fff;padding:9px 12px;font-weight:800;cursor:pointer;white-space:nowrap}.search-result button:disabled{background:#e5e7eb;color:#7b8491;cursor:not-allowed}.search-loading,.selected-empty{padding:18px;text-align:center;color:#69717d}.selected-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.selected-item{display:flex;align-items:center;gap:8px;background:#f3f5f8;border:1px solid #e4e7eb;border-radius:999px;padding:5px 8px 5px 5px}.selected-item img{width:28px;height:38px;object-fit:cover;border-radius:5px}.selected-item button{border:0;background:transparent;font-size:20px;line-height:1;cursor:pointer;color:#69717d}.comparison-area{margin-top:24px}.comparison-title{display:flex;justify-content:space-between;align-items:end;margin-bottom:12px}.comparison-title h2{margin:5px 0}.comparison-title p{color:#69717d;font-size:13px}.comparison-area .table-wrap{border:1px solid #e4e7eb;border-radius:16px;overflow:auto;background:#fff}.comparison-area .compare{border-collapse:collapse;min-width:760px;width:100%}.comparison-area .compare th,.comparison-area .compare td{padding:14px;border-bottom:1px solid #e4e7eb;border-right:1px solid #e4e7eb;text-align:left;vertical-align:top}.comparison-area .compare .label{width:140px;background:#f7f8fa;font-weight:900}.head-work{display:flex;justify-content:space-between;gap:10px;min-width:160px}.head-work button{border:0;background:#f1f2f4;border-radius:7px;cursor:pointer}.work-title{font-size:16px}.score{display:block;color:#e87900;font-size:20px}.compare td small{display:block;color:#69717d;margin-top:4px}.cover{width:120px;aspect-ratio:3/4;object-fit:cover;border-radius:9px}.official-link,.detail-btn{color:#d56800;font-weight:800}.no-cover{width:120px;height:160px;display:grid;place-items:center;background:#eef0f3;border-radius:9px;color:#69717d}@media(max-width:700px){.picker-head,.comparison-title{display:block}.clear-btn{margin-top:12px}.picker-row{align-items:stretch}.count-badge{min-width:54px}.search-result button{padding:8px}.compare-hero h1{font-size:30px}}
+</style>
+<link rel="stylesheet" href="site-theme.css?v=20261001-v8">
+<link rel="stylesheet" href="site-theme.css?v=20261001-v8"><link rel="manifest" href="manifest.webmanifest"><script defer src="animecia-enhancements.js"></script></head>
+<body>
+<header class="site-header">
+<div class="container nav">
+<a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
+<nav class="nav-links" aria-label="メインメニュー">
+<a href="index.html">ホーム</a><a href="season.html">今期</a>
+<a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="community.html">コミュニティ</a><a href="compare.html" aria-current="page">比較</a>
+</nav>
+<form class="header-search" action="anime.html" method="get" role="search"><input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索"></form>
+<div class="nav-actions"><a class="nav-btn" href="mypage.html">マイページ</a><a class="nav-btn primary" href="login.html">ログイン</a></div>
+</div>
+</header>
+<main class="compare-page">
+<div class="container">
+<section class="compare-hero">
+<span>ANIME COMPARISON</span>
+<h1>作品比較</h1>
+<p>気になる作品を最大5作品まで選び、評価・人気・話数・放送情報などを横並びで比較できます。</p>
+</section>
+<section class="compare-picker">
+<div class="picker-head"><div><span class="page-kicker">IMPORTED WORKS</span><h2>取り込んだ作品から比較する</h2><p class="picker-note">Animeciaに登録されている作品を検索して、最大5作品を選択してください。</p></div><button id="clear" class="clear-btn" type="button">すべて外す</button></div>
+<div class="picker-row"><input id="compare-search" type="search" placeholder="取り込んだ作品を検索…" autocomplete="off" aria-label="取り込んだ作品を検索"><span id="compare-count" class="count-badge">0 / 5</span></div>
+<div id="search-results" class="search-results"></div>
+<div id="selected-list" class="selected-list"></div>
+</section>
+<section id="app" class="comparison-area"><div class="empty">比較する作品を選択してください。</div></section>
+</div>
+</main>
+<footer class="site-footer"><div class="container footer-inner"><div><strong>Animecia</strong><p>アニメを探す、評価する、記録する。</p></div><nav class="footer-nav" aria-label="フッターナビゲーション"><a href="index.html">ホーム</a><a href="season.html">今期アニメ</a>
+<a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="terms.html">利用規約</a><a href="privacy.html">プライバシー</a></nav></div><p class="copyright">© 2026 Animecia</p></footer>
+<script>
+const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
+const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
+const seasonName={WINTER:"冬",SPRING:"春",SUMMER:"夏",FALL:"秋"};
+const params=new URLSearchParams(location.search);
+function stored(){try{const a=JSON.parse(localStorage.getItem("animecia_compare")||"[]");return Array.isArray(a)?[...new Set(a.map(Number).filter(Number.isInteger))].slice(0,5):[]}catch(e){return[]}}
+let ids=stored();
+const urlIds=(params.get("ids")||"").split(",").map(Number).filter(Number.isInteger);
+if(urlIds.length){ids=[...new Set(urlIds)].slice(0,5);save();}
+function save(){localStorage.setItem("animecia_compare",JSON.stringify(ids));}
+function updateCount(){document.getElementById("compare-count").textContent=ids.length+" / 5";}
+async function fetchAnimeByIds(){
+ if(!ids.length)return[];
+ const {data}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,official_url,genres").in("id",ids);
+ const map=new Map((data||[]).map(a=>[Number(a.id),a]));
+ return ids.map(id=>map.get(id)).filter(Boolean);
+}
+function removeId(id){ids=ids.filter(x=>x!==Number(id));save();history.replaceState({}, "", "compare.html"+(ids.length?"?ids="+ids.join(","):""));render();}
+async function renderSelected(rows){
+ const el=document.getElementById("selected-list");
+ if(!rows.length){el.innerHTML='<div class="selected-empty">まだ作品が選択されていません。</div>';return;}
+ el.innerHTML=rows.map(a=>'<div class="selected-item"><img src="'+esc(a.cover_image||"")+'" alt=""><span>'+esc(titleOf(a))+'</span><button type="button" data-remove="'+a.id+'" aria-label="'+esc(titleOf(a))+'を比較から外す">×</button></div>').join("");
+ el.querySelectorAll("img").forEach(img=>img.addEventListener("error",()=>{img.style.visibility="hidden";}));
+ el.querySelectorAll("[data-remove]").forEach(btn=>btn.onclick=()=>removeId(btn.dataset.remove));
+}
+async function loadStats(rows){
+ const ids2=rows.map(a=>a.id); const stats=new Map(ids2.map(id=>[id,{rating:null,ratingCount:0,favorites:0,reviews:0}]));
+ const {data}=await supabaseClient.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").in("anime_id",ids2);
+ (data||[]).forEach(x=>{const s=stats.get(Number(x.anime_id));if(s){s.rating=x.average_rating;s.ratingCount=x.rating_count||0;s.favorites=x.favorite_count||0;s.reviews=x.review_count||0;}});
+ return stats;
+}
+function valueText(a){return a.season_year?(a.season_year+"年 "+(seasonName[a.season]||a.season||"")):"—"}
+async function renderComparison(rows){
+ const app=document.getElementById("app");
+ if(!rows.length){app.innerHTML='<div class="empty"><strong>比較する作品を選択してください。</strong><p>上の検索欄から作品を追加できます。</p></div>';return;}
+ const stats=await loadStats(rows);
+ const cell=(a,fn)=>'<td>'+fn(a,stats.get(a.id))+'</td>';
+ const labels=[
+ ["作品名",a=>'<strong class="work-title">'+esc(titleOf(a))+'</strong>'],
+ ["画像",a=>a.cover_image?'<img class="cover" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'">':'<div class="no-cover">画像なし</div>'],
+ ["Animecia評価",(a,s)=>s?.rating!=null?'<strong class="score">★ '+Number(s.rating).toFixed(2)+'</strong><small>'+s.ratingCount+'件の評価</small>':"—"],
+ ["お気に入り",(a,s)=>Number(s?.favorites||0).toLocaleString()+"件"],
+ ["レビュー",(a,s)=>Number(s?.reviews||0).toLocaleString()+"件"],
+ ["形式",a=>esc(a.format||"—")],["放送状況",a=>esc(a.status||"—")],["放送開始",a=>esc(a.start_date||"—")],["放送終了",a=>esc(a.end_date||"—")],
+ ["話数",a=>a.episodes!=null?esc(a.episodes)+"話":"—"],["1話の長さ",a=>a.duration!=null?esc(a.duration)+"分":"—"],["シーズン",a=>esc(valueText(a))],["原作",a=>esc(a.source||"—")],
+ ["公式サイト",a=>a.official_url?'<a class="official-link" href="'+esc(a.official_url)+'" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>':"—"],
+ ["詳細",a=>'<a class="detail-btn" href="anime-detail.html?id='+encodeURIComponent(a.id)+'">詳細を見る</a>']
+ ];
+ let html='<div class="comparison-title"><div><span class="page-kicker">COMPARISON TABLE</span><h2>'+rows.length+'作品を比較中</h2></div><p>横スクロールで全項目を確認できます。</p></div><div class="table-wrap"><table class="compare"><thead><tr><th class="label">項目</th>'+rows.map(a=>'<th><div class="head-work"><span>'+esc(titleOf(a))+'</span><button type="button" data-remove="'+a.id+'">×</button></div></th>').join("")+'</tr></thead><tbody>';
+ for(const [label,fn] of labels)html+='<tr><th class="label">'+label+'</th>'+rows.map(a=>cell(a,fn)).join("")+'</tr>';
+ html+='</tbody></table></div>';
+ app.innerHTML=html;
+ app.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeId(b.dataset.remove));
+}
+async function render(){
+ updateCount();
+ const rows=await fetchAnimeByIds();
+ await renderSelected(rows);
+ await renderComparison(rows);
+}
+let searchTimer;
+async function loadImportedWorks(q=""){
+ const box=document.getElementById("search-results");
+ const term=q.trim();
+ box.innerHTML='<div class="search-loading">取り込んだ作品を読み込み中…</div>';
+ const {data,error}=await supabaseClient.rpc("search_anime_catalog",{
+  p_query:term||null,p_genre_id:null,p_studio_id:null,p_year:null,p_season:null,
+  p_status:null,p_format:null,p_sort:"default",p_limit:term.length?30:18,p_offset:0
+ });
+ if(error){console.error(error);box.innerHTML='<div class="search-loading">取り込んだ作品を読み込めませんでした。Supabaseの検索設定を確認してください。</div>';return;}
+ box.innerHTML=(data||[]).map(a=>{
+  const selected=ids.includes(Number(a.id));
+  const disabled=selected||ids.length>=5;
+  return '<div class="search-result"><img src="'+esc(a.cover_image||"")+'" alt="" onerror="this.style.visibility=\'hidden\'"><div><strong>'+esc(titleOf(a))+'</strong><small>'+esc(a.season_year||"")+ " "+esc(seasonName[a.season]||"")+'</small></div><button type="button" data-add="'+a.id+'" '+(disabled?"disabled":"")+'>'+ (selected?"選択中":ids.length>=5?"上限":"比較に追加")+'</button></div>';
+ }).join("")||'<div class="search-loading">取り込まれた作品がありません。</div>';
+}
+function addId(rawId){
+ if(ids.length>=5)return;
+ const id=Number(rawId);
+ if(!Number.isInteger(id)||ids.includes(id))return;
+ ids.push(id);save();
+ document.getElementById("compare-search").value="";
+ render();
+ loadImportedWorks();
+}
+async function searchWorks(q){ return loadImportedWorks(q); }
+const compareSearch=document.getElementById("compare-search");
+compareSearch.addEventListener("input",e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadImportedWorks(e.target.value),180);});
+compareSearch.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(searchTimer);loadImportedWorks(e.target.value);}});
+
+document.getElementById("clear").onclick=()=>{ids=[];save();history.replaceState({}, "", "compare.html");render();};
+render();
+loadImportedWorks();
+</script>
+<script id="animecia-auth-nav">(function(){function sync(){try{var links=document.querySelectorAll('.nav-actions a[href="login.html"]');if(!links.length)return;var c=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient("https://bhgdjuwlxvbaeraaivmh.supabase.co","sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c"));c.auth.getUser().then(function(r){var u=r.data&&r.data.user;links.forEach(function(x){x.style.display=u&&!u.is_anonymous?"none":"";});}).catch(function(){});}catch(e){}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync);else sync();})();</script>
+</body></html>
