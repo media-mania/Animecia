@@ -133,9 +133,12 @@
 <p>Animeciaに登録された作品を、評価・お気に入り数・レビュー数の3つの基準でランキング表示します。</p>
 </section>
 <div class="ranking-tabs" role="tablist" aria-label="ランキングの種類">
-<button class="ranking-tab active" data-mode="rating">評価</button>
+<button class="ranking-tab active" data-mode="overall">総合</button>
+<button class="ranking-tab" data-mode="rating">評価</button>
 <button class="ranking-tab" data-mode="favorites">お気に入り数</button>
 <button class="ranking-tab" data-mode="reviews">レビュー数</button>
+<button class="ranking-tab" data-mode="new">新着</button>
+<button class="ranking-tab" data-mode="season">今期</button>
 </div>
 <section class="ranking-list" id="ranking-list"><div class="state">ランキングを読み込んでいます…</div></section>
 <p class="ranking-note">※評価は平均評価値で順位付けします。各ランキングは対象データがない作品を除外し、同じ値の作品は同順位とし、次の順位は1つだけ進みます。</p>
@@ -150,17 +153,25 @@ const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?
 const base="id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,season,season_year,average_score,anime_verification_status,created_at";
 let engagement=new Map();
 let anime=new Map();
-let mode="rating";
+let mode="overall";
 function valueFor(a,e){
  if(mode==="rating") return Number(e?.average_rating||0);
  if(mode==="favorites") return Number(e?.favorite_count||0);
  if(mode==="reviews") return Number(e?.review_count||0);
- return 0;
+ if(mode==="new") return new Date(a.created_at||0).getTime();
+ if(mode==="season") return Number(a.average_score||0);
+ const rating=Number(e?.average_rating||0);
+ const favorites=Number(e?.favorite_count||0);
+ const reviews=Number(e?.review_count||0);
+ return rating>0 ? rating*1000 + favorites*10 + reviews : favorites*10 + reviews;
 }
-function labelFor(){
- if(mode==="rating") return "評価";
- if(mode==="favorites") return "お気に入り数";
- return "レビュー数";
+function labelFor(a,e){
+ if(mode==="rating") return e?.rating_count ? "Animecia評価 "+Number(e.average_rating).toFixed(1)+" / "+e.rating_count+"人" : (a.average_score ? "参考評価 "+(Number(a.average_score)/10).toFixed(1) : "評価");
+ if(mode==="favorites") return "お気に入り "+Number(e?.favorite_count||0);
+ if(mode==="reviews") return "レビュー "+Number(e?.review_count||0);
+ if(mode==="new") return "追加日 "+new Date(a.created_at).toLocaleDateString("ja-JP");
+ if(mode==="season") return "参考評価 "+(a.average_score?Number(a.average_score/10).toFixed(1):"—");
+ return e?.rating_count ? "評価 "+Number(e.average_rating).toFixed(1)+" / "+e.rating_count+"人" : "お気に入り "+Number(e?.favorite_count||0);
 }
 function render(rows){
  const box=document.getElementById("ranking-list");
@@ -173,12 +184,11 @@ function render(rows){
    else if(v!==previous) currentRank++;
    const rank=currentRank;
    previous=v;
-   const display=v.toLocaleString("ja-JP");
-   return '<a class="ranking-row" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><span class="rank-number">'+rank+'</span>'+(a.cover_image?'<img class="rank-cover" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-cover"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-stats">'+display+'<small>'+labelFor()+'</small></div></a>';
+   const display=(mode==="rating"&&e?.rating_count)?Number(e.average_rating).toFixed(1):(mode==="season"&&a.average_score)?(Number(a.average_score)/10).toFixed(1):(mode==="new")?"":Number(v).toLocaleString("ja-JP");
+   return '<a class="ranking-row" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><span class="rank-number">'+rank+'</span>'+(a.cover_image?'<img class="rank-cover" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-cover"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-stats">'+(display?display:"")+(display?'<small>'+esc(labelFor(a,e))+'</small>':'<small>'+esc(labelFor(a,e))+'</small>')+'</div></a>';
  }).join("");
 }
 async function load(){
- // 0件の作品に埋もれないよう、実際に評価・お気に入り・レビューがある作品だけを取得
  const e=await sb.from("anime_engagement_summary")
    .select("anime_id,average_rating,rating_count,favorite_count,review_count,engagement_count")
    .gt("engagement_count",0)
@@ -186,21 +196,27 @@ async function load(){
    .limit(1000);
  if(e.error) throw e.error;
  engagement=new Map((e.data||[]).map(x=>[String(x.anime_id),x]));
- const ids=(e.data||[]).map(x=>x.anime_id).filter(Boolean);
- let rows=[];
- if(ids.length){
-   const a=await sb.from("animecia_public_anime").select(base)
-     .eq("anime_verification_status","verified")
-     .in("id",ids);
-   if(a.error) throw a.error;
-   rows=a.data||[];
- }
- anime=new Map(rows.map(x=>[String(x.id),x]));
+ const a=await sb.from("animecia_public_anime").select(base)
+   .eq("anime_verification_status","verified")
+   .limit(1000);
+ if(a.error) throw a.error;
+ anime=new Map((a.data||[]).map(x=>[String(x.id),x]));
  sortAndRender();
 }
 function sortAndRender(){
- let rows=[...anime.values()].filter(a=>{const e=engagement.get(String(a.id));if(mode==="rating") return Number(e?.rating_count||0)>0 && Number(e?.average_rating||0)>0;return valueFor(a,e)>0;});
+ let rows=[...anime.values()].filter(a=>{
+   const e=engagement.get(String(a.id));
+   if(mode==="rating") return Number(e?.rating_count||0)>0 && Number(e?.average_rating||0)>0;
+   if(mode==="favorites") return Number(e?.favorite_count||0)>0;
+   if(mode==="reviews") return Number(e?.review_count||0)>0;
+   if(mode==="season"){
+     const now=new Date(),year=now.getFullYear(),m=now.getMonth()+1,season=m<=3?"WINTER":m<=6?"SPRING":m<=9?"SUMMER":"FALL";
+     return Number(a.season_year)===year && a.season===season;
+   }
+   return true;
+ });
  rows.sort((a,b)=>{
+   if(mode==="new") return new Date(b.created_at||0)-new Date(a.created_at||0);
    const av=valueFor(a,engagement.get(String(a.id))),bv=valueFor(b,engagement.get(String(b.id)));
    if(bv!==av) return bv-av;
    return Number(a.id)-Number(b.id);
