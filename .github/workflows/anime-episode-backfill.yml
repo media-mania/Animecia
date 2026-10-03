@@ -125,8 +125,11 @@ jobs:
               return out
 
           rows = sb("/rest/v1/anime", params={
-              "select":"id,source_provider,source_id,external_id,format,episodes",
+              "select":"id,source_provider,source_id,external_id,format,episodes,duplicate_status,is_adult,is_kids",
               "episodes":"is.null",
+              "duplicate_status":"eq.unique",
+              "is_adult":"eq.false",
+              "is_kids":"eq.false",
               "order":"id.asc",
               "limit":str(BATCH)
           })
@@ -144,12 +147,13 @@ jobs:
               # setting source_provider/source_id. Prefer that mapping first.
               if provider == "anilist" and sid.isdigit():
                   n = int(sid)
+                  # Animecia stores AniList IDs as 2,000,000,000 + AniList ID.
+                  # This must remain an AniList ID, not an ANN ID.
+                  if 2000000000 < n < 3000000000:
+                      ani_ids.append((n - 2000000000, int(r["id"])))
+                      continue
                   if 1 <= n < 2000000000:
                       ani_ids.append((n, int(r["id"])))
-                      continue
-                  # Older ANN imports were stored with a 2,000,000,000 prefix.
-                  if 2000000000 < n < 3000000000:
-                      ann_ids.append((n - 2000000000, int(r["id"])))
                       continue
 
               if not provider and eid.isdigit():
