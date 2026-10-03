@@ -7,7 +7,7 @@ on:
     paths:
       - '.github/workflows/anime-genre-resync.yml'
   schedule:
-    - cron: '*/15 * * * *'
+    # 監査残件を段階的に処理。GitHub Actionsの最短スケジュールに合わせて5分間隔。\n    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       batch_size:
