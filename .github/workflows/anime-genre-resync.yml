@@ -492,8 +492,12 @@ jobs:
               names, confidence, reasons = classify(media, EXISTING.get(int(row["id"]), []), mal_genres_by_id.get(int(row["_anilist_id"]), []))
               genre_ids = [GENRE_ID[n] for n in names if n in GENRE_ID]
 
-              if not genre_ids:
+              # 3件未満しか根拠を取得できない作品は更新しない。
+              # bulk_replace_anime_genres は3〜5件を必須とするため、
+              # このバッチ全体を失敗させず、次回の再取得対象として残す。
+              if len(genre_ids) < 3 or len(genre_ids) > 5:
                   no_evidence += 1
+                  continue
 
               updates.append({
                   "anime_id": int(row["id"]),
