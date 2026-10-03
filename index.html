@@ -396,7 +396,8 @@ async function load(){
  ]);
  const catalog=Number(countRes.data?.[0]?.total_count||0);
  document.getElementById("database-count").textContent=catalog.toLocaleString("ja-JP")+"作品";
- const titleIndex=(titleIndexRes.data||[]).filter(valid).slice(0,24);
+ const titleCollator=new Intl.Collator("ja",{numeric:true,sensitivity:"base",ignorePunctuation:true});
+ const titleIndex=(titleIndexRes.data||[]).filter(a=>a&&titleOf(a)!=="タイトル未設定").sort((a,b)=>titleCollator.compare(titleOf(a),titleOf(b))).slice(0,24);
  document.getElementById("home-title-index").innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
  const genres=genreRes.data||[];
  document.getElementById("genre-count").textContent=genres.length.toLocaleString("ja-JP");
