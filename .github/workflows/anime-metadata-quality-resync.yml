@@ -135,6 +135,7 @@ jobs:
               "limit": str(BATCH),
           }) or []
 
+          rows = fetch_batch(cursor)
           if not rows:
               # 末尾まで到達したら次の実行で先頭から新しい監査サイクルを開始。
               cursor = 0
