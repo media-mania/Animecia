@@ -358,7 +358,7 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
 </main>
 <footer>
 <div class="container footer-inner">
-<div><div class="footer-brand">Animecia</div><div class="footer-copy">アニメを探す、評価する、記録する。</div><div class="admin-login-mini" aria-label="管理者向け"><a href="admin-login.html">管理者ログイン</a></div>
+<div><div class="footer-brand">Animecia</div><div class="footer-copy">アニメを探す、評価する、記録する。</div>
 </div>
 <div class="footer-links">
 <a href="anime.html">探す</a><a href="season.html">今期</a><a href="ranking.html">ランキング</a><a href="recommendations.html">おすすめ</a><a href="community.html">コミュニティ</a><a href="mypage.html">マイページ</a><a href="login.html" id="footer-login-link">ログイン</a>
@@ -408,7 +408,7 @@ async function load(){
  const titleCollator=new Intl.Collator("ja",{numeric:true,sensitivity:"base",ignorePunctuation:true});
  if(titleIndexRes?.data){
    const titleIndex=titleIndexRes.data.filter(a=>a&&titleOf(a)!=="タイトル未設定").sort((a,b)=>titleCollator.compare(titleOf(a),titleOf(b))).slice(0,24);
-   document.getElementById("home-title-index").innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
+   document.getElementById("home-title-index").innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>'; setBusy("home-title-index",false);
  }else showError("home-title-index","作品データを取得できませんでした。");
  const recentRows=(recentRes?.data||[]).filter(valid);
  document.getElementById("home-recent-list").innerHTML=recentRows.length?recentRows.map(card).join(""):'<div class="empty">新着作品がありません。</div>'; setBusy("home-recent-list",false);
@@ -420,13 +420,13 @@ async function load(){
  document.getElementById("genre-count").textContent=genres.length.toLocaleString("ja-JP");
  const genreCountSide=document.getElementById("genre-count-side");if(genreCountSide)genreCountSide.textContent=genres.length.toLocaleString("ja-JP");
  const seasonRows=(seasonRes?.data||[]).filter(valid);
- document.getElementById("season-count-side").textContent=seasonRows.length.toLocaleString("ja-JP");
+ document.getElementById("season-count-side").textContent=seasonRows.length.toLocaleString("ja-JP"); setBusy("hero-stats",false);
  const eng=new Map((engRes?.data||[]).map(x=>[String(x.anime_id),x]));
  if(engRes?.data){
    const rankedIds=engRes.data.filter(x=>x.average_rating!=null).sort((a,b)=>Number(b.average_rating)-Number(a.average_rating)).slice(0,10).map(x=>x.anime_id);
    let rankedRows=[];
    if(rankedIds.length){const rk=await sb.from("animecia_public_anime").select(base).in("id",rankedIds);const by=new Map((rk.data||[]).map(a=>[String(a.id),a]));rankedRows=rankedIds.map(id=>by.get(String(id))).filter(Boolean);}
-   renderHomeRanking(rankedRows,eng);
+   renderHomeRanking(rankedRows,eng); setBusy("home-rank-list",false);
  }else showError("home-rank-list","ランキングデータを取得できませんでした。");
  let seasonal=seasonRows;
  if(seasonal.length){
@@ -440,7 +440,7 @@ async function load(){
  if(reviewRes?.data){
    const reviewIds=[...new Set(reviewRes.data.map(r=>r.anime_id).filter(Boolean))].slice(0,12);
    let reviewAnime=[];if(reviewIds.length){const rr=await sb.from("animecia_public_anime").select(base).in("id",reviewIds);reviewAnime=rr.data||[];}
-   renderReviews(reviewRes.data,new Map(reviewAnime.map(a=>[String(a.id),a])));
+   renderReviews(reviewRes.data,new Map(reviewAnime.map(a=>[String(a.id),a]))); setBusy("home-reviews",false);
  }else showError("home-reviews","レビューを取得できませんでした。");
 }
 function renderHomeRanking(rows,eng){const box=document.getElementById("home-rank-list");if(!box)return;if(!rows.length){box.innerHTML='<div class="empty">評価データがまだありません。</div>';return;}box.innerHTML=rows.slice(0,10).map((a,i)=>{const e=eng.get(String(a.id));const s=scoreOf(a,e);return '<a class="home-rank-row" href="anime-detail.html?id='+a.id+'"><span class="rank-no">'+(i+1)+'</span>'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="no-image"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-score">'+(s!=null?s.toFixed(1):"—")+'<small>評価</small></div></a>';}).join("");}function renderReviews(rows,animeMap){
