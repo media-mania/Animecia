@@ -2729,7 +2729,19 @@
         if (romaji) return romajiToHiragana(romaji);
 
         const native = cleanKana(anime?.title_japanese) || cleanKana(anime?.title_native);
-        return native || String(anime?.title_japanese || anime?.title_native || anime?.title || "")
+        if (native) return native;
+        const kanaRuns = String(anime?.title_japanese || anime?.title_native || "")
+            .normalize("NFKC")
+            .match(/[\u3040-\u30ffー]+/g);
+        if (kanaRuns?.length) {
+            return Array.from(kanaRuns.join("")).map(ch => {
+                const code = ch.charCodeAt(0);
+                return code >= 0x30a1 && code <= 0x30f6
+                    ? String.fromCharCode(code - 0x60)
+                    : ch;
+            }).join("").toLowerCase();
+        }
+        return String(anime?.title_japanese || anime?.title_native || anime?.title || "")
             .normalize("NFKC").toLowerCase();
     }
 
