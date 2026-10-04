@@ -780,6 +780,9 @@
   </style>
 
 <link rel="stylesheet" href="site-theme.css">
+<script src="performance.js" defer></script>
+<link rel="preconnect" href="https://bhgdjuwlxvbaeraaivmh.supabase.co">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 </head>
 
 
@@ -1789,7 +1792,7 @@
               id="image-preview-img"
               src=""
               alt="広告画像プレビュー"
-            >
+             decoding="async" loading="eager" fetchpriority="high">
 
           </div>
 
@@ -5611,7 +5614,7 @@
                       alt="広告画像"
                       loading="lazy"
                       onerror="this.style.display='none';"
-                    >
+                     decoding="async">
 
                   </div>
                 `
