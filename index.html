@@ -519,14 +519,20 @@ async function load(){
  const titleBox=document.getElementById("home-title-index");
  if(titleBox)titleBox.innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
  
- const genres=genreRes.data||[];
- const genreCount=document.getElementById("genre-count");if(genreCount)genreCount.textContent=genres.length.toLocaleString("ja-JP");
- const genreCountSide=document.getElementById("genre-count-side");if(genreCountSide)genreCountSide.textContent=genres.length.toLocaleString("ja-JP");
+ const genres=(genreRes.data||[]).filter(g=>g&&g.id!=null&&g.name);
+ const uniqueGenres=[...new Map(genres.map(g=>[String(g.id),g])).values()];
+ const genreCount=document.getElementById("genre-count");
+ if(genreCount)genreCount.textContent=uniqueGenres.length.toLocaleString("ja-JP");
+ const genreCountSide=document.getElementById("genre-count-side");
+ if(genreCountSide)genreCountSide.textContent=uniqueGenres.length.toLocaleString("ja-JP");
  const genreGrid=document.getElementById("genre-grid");
- if(genreGrid)genreGrid.innerHTML=genres.slice(0,50).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id||g.name)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンル情報を準備中です。</div>';
+ if(genreGrid)genreGrid.innerHTML=uniqueGenres.slice(0,50).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id||g.name)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンル情報を準備中です。</div>';
  
  const seasonRows=(seasonRes.data||[]).filter(valid);
- const seasonSide=document.getElementById("season-count-side");if(seasonSide)seasonSide.textContent=Number(seasonCountRes.count||0).toLocaleString("ja-JP");
+ // 「今期作品」は一覧取得件数ではなく、同じ公開条件で取得した正確なDB件数を表示する。
+ const currentSeasonCount=Math.max(0,Number(seasonCountRes.count||0));
+ const seasonSide=document.getElementById("season-count-side");
+ if(seasonSide)seasonSide.textContent=currentSeasonCount.toLocaleString("ja-JP");
  const engData=engRes.data||[];
  const eng=new Map(engData.map(x=>[String(x.anime_id),x]));
  const rankedIds=engData.filter(x=>x.average_rating!=null).sort((a,b)=>Number(b.average_rating)-Number(a.average_rating)).slice(0,10).map(x=>x.anime_id);
