@@ -952,6 +952,7 @@
         <div class="actions">
           <button id="sync-genres" class="save" type="button">ジャンル監査を再実行（外部照合エラー）</button>
         </div>
+        <div id="genre-audit-stats" class="help" aria-live="polite">監査状況を読み込んでいます……</div>
         <div id="genre-sync-message" class="message"></div>
       </section>
 
@@ -6723,6 +6724,31 @@
        Genre synchronization
     ===================================================== */
 
+    async function loadGenreAuditStats() {
+      const stats = document.getElementById("genre-audit-stats");
+      if (!stats) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from("animecia_public_genre_audit")
+          .select("audit_status,audit_reason,anime_id")
+          .in("anime_id", (
+            (await supabaseClient.from("animecia_public_anime").select("id")).data || []
+          ).map(row => row.id));
+        if (error) throw error;
+        const rows = data || [];
+        const verified = rows.filter(row => row.audit_status === "verified").length;
+        const needsReview = rows.filter(row => row.audit_status === "needs_review").length;
+        const retryable = rows.filter(row => row.audit_status === "needs_review" && row.audit_reason === "AniList検索HTTPエラー").length;
+        const held = rows.filter(row => row.audit_status === "needs_review" && row.audit_reason === "監査実施済み。現時点でジャンル変更を確定できる十分な外部根拠がないため保留").length;
+        stats.textContent = "公開作品の監査状況：完了 " + verified + "件 / 未解決 " + needsReview + "件（外部照合エラー " + retryable + "件・保留 " + held + "件）";
+      } catch (error) {
+        console.error("Genre audit stats error:", error);
+        stats.textContent = "監査状況を取得できませんでした。";
+      }
+    }
+
+    loadGenreAuditStats();
+
     document.getElementById("sync-genres").addEventListener("click", async function() {
       const button = this;
       const message = document.getElementById("genre-sync-message");
@@ -6734,6 +6760,7 @@
         if (error) throw error;
         message.className = "message success";
         message.textContent = "再監査: " + (data?.checked ?? 0) + "件 / 修正: " + (data?.updated ?? 0) + "件 / 外部照合失敗: " + (data?.unmatched ?? 0) + "件 / 曖昧: " + (data?.ambiguous ?? 0) + "件";
+        await loadGenreAuditStats();
         await loadAdminOverview();
       } catch (error) {
         console.error("Genre sync error:", error);
