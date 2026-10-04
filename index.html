@@ -13,7 +13,8 @@
 <meta property="og:site_name" content="Animecia">
 <meta property="og:locale" content="ja_JP">
 <meta name="theme-color" content="#101114">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"Animecia","url":"https://media-mania.github.io/Animecia/","potentialAction":{"@type":"SearchAction","target":"https://media-mania.github.io/Animecia/anime.html?search={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
@@ -370,10 +371,10 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const valid=a=>a&&a.anime_verification_status==="verified"&&a.is_japanese===true&&a.is_adult!==true&&a.is_kids!==true&&a.is_sensitive_visual!==true&&(a.start_date==null||a.start_date>="1963-01-01")&&/[ぁ-んァ-ヶ一-龯々ー]/.test(a.title_japanese||a.title_native||a.title_user_preferred||a.title||"");
-const img=(a,cls="")=>a?.cover_image?'<img class="'+cls+'" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">':'<div class="row-thumb">画像なし</div>';
+const img=(a,cls="")=>a?.cover_image?'<img class="'+cls+'" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'" decoding="async" fetchpriority="high">':'<div class="row-thumb">画像なし</div>';
 function card(a){
  const title=titleOf(a),score=a.average_score!=null?Number(a.average_score)/10:null;
- return '<div class="card"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div></a></div>';
+ return '<div class="card"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy" decoding="async">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div></a></div>';
 }
 function compareJapaneseTitle(a,b){
  const cleanKana=value=>{
@@ -481,14 +482,14 @@ async function load(){
      return {...a,_popularity:popularity};
    }).sort((a,b)=>b._popularity-a._popularity);
  }
- document.getElementById("season-feature").innerHTML=seasonal.slice(0,3).map(a=>'<a class="feature-anime" href="anime-detail.html?id='+a.id+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':"画像なし")+'</div><div class="feature-copy"><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(scoreOf(a,eng.get(String(a.id)))??"—")+(scoreOf(a,eng.get(String(a.id)))!=null?'<span>評価</span>':"")+'</div></div></a>').join("")||'<div class="empty">今期作品がまだ登録されていません。</div>';
+ document.getElementById("season-feature").innerHTML=seasonal.slice(0,3).map(a=>'<a class="feature-anime" href="anime-detail.html?id='+a.id+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" decoding="async">':"画像なし")+'</div><div class="feature-copy"><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(scoreOf(a,eng.get(String(a.id)))??"—")+(scoreOf(a,eng.get(String(a.id)))!=null?'<span>評価</span>':"")+'</div></div></a>').join("")||'<div class="empty">今期作品がまだ登録されていません。</div>';
  document.getElementById("genre-grid").innerHTML=genres.slice(0,50).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id||g.name)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンル情報を準備中です。</div>';
  const reviewIds=[...new Set((reviewRes.data||[]).map(r=>r.anime_id).filter(Boolean))].slice(0,12);
  let reviewAnime=[];
  if(reviewIds.length){const rr=await sb.from("animecia_public_anime").select(base).in("id",reviewIds);reviewAnime=rr.data||[];}
  renderReviews(reviewRes.data||[],new Map(reviewAnime.map(a=>[String(a.id),a])));
 }
-function renderHomeRanking(rows,eng){const box=document.getElementById("home-rank-list");if(!box)return;if(!rows.length){box.innerHTML='<div class="empty">評価データがまだありません。</div>';return;}box.innerHTML=rows.slice(0,10).map((a,i)=>{const e=eng.get(String(a.id));const s=scoreOf(a,e);return '<a class="home-rank-row" href="anime-detail.html?id='+a.id+'"><span class="rank-no">'+(i+1)+'</span>'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="no-image"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-score">'+(s!=null?s.toFixed(1):"—")+'<small>評価</small></div></a>';}).join("");}function renderReviews(rows,animeMap){
+function renderHomeRanking(rows,eng){const box=document.getElementById("home-rank-list");if(!box)return;if(!rows.length){box.innerHTML='<div class="empty">評価データがまだありません。</div>';return;}box.innerHTML=rows.slice(0,10).map((a,i)=>{const e=eng.get(String(a.id));const s=scoreOf(a,e);return '<a class="home-rank-row" href="anime-detail.html?id='+a.id+'"><span class="rank-no">'+(i+1)+'</span>'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" decoding="async">':'<div class="no-image"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-score">'+(s!=null?s.toFixed(1):"—")+'<small>評価</small></div></a>';}).join("");}function renderReviews(rows,animeMap){
  const box=document.getElementById("home-reviews");if(!box)return;
  if(!rows.length){box.innerHTML='<div class="empty">レビューが投稿されると、ここに表示されます。</div>';return;}
  box.innerHTML=rows.map(r=>{const a=animeMap.get(String(r.anime_id));return '<a class="home-review" href="anime-detail.html?id='+r.anime_id+'"><div class="home-review-top"><strong>'+esc(a?titleOf(a):"作品レビュー")+'</strong><span>★ '+(r.rating!=null?Number(r.rating).toFixed(1):"—")+'</span></div><b>'+esc(r.title||"レビュー")+'</b><p>'+esc(String(r.content||"").slice(0,120))+'</p><small>♥ '+Number(r.likes_count||0)+'</small></a>';}).join("");
