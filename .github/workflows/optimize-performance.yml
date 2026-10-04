@@ -8,19 +8,15 @@ permissions:
   contents: write
 jobs:
   optimize:
-    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message != 'perf: automated HTML performance optimization [skip ci]'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Optimize all HTML
-        run: node scripts/optimize-html-performance.mjs
+      - run: node scripts/optimize-html-performance.mjs
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
