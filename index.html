@@ -424,70 +424,84 @@ async function fetchCatalog(limit=30){
 async function load(){
  const now=new Date(),year=now.getFullYear(),month=now.getMonth()+1,season=month<=3?"WINTER":month<=6?"SPRING":month<=9?"SUMMER":"FALL";
  const base="id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,season,season_year,average_score,anime_verification_status,is_japanese,is_adult,is_kids,is_sensitive_visual,created_at";
- const [countRes,seasonRes,seasonCountRes,titleIndexRes,genreRes,engRes,reviewRes]=await Promise.all([
-   sb.rpc("search_anime_catalog",{p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"default",p_limit:1,p_offset:0}),
-   sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season).order("id",{ascending:false}).limit(12),
-   sb.from("animecia_public_anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season),
-   sb.rpc("search_anime_catalog",{p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"title",p_limit:1000,p_offset:0}),
-   sb.rpc("get_catalog_genres"),
-   sb.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").order("average_rating",{ascending:false,nullsFirst:false}).limit(100),
-   sb.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at").order("created_at",{ascending:false}).limit(6)
+ const safe=promise=>Promise.resolve(promise).catch(error=>({data:[],count:0,error}));
+ const [countRes,seasonRes,seasonCountRes,genreRes,engRes,reviewRes]=await Promise.all([
+   safe(sb.from("animecia_public_anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified")),
+   safe(sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season).order("id",{ascending:false}).limit(12)),
+   safe(sb.from("animecia_public_anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season)),
+   safe(sb.rpc("get_catalog_genres")),
+   safe(sb.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").order("average_rating",{ascending:false,nullsFirst:false}).limit(100)),
+   safe(sb.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at").order("created_at",{ascending:false}).limit(6))
  ]);
- const catalog=Number(countRes.data?.[0]?.total_count||0);
- document.getElementById("database-count").textContent=catalog.toLocaleString("ja-JP")+"作品";
-
- let titleIndexRows=(titleIndexRes.data||[]).slice();
- const titleIndexTotal=Number(titleIndexRows[0]?.total_count||catalog||0);
- const titleIndexBatch=100;
- const titleIndexPages=Math.ceil(titleIndexTotal/titleIndexBatch);
- if(titleIndexPages>1){
-   const more=await Promise.all(Array.from({length:titleIndexPages-1},(_,i)=>sb.rpc("search_anime_catalog",{
-     p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,
-     p_sort:"title",p_limit:titleIndexBatch,p_offset:(i+1)*titleIndexBatch
-   })));
-   more.forEach(x=>{if(x.error)throw x.error;titleIndexRows.push(...(x.data||[]));});
+ const catalog=Number(countRes.count||0);
+ const databaseCount=document.getElementById("database-count");if(databaseCount)databaseCount.textContent=catalog.toLocaleString("ja-JP")+"作品";
+ 
+ // タイトル五十音索引は、公開対象だけを直接取得してから既存の日本語ソートを適用する。
+ let titleIndexRows=[];
+ const titleBatch=1000;
+ const titlePages=Math.ceil(catalog/titleBatch);
+ const titleRequests=[];
+ for(let i=0;i<titlePages;i++){
+   titleRequests.push(safe(sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).range(i*titleBatch,(i+1)*titleBatch-1)));
  }
+ const titleResponses=await Promise.all(titleRequests);
+ titleResponses.forEach(x=>{if(!x.error)titleIndexRows.push(...(x.data||[]));});
  const titleKanaIds=titleIndexRows.map(a=>a?.id).filter(Boolean);
  const titleKanaMap=new Map();
- const titleKanaBatch=500;
  const titleKanaRequests=[];
- for(let offset=0;offset<titleKanaIds.length;offset+=titleKanaBatch){
-   titleKanaRequests.push(sb.from("anime").select("id,title_kana").in("id",titleKanaIds.slice(offset,offset+titleKanaBatch)));
+ for(let offset=0;offset<titleKanaIds.length;offset+=500){
+   titleKanaRequests.push(safe(sb.from("anime").select("id,title_kana").in("id",titleKanaIds.slice(offset,offset+500))));
  }
  const titleKanaResponses=await Promise.all(titleKanaRequests);
- titleKanaResponses.forEach(x=>{if(x.error)throw x.error;(x.data||[]).forEach(row=>titleKanaMap.set(Number(row.id),row.title_kana||""));});
- titleIndexRows.forEach(a=>{a.title_kana=titleKanaMap.get(Number(a.id))||"";});
- const titleIndex=(titleIndexRows.filter(valid).sort(compareJapaneseTitle).slice(0,24));
- document.getElementById("home-title-index").innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
+ titleKanaResponses.forEach(x=>{if(!x.error)(x.data||[]).forEach(row=>titleKanaMap.set(Number(row.id),row.title_kana||""));});
+ titleIndexRows.forEach(a=>a.title_kana=titleKanaMap.get(Number(a.id))||"");
+ const titleIndex=titleIndexRows.sort(compareJapaneseTitle).slice(0,24);
+ const titleBox=document.getElementById("home-title-index");
+ if(titleBox)titleBox.innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
+ 
  const genres=genreRes.data||[];
- document.getElementById("genre-count").textContent=genres.length.toLocaleString("ja-JP");
+ const genreCount=document.getElementById("genre-count");if(genreCount)genreCount.textContent=genres.length.toLocaleString("ja-JP");
  const genreCountSide=document.getElementById("genre-count-side");if(genreCountSide)genreCountSide.textContent=genres.length.toLocaleString("ja-JP");
+ const genreGrid=document.getElementById("genre-grid");
+ if(genreGrid)genreGrid.innerHTML=genres.slice(0,50).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id||g.name)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンル情報を準備中です。</div>';
+ 
  const seasonRows=(seasonRes.data||[]).filter(valid);
- document.getElementById("season-count-side").textContent=Number(seasonCountRes.count||0).toLocaleString("ja-JP");
- const eng=new Map((engRes.data||[]).map(x=>[String(x.anime_id),x]));
- const rankedIds=(engRes.data||[]).filter(x=>x.average_rating!=null).sort((a,b)=>Number(b.average_rating)-Number(a.average_rating)).slice(0,10).map(x=>x.anime_id);
- let rankedRows=[]; if(rankedIds.length){const rk=await sb.from("animecia_public_anime").select(base).in("id",rankedIds); const by=new Map((rk.data||[]).map(a=>[String(a.id),a])); rankedRows=rankedIds.map(id=>by.get(String(id))).filter(Boolean);} renderHomeRanking(rankedRows,eng);
-
- // トップページの「今期アニメ」は順位表示ではなく、今期作品の中から利用状況（評価・お気に入り・レビュー）の合計で注目作品を選ぶ。
+ const seasonSide=document.getElementById("season-count-side");if(seasonSide)seasonSide.textContent=Number(seasonCountRes.count||0).toLocaleString("ja-JP");
+ const engData=engRes.data||[];
+ const eng=new Map(engData.map(x=>[String(x.anime_id),x]));
+ const rankedIds=engData.filter(x=>x.average_rating!=null).sort((a,b)=>Number(b.average_rating)-Number(a.average_rating)).slice(0,10).map(x=>x.anime_id);
+ let rankedRows=[];
+ if(rankedIds.length){
+   const rk=await safe(sb.from("animecia_public_anime").select(base).in("id",rankedIds));
+   const by=new Map((rk.data||[]).map(a=>[String(a.id),a]));
+   rankedRows=rankedIds.map(id=>by.get(String(id))).filter(a=>a&&valid(a));
+ }
+ renderHomeRanking(rankedRows,eng);
+ 
  let seasonal=seasonRows;
  if(seasonal.length){
    const seasonIds=seasonal.map(a=>a.id);
-   const {data:seasonEngData}=await sb.from("anime_engagement_summary")
-     .select("anime_id,rating_count,favorite_count,review_count")
-     .in("anime_id",seasonIds);
-   const seasonEng=new Map((seasonEngData||[]).map(x=>[String(x.anime_id),x]));
+   const seasonEngRes=await safe(sb.from("anime_engagement_summary").select("anime_id,rating_count,favorite_count,review_count").in("anime_id",seasonIds));
+   const seasonEng=new Map((seasonEngRes.data||[]).map(x=>[String(x.anime_id),x]));
    seasonal=seasonal.map(a=>{
      const e=seasonEng.get(String(a.id))||{};
-     const popularity=Number(e.rating_count||0)+Number(e.favorite_count||0)+Number(e.review_count||0);
-     return {...a,_popularity:popularity};
+     return {...a,_popularity:Number(e.rating_count||0)+Number(e.favorite_count||0)+Number(e.review_count||0)};
    }).sort((a,b)=>b._popularity-a._popularity);
  }
- document.getElementById("season-feature").innerHTML=seasonal.slice(0,3).map(a=>'<a class="feature-anime" href="anime-detail.html?id='+a.id+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" decoding="async">':"画像なし")+'</div><div class="feature-copy"><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(scoreOf(a,eng.get(String(a.id)))??"—")+(scoreOf(a,eng.get(String(a.id)))!=null?'<span>評価</span>':"")+'</div></div></a>').join("")||'<div class="empty">今期作品がまだ登録されていません。</div>';
- document.getElementById("genre-grid").innerHTML=genres.slice(0,50).map(g=>'<a class="genre" href="anime.html?genre='+encodeURIComponent(g.id||g.name)+'">'+esc(g.name)+'</a>').join("")||'<div class="empty">ジャンル情報を準備中です。</div>';
- const reviewIds=[...new Set((reviewRes.data||[]).map(r=>r.anime_id).filter(Boolean))].slice(0,12);
+ const feature=document.getElementById("season-feature");
+ if(feature)feature.innerHTML=seasonal.slice(0,3).map(a=>{
+   const s=scoreOf(a,eng.get(String(a.id)));
+   return '<a class="feature-anime" href="anime-detail.html?id='+a.id+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" decoding="async">':"画像なし")+'</div><div class="feature-copy"><h3>'+esc(titleOf(a))+'</h3><div class="feature-score">'+(s??"—")+(s!=null?'<span>評価</span>':"")+'</div></div></a>';
+ }).join("")||'<div class="empty">今期作品がまだ登録されていません。</div>';
+ 
+ const reviewRows=reviewRes.data||[];
+ const reviewIds=[...new Set(reviewRows.map(r=>r.anime_id).filter(Boolean))].slice(0,12);
  let reviewAnime=[];
- if(reviewIds.length){const rr=await sb.from("animecia_public_anime").select(base).in("id",reviewIds);reviewAnime=rr.data||[];}
- renderReviews(reviewRes.data||[],new Map(reviewAnime.map(a=>[String(a.id),a])));
+ if(reviewIds.length){
+   const rr=await safe(sb.from("animecia_public_anime").select(base).in("id",reviewIds));
+   reviewAnime=rr.data||[];
+ }
+ renderReviews(reviewRows,new Map(reviewAnime.map(a=>[String(a.id),a])));
 }
 function renderHomeRanking(rows,eng){const box=document.getElementById("home-rank-list");if(!box)return;if(!rows.length){box.innerHTML='<div class="empty">評価データがまだありません。</div>';return;}box.innerHTML=rows.slice(0,10).map((a,i)=>{const e=eng.get(String(a.id));const s=scoreOf(a,e);return '<a class="home-rank-row" href="anime-detail.html?id='+a.id+'"><span class="rank-no">'+(i+1)+'</span>'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" decoding="async">':'<div class="no-image"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-score">'+(s!=null?s.toFixed(1):"—")+'<small>評価</small></div></a>';}).join("");}function renderReviews(rows,animeMap){
  const box=document.getElementById("home-reviews");if(!box)return;
