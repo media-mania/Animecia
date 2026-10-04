@@ -2724,9 +2724,16 @@
 
         const romajiToHiragana = value => {
             let s = String(value || "").normalize("NFKC").toLowerCase();
-            s = s.replace(/[0-9]+/g, token => token.split("").map(d => numberKana[d] || d).join(""));
             let out = "";
             for (let i = 0; i < s.length;) {
+                if (/\d/.test(s[i])) {
+                    const match = s.slice(i).match(/^\d+/);
+                    if (match) {
+                        out += numberToJapanese(match[0]);
+                        i += match[0].length;
+                        continue;
+                    }
+                }
                 if (/[^a-z]/.test(s[i])) {
                     out += s[i] === "-" || /\s/.test(s[i]) ? "" : s[i];
                     i++;
@@ -2766,7 +2773,7 @@
 
         const romaji = anime?.title_romaji || anime?.title_english || anime?.english_title || "";
         if (romaji) {
-            return romajiToHiragana(romaji).replace(/[0-9]+/g, numberToJapanese);
+            return romajiToHiragana(romaji);
         }
 
         const native = cleanKana(anime?.title_japanese) || cleanKana(anime?.title_native);
