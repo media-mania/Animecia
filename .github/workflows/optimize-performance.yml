@@ -1,0 +1,25 @@
+name: Optimize site performance
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  optimize:
+    if: ${{ !startsWith(github.event.head_commit.message, 'perf: automated') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/optimize-html-performance.mjs
+      - name: Commit optimized HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '*.html'
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "perf: automated HTML performance optimization [skip ci]"
+          git push
