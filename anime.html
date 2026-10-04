@@ -2821,7 +2821,7 @@
             const isTitleSort = (sortFilter.value || "title") === "title";
 
             if (isTitleSort) {
-                const batchSize = 1000;
+                const batchSize = 100;
                 const first = await supabaseClient.rpc("search_anime_catalog", {
                     p_query: searchInput.value.trim() || null,
                     p_genre_id: genreFilter.value ? Number(genreFilter.value) : null,
