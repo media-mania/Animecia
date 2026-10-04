@@ -429,7 +429,19 @@ async function load(){
  ]);
  const catalog=Number(countRes.data?.[0]?.total_count||0);
  document.getElementById("database-count").textContent=catalog.toLocaleString("ja-JP")+"作品";
- const titleIndex=(titleIndexRes.data||[]).filter(valid).sort(compareJapaneseTitle).slice(0,24);
+
+ let titleIndexRows=(titleIndexRes.data||[]).slice();
+ const titleIndexTotal=Number(titleIndexRows[0]?.total_count||catalog||0);
+ const titleIndexBatch=1000;
+ const titleIndexPages=Math.ceil(titleIndexTotal/titleIndexBatch);
+ if(titleIndexPages>1){
+   const more=await Promise.all(Array.from({length:titleIndexPages-1},(_,i)=>sb.rpc("search_anime_catalog",{
+     p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,
+     p_sort:"title",p_limit:titleIndexBatch,p_offset:(i+1)*titleIndexBatch
+   })));
+   more.forEach(x=>{if(x.error)throw x.error;titleIndexRows.push(...(x.data||[]));});
+ }
+ const titleIndex=(titleIndexRows.filter(valid).sort(compareJapaneseTitle).slice(0,24));
  document.getElementById("home-title-index").innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
  const genres=genreRes.data||[];
  document.getElementById("genre-count").textContent=genres.length.toLocaleString("ja-JP");
