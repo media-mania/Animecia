@@ -1,1 +1,26 @@
-const CACHE='animecia-static-v1';const STATIC=/\.(?:css|js|woff2?|png|jpe?g|webp|gif|svg)(?:\?.*)?$/i;self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET'||u.origin!==location.origin||!STATIC.test(u.pathname))return;e.respondWith(caches.open(CACHE).then(async c=>{const hit=await c.match(e.request);const net=fetch(e.request).then(r=>{if(r.ok)c.put(e.request,r.clone());return r}).catch(()=>hit);return hit||net}))});
+const CACHE="animecia-static-v2";
+const STATIC=/\.(?:css|js|woff2?|png|jpe?g|webp|gif|svg)(?:\?.*)?$/i;
+const STATIC_HTML=/^\/Animecia\/(?:anime\/[^/]+\/|genre\/[^/]+\/)/i;
+self.addEventListener("install",e=>e.waitUntil(self.skipWaiting()));
+self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch",e=>{
+  const r=e.request;
+  if(r.method!=="GET") return;
+  const u=new URL(r.url);
+  if(u.origin!==location.origin) return;
+  if(STATIC.test(u.pathname)){
+    e.respondWith(caches.open(CACHE).then(async c=>{
+      const hit=await c.match(r);
+      const net=fetch(r).then(res=>{if(res.ok)c.put(r,res.clone());return res}).catch(()=>hit);
+      return hit||net;
+    }));
+    return;
+  }
+  if(r.mode==="navigate"&&STATIC_HTML.test(u.pathname)){
+    e.respondWith(caches.open(CACHE).then(async c=>{
+      const hit=await c.match(r);
+      const net=fetch(r).then(res=>{if(res.ok)c.put(r,res.clone());return res}).catch(()=>hit);
+      return hit||net;
+    }));
+  }
+});
