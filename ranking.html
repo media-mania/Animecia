@@ -7,7 +7,8 @@
 <meta name="description" content="Animeciaのアニメランキング。評価、お気に入り、レビューなどのデータから作品のデータを確認できます。">
 <link rel="canonical" href="https://media-mania.github.io/Animecia/ranking.html">
 <link rel="stylesheet" href="site-theme.css?v=20261001-v8">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 .ranking-page{padding-top:28px;padding-bottom:70px}
 .ranking-hero{padding:26px 28px;border-radius:16px;background:linear-gradient(135deg,#101827,#18243a);color:#fff;margin-bottom:16px}
@@ -174,7 +175,7 @@ function render(rows){
    const rank=currentRank;
    previous=v;
    const display=v.toLocaleString("ja-JP");
-   return '<a class="ranking-row" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><span class="rank-number">'+rank+'</span>'+(a.cover_image?'<img class="rank-cover" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="rank-cover"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-stats">'+display+'<small>'+labelFor()+'</small></div></a>';
+   return '<a class="ranking-row" href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><span class="rank-number">'+rank+'</span>'+(a.cover_image?'<img class="rank-cover" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" decoding="async" fetchpriority="high">':'<div class="rank-cover"></div>')+'<div><div class="rank-title">'+esc(titleOf(a))+'</div><div class="rank-meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div><div class="rank-stats">'+display+'<small>'+labelFor()+'</small></div></a>';
  }).join("");
 }
 async function load(){
