@@ -2877,7 +2877,7 @@
                 for (let offset = 0; offset < ids.length; offset += titleKanaBatch) {
                     titleKanaRequests.push(
                         supabaseClient
-                            .from("animecia_public_anime")
+                            .from("anime")
                             .select("id,title_kana")
                             .in("id", ids.slice(offset, offset + titleKanaBatch))
                     );
