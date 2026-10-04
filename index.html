@@ -376,11 +376,33 @@ function card(a){
  return '<div class="card"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div></a></div>';
 }
 function compareJapaneseTitle(a,b){
- const av=String(a?.title_romaji||a?.title_english||a?.title_japanese||"").trim();
- const bv=String(b?.title_romaji||b?.title_english||b?.title_japanese||"").trim();
- const digits=s=>s.replace(/\d+/g,m=>m.split("").map(d=>["zero","ichi","ni","san","yon","go","roku","nana","hachi","kyuu"][Number(d)]||d).join(" "));
- const ar=digits(av).toLowerCase(),br=digits(bv).toLowerCase();
- return new Intl.Collator("ja-JP",{usage:"sort",sensitivity:"base",numeric:false}).compare(ar,br);
+ const cleanKana=value=>{
+  if(typeof value!=="string"||!value.trim()) return "";
+  const v=value.normalize("NFKC").trim();
+  if(!/^[\u3040-\u30ffー・\s~～\-—―:：'"「」『』【】（）()]+$/.test(v)) return "";
+  return Array.from(v).map(ch=>{const n=ch.charCodeAt(0);return n>=0x30a1&&n<=0x30f6?String.fromCharCode(n-0x60):ch;}).join("").toLowerCase();
+ };
+ const numberKana={"0":"ゼロ","1":"イチ","2":"ニ","3":"サン","4":"ヨン","5":"ゴ","6":"ロク","7":"ナナ","8":"ハチ","9":"キュウ"};
+ const map={"sha":"しゃ","shu":"しゅ","sho":"しょ","cha":"ちゃ","chu":"ちゅ","cho":"ちょ","nya":"にゃ","nyu":"にゅ","nyo":"にょ","hya":"ひゃ","hyu":"ひゅ","hyo":"ひょ","mya":"みゃ","myu":"みゅ","myo":"みょ","rya":"りゃ","ryu":"りゅ","ryo":"りょ","gya":"ぎゃ","gyu":"ぎゅ","gyo":"ぎょ","bya":"びゃ","byu":"びゅ","byo":"びょ","pya":"ぴゃ","pyu":"ぴゅ","pyo":"ぴょ","fa":"ふぁ","fi":"ふぃ","fe":"ふぇ","fo":"ふぉ","va":"ゔぁ","vi":"ゔぃ","ve":"ゔぇ","vo":"ゔぉ","shi":"し","chi":"ち","tsu":"つ","fu":"ふ","ka":"か","ki":"き","ku":"く","ke":"け","ko":"こ","sa":"さ","su":"す","se":"せ","so":"そ","ta":"た","te":"て","to":"と","na":"な","ni":"に","nu":"ぬ","ne":"ね","no":"の","ha":"は","hi":"ひ","he":"へ","ho":"ほ","ma":"ま","mi":"み","mu":"む","me":"め","mo":"も","ya":"や","yu":"ゆ","yo":"よ","ra":"ら","ri":"り","ru":"る","re":"れ","ro":"ろ","wa":"わ","wi":"うぃ","we":"うぇ","wo":"を","ga":"が","gi":"ぎ","gu":"ぐ","ge":"げ","go":"ご","za":"ざ","zi":"じ","zu":"ず","ze":"ぜ","zo":"ぞ","da":"だ","di":"ぢ","du":"づ","de":"で","do":"ど","ba":"ば","bi":"び","bu":"ぶ","be":"べ","bo":"ぼ","pa":"ぱ","pi":"ぴ","pu":"ぷ","pe":"ぺ","po":"ぽ","ja":"じゃ","ju":"じゅ","jo":"じょ","je":"じぇ","ji":"じ","a":"あ","i":"い","u":"う","e":"え","o":"お"};
+ const toKana=value=>{
+  let x=String(value||"").normalize("NFKC").toLowerCase().replace(/[0-9]+/g,m=>m.split("").map(d=>numberKana[d]||d).join(""));
+  let out="";
+  for(let i=0;i<x.length;){
+   if(!/[a-z]/.test(x[i])){i++;continue;}
+   if(i+1<x.length&&x[i]===x[i+1]&&!/"aeiou"/.test(x[i])){out+="っ";i++;continue;}
+   let hit=false;
+   for(const len of [3,2,1]){const p=x.slice(i,i+len);if(map[p]){out+=map[p];i+=len;hit=true;break;}}
+   if(!hit){out+=x[i];i++;}
+  }
+  return out;
+ };
+ const key=a=>{
+  const kana=cleanKana(a?.title_kana);
+  return kana || toKana(a?.title_romaji||a?.title_english||a?.english_title||a?.title_japanese||a?.title_native||"");
+ };
+ const ar=key(a),br=key(b);
+ const n=new Intl.Collator("ja-JP",{usage:"sort",sensitivity:"base",numeric:false}).compare(ar,br);
+ return n||Number(a?.id||0)-Number(b?.id||0);
 }
 function setCards(id,rows){const el=document.getElementById(id);el.innerHTML=rows.length?rows.map(card).join(""):'<div class="empty">該当する作品がありません。</div>';bindQuickAdds();}
 function scoreOf(a,e){return e?.average_rating!=null?Number(e.average_rating):a.average_score!=null?Number(a.average_score)/10:null;}
