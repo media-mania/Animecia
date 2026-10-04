@@ -2870,6 +2870,31 @@
                     responses.flatMap(response => (response.data || []))
                 );
 
+                const ids = all.map(anime => anime?.id).filter(Boolean);
+                const titleKanaMap = new Map();
+                const titleKanaBatch = 500;
+                const titleKanaRequests = [];
+                for (let offset = 0; offset < ids.length; offset += titleKanaBatch) {
+                    titleKanaRequests.push(
+                        supabaseClient
+                            .from("animecia_public_anime")
+                            .select("id,title_kana")
+                            .in("id", ids.slice(offset, offset + titleKanaBatch))
+                    );
+                }
+                const titleKanaResponses = await Promise.all(titleKanaRequests);
+                titleKanaResponses.forEach(response => {
+                    if (response.error) throw response.error;
+                    (response.data || []).forEach(row => {
+                        titleKanaMap.set(Number(row.id), row.title_kana || "");
+                    });
+                });
+                all.forEach(anime => {
+                    if (titleKanaMap.has(Number(anime.id))) {
+                        anime.title_kana = titleKanaMap.get(Number(anime.id));
+                    }
+                });
+
                 if (requestVersion !== loadRequestVersion) return;
 
                 animeData = all
