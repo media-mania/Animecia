@@ -2669,6 +2669,39 @@
             "5":"ゴ","6":"ロク","7":"ナナ","8":"ハチ","9":"キュウ"
         };
 
+        const numberToJapanese = value => {
+            const n = Number(String(value).replace(/^0+(?=\\d)/, ""));
+            if (!Number.isFinite(n)) return "";
+            if (n === 0) return "ゼロ";
+            const digit = ["","イチ","ニ","サン","ヨン","ゴ","ロク","ナナ","ハチ","キュウ"];
+            const units = ["","ジュウ","ヒャク","セン"];
+            const small = x => {
+                let out = "";
+                const ds = String(x).padStart(4,"0").split("").map(Number);
+                ds.forEach((d,i) => {
+                    const p = 3-i;
+                    if (!d) return;
+                    if (p === 3 && d === 1) out += "セン";
+                    else if (p === 2 && d === 1) out += "ヒャク";
+                    else if (p === 2 && d === 3) out += "サンビャク";
+                    else if (p === 2 && d === 6) out += "ロッピャク";
+                    else if (p === 2 && d === 8) out += "ハッピャク";
+                    else if (p === 1 && d === 1) out += "ジュウ";
+                    else if (p === 0) out += digit[d];
+                    else out += digit[d] + units[p];
+                });
+                return out;
+            };
+            let rest = n;
+            let out = "";
+            if (rest >= 10000) {
+                out += small(Math.floor(rest/10000)) + "マン";
+                rest %= 10000;
+            }
+            if (rest) out += small(rest);
+            return out;
+        };
+
         const romajiMap = {
             "tch":"っち","dzu":"づ","dji":"ぢ","sha":"しゃ","shu":"しゅ","sho":"しょ",
             "cha":"ちゃ","chu":"ちゅ","cho":"ちょ","nya":"にゃ","nyu":"にゅ","nyo":"にょ",
@@ -2725,8 +2758,16 @@
         const kana = cleanKana(anime?.title_kana);
         if (kana) return kana;
 
+        const japaneseTitle = String(anime?.title_japanese || anime?.title_native || "").normalize("NFKC");
+        const numericReading = japaneseTitle.match(/^\s*[0-9０-９]+\s*[－—―-]?\s*([ぁ-んァ-ヶー・]+)/);
+        if (numericReading?.[1]) {
+            return cleanKana(numericReading[1]) || "";
+        }
+
         const romaji = anime?.title_romaji || anime?.title_english || anime?.english_title || "";
-        if (romaji) return romajiToHiragana(romaji);
+        if (romaji) {
+            return romajiToHiragana(romaji).replace(/[0-9]+/g, numberToJapanese);
+        }
 
         const native = cleanKana(anime?.title_japanese) || cleanKana(anime?.title_native);
         if (native) return native;
