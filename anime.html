@@ -69,9 +69,8 @@
         href="style.css"
     >
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-     defer></script>
+    <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 
     <style>
@@ -3673,7 +3672,7 @@
                         )}のキービジュアル"
                         loading="lazy"
                         onerror="this.style.visibility='hidden';this.nextElementSibling&&(this.nextElementSibling.style.display='grid');"
-                    >
+                     decoding="async" fetchpriority="high">
 
                     <div
                         class="image-placeholder"
