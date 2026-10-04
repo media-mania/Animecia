@@ -11,6 +11,9 @@
 main{max-width:1080px;margin:0 auto;padding:36px 20px 70px}.hero{margin-bottom:22px}.hero h1{margin:0 0 8px}.hero p{color:#737373}
 .search-box{display:flex;gap:10px;margin:20px 0}.search-box input{flex:1}.results{display:grid;gap:10px}.user-card{display:flex;gap:14px;align-items:center;padding:16px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}.avatar{width:58px;height:58px;border-radius:50%;object-fit:cover;background:#eef0f3;flex:none}.avatar-placeholder{display:grid;place-items:center;font-weight:800;color:#697386}.grow{flex:1;min-width:0}.name{font-weight:800}.username,.bio,.meta{color:#737373;font-size:13px}.bio{margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{margin-top:7px}.empty,.error{text-align:center;padding:36px;color:#737373}
 </style>
+<script src="performance.js" defer></script>
+<link rel="preconnect" href="https://bhgdjuwlxvbaeraaivmh.supabase.co">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 </head>
 <body>
 <header><div class="wrap head"><a class="logo" href="index.html">Animecia</a><nav>
@@ -31,7 +34,7 @@ function render(rows){
  if(!rows.length){results.innerHTML='<div class="empty">該当するユーザーが見つかりませんでした。</div>';return;}
  results.innerHTML=rows.map(p=>{
   const name=p.display_name||p.username||"Animeciaユーザー";
-  const avatar=p.avatar_url?'<img class="avatar" src="'+esc(p.avatar_url)+'" alt="">':'<div class="avatar avatar-placeholder">'+esc(name.slice(0,1))+'</div>';
+  const avatar=p.avatar_url?'<img class="avatar" src="'+esc(p.avatar_url)+'" alt="" decoding="async" loading="eager" fetchpriority="high">':'<div class="avatar avatar-placeholder">'+esc(name.slice(0,1))+'</div>';
   return '<a class="user-card" href="profile.html?id='+encodeURIComponent(p.id)+'">'+avatar+'<div class="grow"><div class="name">'+esc(name)+'</div>'+(p.username?'<div class="username">@'+esc(String(p.username).replace(/^@/,""))+'</div>':'')+(p.bio?'<div class="bio">'+esc(p.bio)+'</div>':'')+'</div></a>';
  }).join("");
 }
