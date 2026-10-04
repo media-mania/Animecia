@@ -379,40 +379,98 @@ function card(a){
 function compareJapaneseTitle(a,b){
  const cleanKana=value=>{
   if(typeof value!=="string"||!value.trim()) return "";
-  const v=value.normalize("NFKC").trim();
-  if(!/^[\u3040-\u30ffー・\s~～\-—―:：'"「」『』【】（）()]+$/.test(v)) return "";
-  return Array.from(v).map(ch=>{const n=ch.charCodeAt(0);return n>=0x30a1&&n<=0x30f6?String.fromCharCode(n-0x60):ch;}).join("").toLowerCase();
+  const normalized=value.normalize("NFKC").trim();
+  if(!/^[\\u3040-\\u30ffー・\\s~～\\-—―:：'"「」『』【】（）()]+$/.test(normalized)) return "";
+  return Array.from(normalized).map(ch=>{
+   const code=ch.charCodeAt(0);
+   return code>=0x30a1&&code<=0x30f6?String.fromCharCode(code-0x60):ch;
+  }).join("").toLowerCase();
  };
- const numberKana={"0":"ゼロ","1":"イチ","2":"ニ","3":"サン","4":"ヨン","5":"ゴ","6":"ロク","7":"ナナ","8":"ハチ","9":"キュウ"};
- const map={"sha":"しゃ","shu":"しゅ","sho":"しょ","cha":"ちゃ","chu":"ちゅ","cho":"ちょ","nya":"にゃ","nyu":"にゅ","nyo":"にょ","hya":"ひゃ","hyu":"ひゅ","hyo":"ひょ","mya":"みゃ","myu":"みゅ","myo":"みょ","rya":"りゃ","ryu":"りゅ","ryo":"りょ","gya":"ぎゃ","gyu":"ぎゅ","gyo":"ぎょ","bya":"びゃ","byu":"びゅ","byo":"びょ","pya":"ぴゃ","pyu":"ぴゅ","pyo":"ぴょ","fa":"ふぁ","fi":"ふぃ","fe":"ふぇ","fo":"ふぉ","va":"ゔぁ","vi":"ゔぃ","ve":"ゔぇ","vo":"ゔぉ","shi":"し","chi":"ち","tsu":"つ","fu":"ふ","ka":"か","ki":"き","ku":"く","ke":"け","ko":"こ","sa":"さ","su":"す","se":"せ","so":"そ","ta":"た","te":"て","to":"と","na":"な","ni":"に","nu":"ぬ","ne":"ね","no":"の","ha":"は","hi":"ひ","he":"へ","ho":"ほ","ma":"ま","mi":"み","mu":"む","me":"め","mo":"も","ya":"や","yu":"ゆ","yo":"よ","ra":"ら","ri":"り","ru":"る","re":"れ","ro":"ろ","wa":"わ","wi":"うぃ","we":"うぇ","wo":"を","ga":"が","gi":"ぎ","gu":"ぐ","ge":"げ","go":"ご","za":"ざ","zi":"じ","zu":"ず","ze":"ぜ","zo":"ぞ","da":"だ","di":"ぢ","du":"づ","de":"で","do":"ど","ba":"ば","bi":"び","bu":"ぶ","be":"べ","bo":"ぼ","pa":"ぱ","pi":"ぴ","pu":"ぷ","pe":"ぺ","po":"ぽ","ja":"じゃ","ju":"じゅ","jo":"じょ","je":"じぇ","ji":"じ","a":"あ","i":"い","u":"う","e":"え","o":"お"};
- const toKana=value=>{
-  let x=String(value||"").normalize("NFKC").toLowerCase();
-  let out="";
-  for(let i=0;i<x.length;){
-   if(/\d/.test(x[i])){const m=x.slice(i).match(/^\d+/);if(m){out+=numberToJapanese(m[0]);i+=m[0].length;continue;}}
-   if(!/[a-z]/.test(x[i])){i++;continue;}
-   if(i+1<x.length&&x[i]===x[i+1]&&!"aeiou".includes(x[i])){out+="っ";i++;continue;}
-   let hit=false;
-   for(const len of [3,2,1]){const p=x.slice(i,i+len);if(map[p]){out+=map[p];i+=len;hit=true;break;}}
-   if(!hit){out+=x[i];i++;}
-  }
+ const numberToJapanese=value=>{
+  const raw=String(value).replace(/^0+(?=\\d)/,"");
+  const n=Number(raw);
+  if(!Number.isFinite(n)) return "";
+  if(n===0) return "ゼロ";
+  const digit=["","イチ","ニ","サン","ヨン","ゴ","ロク","ナナ","ハチ","キュウ"];
+  const units=["","ジュウ","ヒャク","セン"];
+  const small=x=>{
+   let out="";
+   const ds=String(x).padStart(4,"0").split("").map(Number);
+   ds.forEach((d,i)=>{
+    const p=3-i;
+    if(!d)return;
+    if(p===3&&d===1)out+="セン";
+    else if(p===2&&d===1)out+="ヒャク";
+    else if(p===2&&d===3)out+="サンビャク";
+    else if(p===2&&d===6)out+="ロッピャク";
+    else if(p===2&&d===8)out+="ハッピャク";
+    else if(p===1&&d===1)out+="ジュウ";
+    else if(p===0)out+=digit[d];
+    else out+=digit[d]+units[p];
+   });
+   return out;
+  };
+  let rest=n,out="";
+  if(rest>=10000){out+=small(Math.floor(rest/10000))+"マン";rest%=10000;}
+  if(rest)out+=small(rest);
   return out;
  };
- const key=a=>{
-  const kana=cleanKana(a?.title_kana);
-  if(kana)return kana;
-  const japaneseTitle=String(a?.title_japanese||a?.title_native||"").normalize("NFKC");
-  const numericReading=japaneseTitle.match(/^\s*[0-9０-９]+\s*[－—―-]?\s*([ぁ-んァ-ヶー・]+)/);
-  if(numericReading?.[1])return Array.from(numericReading[1]).map(ch=>{const n=ch.charCodeAt(0);return n>=0x30a1&&n<=0x30f6?String.fromCharCode(n-0x60):ch;}).join("").toLowerCase();
-  const romaji=a?.title_romaji||a?.title_english||a?.english_title||"";
-  if(romaji)return toKana(romaji);
-  const runs=japaneseTitle.match(/[ぁ-んァ-ヶー]+/g);
-  if(runs?.length)return Array.from(runs.join("")).map(ch=>{const n=ch.charCodeAt(0);return n>=0x30a1&&n<=0x30f6?String.fromCharCode(n-0x60):ch;}).join("").toLowerCase();
-  return japaneseTitle.toLowerCase();
+ const romajiMap={
+  "tch":"っち","dzu":"づ","dji":"ぢ","sha":"しゃ","shu":"しゅ","sho":"しょ",
+  "cha":"ちゃ","chu":"ちゅ","cho":"ちょ","nya":"にゃ","nyu":"にゅ","nyo":"にょ",
+  "hya":"ひゃ","hyu":"ひゅ","hyo":"ひょ","mya":"みゃ","myu":"みゅ","myo":"みょ",
+  "rya":"りゃ","ryu":"りゅ","ryo":"りょ","gya":"ぎゃ","gyu":"ぎゅ","gyo":"ぎょ",
+  "bya":"びゃ","byu":"びゅ","byo":"びょ","pya":"ぴゃ","pyu":"ぴゅ","pyo":"ぴょ",
+  "ja":"じゃ","ju":"じゅ","jo":"じょ","je":"じぇ","ji":"じ",
+  "fa":"ふぁ","fi":"ふぃ","fe":"ふぇ","fo":"ふぉ","fyu":"ふゅ",
+  "va":"ゔぁ","vi":"ゔぃ","ve":"ゔぇ","vo":"ゔぉ",
+  "ka":"か","ki":"き","ku":"く","ke":"け","ko":"こ","sa":"さ","shi":"し","su":"す",
+  "se":"せ","so":"そ","ta":"た","chi":"ち","tsu":"つ","te":"て","to":"と",
+  "na":"な","ni":"に","nu":"ぬ","ne":"ね","no":"の","ha":"は","hi":"ひ","fu":"ふ","he":"へ","ho":"ほ",
+  "ma":"ま","mi":"み","mu":"む","me":"め","mo":"も","ya":"や","yu":"ゆ","yo":"よ",
+  "ra":"ら","ri":"り","ru":"る","re":"れ","ro":"ろ","wa":"わ","wi":"うぃ","we":"うぇ","wo":"を",
+  "ga":"が","gi":"ぎ","gu":"ぐ","ge":"げ","go":"ご","za":"ざ","zi":"じ","zu":"ず","ze":"ぜ","zo":"ぞ",
+  "da":"だ","di":"ぢ","du":"づ","de":"で","do":"ど","ba":"ば","bi":"び","bu":"ぶ","be":"べ","bo":"ぼ",
+  "pa":"ぱ","pi":"ぴ","pu":"ぷ","pe":"ぺ","po":"ぽ","a":"あ","i":"い","u":"う","e":"え","o":"お"
  };
- const ar=key(a),br=key(b);
- const n=new Intl.Collator("ja-JP",{usage:"sort",sensitivity:"base",numeric:false}).compare(ar,br);
- return n||Number(a?.id||0)-Number(b?.id||0);
+ const romajiToHiragana=value=>{
+  let s=String(value||"").normalize("NFKC").toLowerCase(),out="";
+  for(let i=0;i<s.length;){
+   if(/\\d/.test(s[i])){
+    const match=s.slice(i).match(/^\\d+/);
+    if(match){out+=numberToJapanese(match[0]);i+=match[0].length;continue;}
+   }
+   if(/[^a-z]/.test(s[i])){out+=(s[i]==="-"||/\\s/.test(s[i]))?"":s[i];i++;continue;}
+   if(i+1<s.length&&s[i]===s[i+1]&&!"aeiou".includes(s[i])){out+="っ";i++;continue;}
+   let matched=false;
+   for(const len of [4,3,2,1]){
+    const part=s.slice(i,i+len);
+    if(romajiMap[part]){out+=romajiMap[part];i+=len;matched=true;break;}
+   }
+   if(!matched){out+=s[i];i++;}
+  }
+  return out.replace(/ー+/g,"ー");
+ };
+ const reading=anime=>{
+  const kana=cleanKana(anime?.title_kana);
+  if(kana)return kana;
+  const japaneseTitle=String(anime?.title_japanese||anime?.title_native||"").normalize("NFKC");
+  const numericReading=japaneseTitle.match(/^\\s*[0-9０-９]+\\s*[－—―-]?\\s*([ぁ-んァ-ヶー・]+)/);
+  if(numericReading?.[1])return cleanKana(numericReading[1])||"";
+  const romaji=anime?.title_romaji||anime?.title_english||anime?.english_title||"";
+  if(romaji)return romajiToHiragana(romaji);
+  const native=cleanKana(anime?.title_japanese)||cleanKana(anime?.title_native);
+  if(native)return native;
+  const kanaRuns=japaneseTitle.match(/[\\u3040-\\u30ffー]+/g);
+  if(kanaRuns?.length)return Array.from(kanaRuns.join("")).map(ch=>{
+   const code=ch.charCodeAt(0);
+   return code>=0x30a1&&code<=0x30f6?String.fromCharCode(code-0x60):ch;
+  }).join("").toLowerCase();
+  return String(anime?.title_japanese||anime?.title_native||anime?.title||"").normalize("NFKC").toLowerCase();
+ };
+ const ar=reading(a),br=reading(b);
+ const primary=new Intl.Collator("ja-JP",{usage:"sort",sensitivity:"base",numeric:false}).compare(ar,br);
+ return primary!==0?primary:Number(a?.id||0)-Number(b?.id||0);
 }
 function setCards(id,rows){const el=document.getElementById(id);el.innerHTML=rows.length?rows.map(card).join(""):'<div class="empty">該当する作品がありません。</div>';bindQuickAdds();}
 function scoreOf(a,e){return e?.average_rating!=null?Number(e.average_rating):a.average_score!=null?Number(a.average_score)/10:null;}
