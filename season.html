@@ -6,7 +6,8 @@
 <title>今期アニメ | Animecia</title>
 <meta name="description" content="Animeciaの今期アニメ一覧。放送中のアニメを検索・絞り込みできます。">
 <link rel="canonical" href="https://media-mania.github.io/Animecia/season.html">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 .hero{margin-bottom:22px}.hero h1{margin:0 0 7px;font-size:32px}.hero p{margin:0;color:#737373}
@@ -276,7 +277,7 @@ function renderFeature(rows){
  const el=document.getElementById("season-v7-feature"); if(!el)return;
  const top=rows.slice().sort((a,b)=>Number(b.average_rating??-1)-Number(a.average_rating??-1)||Number(b.favorite_count||0)-Number(a.favorite_count||0)).slice(0,3);
  el.innerHTML=top.map((x,i)=>'<a class="feature-card" href="anime-detail.html?id='+encodeURIComponent(x.anime.id)+'">'+
- '<img src="'+esc(x.anime.cover_image||"")+'" alt="" loading="lazy">'+
+ '<img src="'+esc(x.anime.cover_image||"")+'" alt="" loading="lazy" decoding="async" fetchpriority="high">'+
  '<div><div class="badge">NO.'+(i+1)+' / CURRENT SEASON</div><div class="ftitle">'+esc(titleOf(x.anime))+'</div><div class="fscore">'+(x.average_rating!=null?"★ "+Number(x.average_rating).toFixed(2):"評価なし")+'</div><div class="fmeta">♥ '+Number(x.favorite_count||0)+' ・ レビュー '+Number(x.review_count||0)+'</div></div></a>').join("");
 }
 function render(){
@@ -306,7 +307,7 @@ function render(){
  grid.innerHTML=rows.map(x=>{
    const a=x.anime;
    return '<a class="card" href="anime-detail.html?id='+a.id+'">'+
-     (a.cover_image?'<img class="cover" data-image src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy">':'<div class="cover" data-image>')+
+     (a.cover_image?'<img class="cover" data-image src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" decoding="async">':'<div class="cover" data-image>')+
      (a.cover_image?'':'画像なし</div>')+
      '<div class="pad"><div class="title">'+esc(titleOf(a))+'</div>'+
      '<div class="sub">'+esc(a.status||"")+(a.episodes!=null?" · "+esc(a.episodes)+"話":"")+'</div>'+
