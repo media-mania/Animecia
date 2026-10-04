@@ -427,15 +427,7 @@ async function load(){
    sb.rpc("search_anime_catalog",{p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"default",p_limit:1,p_offset:0}),
    sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season).order("id",{ascending:false}).limit(12),
    sb.from("animecia_public_anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season),
-   sb.from("animecia_public_anime")
-     .select(base+",title_kana",{count:"exact"})
-     .eq("anime_verification_status","verified")
-     .eq("is_japanese",true)
-     .eq("is_adult",false)
-     .eq("is_kids",false)
-     .eq("is_sensitive_visual",false)
-     .gte("start_date","1963-01-01")
-     .range(0,999),
+   sb.rpc("search_anime_catalog",{p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"title",p_limit:1000,p_offset:0}),
    sb.rpc("get_catalog_genres"),
    sb.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").order("average_rating",{ascending:false,nullsFirst:false}).limit(100),
    sb.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at").order("created_at",{ascending:false}).limit(6)
@@ -444,21 +436,26 @@ async function load(){
  document.getElementById("database-count").textContent=catalog.toLocaleString("ja-JP")+"作品";
 
  let titleIndexRows=(titleIndexRes.data||[]).slice();
- const titleIndexTotal=Number(titleIndexRes.count||titleIndexRows.length||catalog||0);
+ const titleIndexTotal=Number(titleIndexRows[0]?.total_count||catalog||0);
  const titleIndexBatch=1000;
  const titleIndexPages=Math.ceil(titleIndexTotal/titleIndexBatch);
  if(titleIndexPages>1){
-   const more=await Promise.all(Array.from({length:titleIndexPages-1},(_,i)=>sb.from("animecia_public_anime")
-     .select(base+",title_kana")
-     .eq("anime_verification_status","verified")
-     .eq("is_japanese",true)
-     .eq("is_adult",false)
-     .eq("is_kids",false)
-     .eq("is_sensitive_visual",false)
-     .gte("start_date","1963-01-01")
-     .range((i+1)*titleIndexBatch,(i+2)*titleIndexBatch-1)));
+   const more=await Promise.all(Array.from({length:titleIndexPages-1},(_,i)=>sb.rpc("search_anime_catalog",{
+     p_query:null,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,
+     p_sort:"title",p_limit:titleIndexBatch,p_offset:(i+1)*titleIndexBatch
+   })));
    more.forEach(x=>{if(x.error)throw x.error;titleIndexRows.push(...(x.data||[]));});
  }
+ const titleKanaIds=titleIndexRows.map(a=>a?.id).filter(Boolean);
+ const titleKanaMap=new Map();
+ const titleKanaBatch=500;
+ const titleKanaRequests=[];
+ for(let offset=0;offset<titleKanaIds.length;offset+=titleKanaBatch){
+   titleKanaRequests.push(sb.from("anime").select("id,title_kana").in("id",titleKanaIds.slice(offset,offset+titleKanaBatch)));
+ }
+ const titleKanaResponses=await Promise.all(titleKanaRequests);
+ titleKanaResponses.forEach(x=>{if(x.error)throw x.error;(x.data||[]).forEach(row=>titleKanaMap.set(Number(row.id),row.title_kana||""));});
+ titleIndexRows.forEach(a=>{a.title_kana=titleKanaMap.get(Number(a.id))||"";});
  const titleIndex=(titleIndexRows.filter(valid).sort(compareJapaneseTitle).slice(0,24));
  document.getElementById("home-title-index").innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
  const genres=genreRes.data||[];
