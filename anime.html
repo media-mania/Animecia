@@ -2651,6 +2651,50 @@
         });
     }
 
+    function normalizeTitleReading(anime) {
+        const candidates = [
+            anime?.title_kana,
+            anime?.title_japanese,
+            anime?.title_native,
+            anime?.title_user_preferred,
+            anime?.title_romaji,
+            anime?.title_english,
+            anime?.english_title,
+            anime?.title
+        ];
+        let value = candidates.find(v => typeof v === "string" && v.trim()) || "";
+        value = value.normalize("NFKC")
+            .replace(/[\u3000\\s]+/g, "")
+            .replace(/[・･:：!！?？,，.。'"「」『』【】\[\]{}()（）<>＜＞〈〉《》]/g, "")
+            .toLowerCase();
+
+        const numberKana = {
+            "0":"ゼロ","1":"イチ","2":"ニ","3":"サン","4":"ヨン",
+            "5":"ゴ","6":"ロク","7":"ナナ","8":"ハチ","9":"キュウ"
+        };
+        value = value.replace(/[0-9]+/g, token =>
+            token.split("").map(d => numberKana[d] || d).join("")
+        );
+
+        return value;
+    }
+
+    function compareAnimeTitles(a, b) {
+        const ar = normalizeTitleReading(a);
+        const br = normalizeTitleReading(b);
+        const collator = new Intl.Collator("ja-JP", {
+            usage: "sort",
+            sensitivity: "base",
+            numeric: false
+        });
+        const primary = collator.compare(ar, br);
+        if (primary !== 0) return primary;
+
+        const aid = Number(a?.id || 0);
+        const bid = Number(b?.id || 0);
+        return aid - bid;
+    }
+
     /* =========================================
        Load anime
     ========================================= */
@@ -2663,6 +2707,84 @@
         pagination.innerHTML = "";
 
         try {
+            const isTitleSort = (sortFilter.value || "title") === "title";
+
+            if (isTitleSort) {
+                const batchSize = 1000;
+                const first = await supabaseClient.rpc("search_anime_catalog", {
+                    p_query: searchInput.value.trim() || null,
+                    p_genre_id: genreFilter.value ? Number(genreFilter.value) : null,
+                    p_studio_id: studioFilter.value ? Number(studioFilter.value) : null,
+                    p_year: yearFilter.value ? Number(yearFilter.value) : null,
+                    p_season: seasonFilter.value || null,
+                    p_status: statusFilter.value || null,
+                    p_format: formatFilter.value || null,
+                    p_sort: "title",
+                    p_limit: batchSize,
+                    p_offset: 0
+                });
+                if (first.error) throw first.error;
+                if (requestVersion !== loadRequestVersion) return;
+
+                const firstData = (first.data || []).filter(anime =>
+                    anime?.start_date && anime.start_date >= "1963-01-01"
+                );
+                const total = Number(firstData[0]?.total_count || 0);
+                const batches = Math.ceil(total / batchSize);
+                const remaining = [];
+
+                for (let i = 1; i < batches; i++) {
+                    remaining.push(
+                        supabaseClient.rpc("search_anime_catalog", {
+                            p_query: searchInput.value.trim() || null,
+                            p_genre_id: genreFilter.value ? Number(genreFilter.value) : null,
+                            p_studio_id: studioFilter.value ? Number(studioFilter.value) : null,
+                            p_year: yearFilter.value ? Number(yearFilter.value) : null,
+                            p_season: seasonFilter.value || null,
+                            p_status: statusFilter.value || null,
+                            p_format: formatFilter.value || null,
+                            p_sort: "title",
+                            p_limit: batchSize,
+                            p_offset: i * batchSize
+                        })
+                    );
+                }
+
+                const responses = await Promise.all(remaining);
+                for (const response of responses) {
+                    if (response.error) throw response.error;
+                }
+
+                const all = firstData.concat(
+                    responses.flatMap(response => (response.data || []))
+                );
+
+                if (requestVersion !== loadRequestVersion) return;
+
+                animeData = all
+                    .filter(anime => anime?.start_date && anime.start_date >= "1963-01-01")
+                    .sort(compareAnimeTitles);
+
+                filteredAnime = animeData;
+                serverTotal = animeData.length;
+
+                resultCount.innerHTML = `<span>${formatNumber(serverTotal)}</span> 作品`;
+
+                if (!serverTotal) {
+                    resultPage.textContent = "該当作品なし";
+                    animeGrid.innerHTML = '<div class="empty-state"><h2>その条件のアニメはありません</h2><p>検索条件やフィルターを変更してみてください。</p></div>';
+                    pagination.innerHTML = "";
+                    return;
+                }
+
+                renderAnime();
+                renderActiveFilters();
+                await initUserAnimeActions();
+                bindMemoButtons();
+                updateMemoUI();
+                return;
+            }
+
             const { data, error } = await supabaseClient.rpc("search_anime_catalog", {
                 p_query: searchInput.value.trim() || null,
                 p_genre_id: genreFilter.value ? Number(genreFilter.value) : null,
