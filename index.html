@@ -437,7 +437,7 @@ async function load(){
 
  let titleIndexRows=(titleIndexRes.data||[]).slice();
  const titleIndexTotal=Number(titleIndexRows[0]?.total_count||catalog||0);
- const titleIndexBatch=1000;
+ const titleIndexBatch=100;
  const titleIndexPages=Math.ceil(titleIndexTotal/titleIndexBatch);
  if(titleIndexPages>1){
    const more=await Promise.all(Array.from({length:titleIndexPages-1},(_,i)=>sb.rpc("search_anime_catalog",{
