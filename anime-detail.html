@@ -72,9 +72,8 @@
         content="summary_large_image"
     >
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-     defer></script>
+    <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 
     <style>
@@ -3980,7 +3979,7 @@
                             this.nextElementSibling.style.display='flex';
                         }
                     "
-                >
+                 decoding="async" fetchpriority="high">
 
                 <div
                     class="hero-cover-placeholder"
@@ -4558,7 +4557,7 @@
                                                 name
                                             )}"
                                             loading="lazy"
-                                        >
+                                         decoding="async">
                                     `
 
                                     : `
@@ -4751,7 +4750,7 @@
                                                 name
                                             )}"
                                             loading="lazy"
-                                        >
+                                         decoding="async">
                                     `
 
                                     : `
@@ -5720,7 +5719,7 @@
                 return `
                     <a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer nofollow"
                        style="display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #eee;border-radius:10px;text-decoration:none;color:#222;">
-                        ${link.thumbnail ? `<img src="${escapeHTML(safeURL(link.thumbnail))}" alt="" style="width:72px;height:42px;object-fit:cover;border-radius:6px;" loading="lazy">` : ""}
+                        ${link.thumbnail ? `<img src="${escapeHTML(safeURL(link.thumbnail))}" alt="" style="width:72px;height:42px;object-fit:cover;border-radius:6px;" loading="lazy" decoding="async">` : ""}
                         <span><strong>${escapeHTML(link.site || "配信サイト")}</strong><br><small>${escapeHTML(link.title || "作品ページを開く")}</small></span>
                     </a>`;
             }).join("");
@@ -5838,7 +5837,7 @@
                 const actorImage = safeURL(actor.image);
                 return `
                     <div class="item-card" style="display:flex;gap:12px;align-items:center;">
-                        ${actorImage ? `<img src="${escapeHTML(actorImage)}" alt="${escapeHTML(actorName)}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" loading="lazy">` : ""}
+                        ${actorImage ? `<img src="${escapeHTML(actorImage)}" alt="${escapeHTML(actorName)}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" loading="lazy" decoding="async">` : ""}
                         <div><strong>${escapeHTML(characterName)}</strong><br><span style="color:#777;">CV. ${escapeHTML(actorName)}</span></div>
                     </div>`;
             }).join("");
@@ -5969,7 +5968,7 @@
                 const title = ep.title || ("第" + ep.episode_number + "話");
                 const meta = [ep.air_date, ep.duration ? ep.duration + "分" : ""].filter(Boolean).join(" / ");
                 let html = '<article class="item-card" style="display:flex;gap:12px;align-items:flex-start;">';
-                if (thumb) html += '<img src="' + escapeHTML(thumb) + '" alt="" loading="lazy" style="width:110px;height:62px;object-fit:cover;border-radius:8px;">';
+                if (thumb) html += '<img src="' + escapeHTML(thumb) + '" alt="" loading="lazy" style="width:110px;height:62px;object-fit:cover;border-radius:8px;" decoding="async">';
                 html += '<div><strong>第' + escapeHTML(ep.episode_number) + '話</strong> ' + escapeHTML(title);
                 if (meta) html += '<br><small>' + escapeHTML(meta) + '</small>';
                 if (ep.synopsis) html += '<p style="margin:7px 0 0;color:#667085;">' + escapeHTML(ep.synopsis) + '</p>';
@@ -6286,7 +6285,7 @@
                                     )}"
                                     alt=""
                                     loading="lazy"
-                                >
+                                 decoding="async">
 
                             `
 
@@ -7307,7 +7306,7 @@
                             "広告"
                         )}"
                         loading="lazy"
-                    >
+                     decoding="async">
 
                 `;
             }
