@@ -4429,10 +4429,6 @@ function compareAnimeTitles(a,b){const order="ぁあぃいぅうぇえぉおか�
                 if (ids.includes(id)) {
                     ids = ids.filter(value => value !== id);
                 } else {
-                    if (false) {
-                        alert("メモする作品数に上限はありません。");
-                        return;
-                    }
                     ids.push(id);
                 }
                 setMemoIds(ids);
