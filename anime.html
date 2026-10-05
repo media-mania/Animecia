@@ -1539,6 +1539,45 @@
             SUPABASE_ANON_KEY
         );
 
+    /* =========================================
+       Auth navigation
+       トップページ以外は、ログイン中ならログインボタンを非表示
+    ========================================= */
+
+    function syncAuthNavigation(user = null) {
+        const links = document.querySelectorAll(
+            '.nav-actions #auth-link, .nav-actions a[href="login.html"]'
+        );
+
+        const loggedIn = !!(
+            user &&
+            user.id &&
+            !user.is_anonymous
+        );
+
+        links.forEach(link => {
+            link.hidden = loggedIn;
+            link.setAttribute("aria-hidden", String(loggedIn));
+        });
+    }
+
+    async function initializeAuthNavigation() {
+        try {
+            const { data, error } = await supabaseClient.auth.getUser();
+            if (error) throw error;
+            syncAuthNavigation(data?.user || null);
+
+            supabaseClient.auth.onAuthStateChange((_event, session) => {
+                syncAuthNavigation(session?.user || null);
+            });
+        } catch (error) {
+            console.error("認証状態の取得に失敗しました:", error);
+            syncAuthNavigation(null);
+        }
+    }
+
+    initializeAuthNavigation();
+
 
     /* =========================================
        Settings
@@ -4211,22 +4250,6 @@ function compareAnimeTitles(a,b){const order="ぁあぃいぅうぇえぉおか�
 </script>
 
 
-<script id="animecia-auth-nav">
-(function(){
-  function syncAuthNav(){
-    try{
-      if(!window.supabase || !window.supabase.createClient) return;
-      var links=document.querySelectorAll('.nav-actions #auth-link, .nav-actions a[href="login.html"]');
-      if(!links.length) return;
-      var U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",client=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient(U,K));
-      client.auth.getUser().then(function(res){
-        var loggedIn=!!(res.data&&res.data.user&&!res.data.user.is_anonymous);
-        links.forEach(function(el){el.style.display=loggedIn?"none":"";});
-      }).catch(function(){});
-    }catch(e){}
-  }
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",syncAuthNav); else syncAuthNav();
-})();
-</script></body>
+</body>
 
 </html>
