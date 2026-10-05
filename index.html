@@ -536,7 +536,25 @@ function card(a){
  const title=titleOf(a),score=a.average_score!=null?Number(a.average_score)/10:null;
  return '<div class="card"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy" decoding="async">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div></a></div>';
 }
-function compareJapaneseTitle(a,b){const order="ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをん";const key=x=>String(x?.title_kana||x?.title_romaji||x?.title_japanese||x?.title_native||x?.title||"").normalize("NFKC").replace(/[\s\u3000]/g,"").replace(/^[^\p{Letter}\p{Number}\u3040-\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)).toLowerCase();const ak=key(a),bk=key(b);for(let i=0;i<Math.max(ak.length,bk.length);i++){const ai=order.indexOf(ak[i]),bi=order.indexOf(bk[i]);if(ai!==bi){if(ai<0&&bi>=0)return 1;if(ai>=0&&bi<0)return -1;return ai-bi;}if(ak[i]!==bk[i]){const z=ak[i].localeCompare(bk[i],"ja-JP");if(z)return z;}}return Number(a?.id||0)-Number(b?.id||0);}
+function compareJapaneseTitle(a,b){
+ const order="ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶへべほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをん";
+ const key=x=>String(x?.title_kana||x?.title_romaji||x?.title_japanese||x?.title_native||x?.title||"").normalize("NFKC").replace(/[\\s\\u3000]/g,"").replace(/^[^\\p{Letter}\\p{Number}\\u3040-\\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)).toLowerCase();
+ const ak=key(a),bk=key(b);
+ const max=Math.max(ak.length,bk.length);
+ for(let i=0;i<max;i++){
+  const ac=ak[i]||"",bc=bk[i]||"";
+  if(ac===bc) continue;
+  const ai=ac?order.indexOf(ac):-1,bi=bc?order.indexOf(bc):-1;
+  if(ai!==bi){
+   if(ai<0&&bi>=0)return 1;
+   if(ai>=0&&bi<0)return -1;
+   if(ai!==bi)return ai-bi;
+  }
+  const z=String(ac).localeCompare(String(bc),"ja-JP");
+  if(z)return z;
+ }
+ return Number(a?.id||0)-Number(b?.id||0);
+}
 function setCards(id,rows){const el=document.getElementById(id);el.innerHTML=rows.length?rows.map(card).join(""):'<div class="empty">該当する作品がありません。</div>';bindQuickAdds();}
 function scoreOf(a,e){return e?.average_rating!=null?Number(e.average_rating):a.average_score!=null?Number(a.average_score)/10:null;}
 function renderFailure(id,msg){const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">'+esc(msg)+'</div>';}
