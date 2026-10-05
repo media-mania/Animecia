@@ -3201,45 +3201,6 @@
     }
 
 
-    function relationLabel(value) {
-
-        const map = {
-
-            SEQUEL:
-                "続編",
-
-            PREQUEL:
-                "前編",
-
-            SIDE_STORY:
-                "外伝",
-
-            ALTERNATIVE:
-                "別作品",
-
-            SPIN_OFF:
-                "スピンオフ",
-
-            SUMMARY:
-                "総集編",
-
-            PARENT:
-                "関連作品",
-
-            OTHER:
-                "その他"
-
-        };
-
-
-        return (
-            map[value] ||
-            value ||
-            "関連作品"
-        );
-    }
-
-
     function hideSection(id) {
 
         const element =
@@ -6608,17 +6569,6 @@
         document.getElementById("review-cancel-edit").style.display = "inline-block";
         document.getElementById("review-message").textContent = "編集中です。";
         document.getElementById("review-form").scrollIntoView({behavior:"smooth",block:"center"});
-    }
-
-    function cancelEditReview() {
-        document.getElementById("review-edit-id").value = "";
-        document.getElementById("review-title").value = "";
-        document.getElementById("review-content").value = "";
-        document.getElementById("review-rating").value = "";
-        document.getElementById("review-spoiler").checked = false;
-        document.getElementById("review-submit-button").textContent = "レビューを投稿";
-        document.getElementById("review-cancel-edit").style.display = "none";
-        document.getElementById("review-message").textContent = "";
     }
 
     async function submitReview(event) {
