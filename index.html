@@ -555,13 +555,8 @@ function compareJapaneseTitle(a,b){
  }
  return Number(a?.id||0)-Number(b?.id||0);
 }
-function setCards(id,rows){const el=document.getElementById(id);el.innerHTML=rows.length?rows.map(card).join(""):'<div class="empty">該当する作品がありません。</div>';bindQuickAdds();}
 function scoreOf(a,e){return e?.average_rating!=null?Number(e.average_rating):a.average_score!=null?Number(a.average_score)/10:null;}
 function renderFailure(id,msg){const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">'+esc(msg)+'</div>';}
-async function fetchCatalog(limit=30){
- const r=await sb.from("animecia_public_anime").select("id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,season,season_year,average_score,anime_verification_status,created_at").eq("anime_verification_status","verified").gte("start_date","1963-01-01").order("created_at",{ascending:false}).limit(limit);
- return r.error?[]:(r.data||[]).filter(valid);
-}
 async function load(){
  const now=new Date(),year=now.getFullYear(),month=now.getMonth()+1,season=month<=3?"WINTER":month<=6?"SPRING":month<=9?"SUMMER":"FALL";
  const base="id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,season,season_year,average_score,anime_verification_status,is_japanese,is_adult,is_kids,is_sensitive_visual,created_at";
