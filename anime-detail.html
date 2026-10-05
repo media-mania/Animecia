@@ -7488,9 +7488,7 @@
                 : "メモに追加済み";
             button.classList.add("active");
         } else {
-            button.textContent = false
-                ? "メモ"
-                : "メモに追加";
+            button.textContent = "メモに追加";
             button.classList.remove("active");
         }
     }
@@ -7506,10 +7504,6 @@
             }
             ids = ids.filter(id => id !== currentId);
         } else {
-            if (false) {
-                alert("メモする作品数に上限はありません。");
-                return;
-            }
             ids.push(currentId);
         }
         saveMemoIds(ids);
