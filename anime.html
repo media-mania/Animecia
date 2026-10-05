@@ -2630,7 +2630,7 @@
     }
 
     function normalizeTitleReading(anime){return String(anime?.title_kana||anime?.title_romaji||anime?.title_japanese||anime?.title_native||anime?.title||"").normalize("NFKC").replace(/[\s\u3000]/g,"").replace(/^[^\p{Letter}\p{Number}\u3040-\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60)).toLowerCase();}
-function compareAnimeTitles(a,b){const order="ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをん";const ar=normalizeTitleReading(a),br=normalizeTitleReading(b);for(let i=0;i<Math.max(ar.length,br.length);i++){const ai=order.indexOf(ar[i]),bi=order.indexOf(br[i]);if(ai!==bi){if(ai<0&&bi>=0)return 1;if(ai>=0&&bi<0)return -1;return ai-bi;}if(ar[i]!==br[i]){const z=ar[i].localeCompare(br[i],"ja-JP");if(z)return z;}}return Number(a?.id||0)-Number(b?.id||0);}
+function compareAnimeTitles(a,b){const order="ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅよょらりるれろゎわゐゑをん";const ar=normalizeTitleReading(a),br=normalizeTitleReading(b);for(let i=0;i<Math.max(ar.length,br.length);i++){const ac=ar[i]??"",bc=br[i]??"",ai=order.indexOf(ac),bi=order.indexOf(bc);if(ai!==bi){if(ai<0&&bi>=0)return 1;if(ai>=0&&bi<0)return -1;return ai-bi;}if(ac!==bc){const z=String(ac).localeCompare(String(bc),"ja-JP");if(z)return z;}}return Number(a?.id||0)-Number(b?.id||0);}
 
     /* =========================================
        Load anime
