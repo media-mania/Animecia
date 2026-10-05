@@ -1,4 +1,4 @@
-const CACHE="animecia-static-v2";
+const CACHE="animecia-static-v3";
 const STATIC=/\.(?:css|js|woff2?|png|jpe?g|webp|gif|svg)(?:\?.*)?$/i;
 const STATIC_HTML=/^\/Animecia\/(?:anime\/[^/]+\/|genre\/[^/]+\/)/i;
 self.addEventListener("install",e=>e.waitUntil(self.skipWaiting()));
