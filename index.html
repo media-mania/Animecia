@@ -538,7 +538,7 @@ function card(a){
 }
 function compareJapaneseTitle(a,b){
  const order="ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶへべほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをん";
- const key=x=>String(x?.title_kana||x?.title_romaji||x?.title_japanese||x?.title_native||x?.title||"").normalize("NFKC").replace(/[\\s\\u3000]/g,"").replace(/^[^\\p{Letter}\\p{Number}\\u3040-\\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)).toLowerCase();
+ const key=x=>String(x?.title_kana||x?.title_romaji||x?.title_japanese||x?.title_native||x?.title||"").normalize("NFKC").replace(/[\s\u3000]/g,"").replace(/^[^\p{Letter}\p{Number}\u3040-\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)).toLowerCase();
  const ak=key(a),bk=key(b);
  const max=Math.max(ak.length,bk.length);
  for(let i=0;i<max;i++){
