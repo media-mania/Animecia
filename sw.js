@@ -1,8 +1,8 @@
-const CACHE="animecia-static-v3";
+const CACHE="animecia-static-v4";
 const STATIC=/\.(?:css|js|woff2?|png|jpe?g|webp|gif|svg)(?:\?.*)?$/i;
 const STATIC_HTML=/^\/Animecia\/(?:anime\/[^/]+\/|genre\/[^/]+\/)/i;
 self.addEventListener("install",e=>e.waitUntil(self.skipWaiting()));
-self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
+self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{
   const r=e.request;
   if(r.method!=="GET") return;
