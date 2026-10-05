@@ -3555,47 +3555,7 @@
 
                     .from("animecia_public_anime")
 
-                    .select(`
-                        id,
-                        title,
-                        genre,
-                        description,
-                        synopsis,
-                        review,
-                        official_url,
-                        english_title,
-                        recommended,
-                        recommended_start_at,
-                        recommended_end_at,
-                        external_id,
-                        title_romaji,
-                        title_user_preferred,
-                        title_english,
-                        title_native,
-                        title_japanese,
-                        search_aliases,
-                        streaming_links,
-                        cover_image,
-                        banner_image,
-                        start_date,
-                        end_date,
-                        episodes,
-                        duration,
-                        status,
-                        format,
-                        season,
-                        season_year,
-                        source,
-                        average_score,
-                        popularity,
-                        favourites_count,
-                        site_url,
-                        updated_at,
-                        created_at,
-                        is_adult,
-                        is_kids,
-                        is_sensitive_visual
-                    `)
+                    .select("*")
                     .eq(
                         "id",
                         Number(
@@ -3891,13 +3851,17 @@
             subtitle;
 
 
+        const descriptionText =
+            anime.synopsis ||
+            anime.description ||
+            "作品情報は準備中です。";
+
         document
             .getElementById(
                 "description"
             )
             .textContent =
-            anime.synopsis ||
-            "";
+            descriptionText;
 
 
         document
@@ -3905,7 +3869,7 @@
                 "hero-description"
             )
             .textContent =
-            "";
+            descriptionText;
 
 
         /* =====================================
