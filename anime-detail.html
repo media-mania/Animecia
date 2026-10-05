@@ -3555,6 +3555,8 @@
 
                     .from("animecia_public_anime")
 
+                    // animecia_public_anime は公開対象作品をDB側ですでに絞り込んでいる。
+                    // 詳細ページではIDだけで取得し、同じ条件を重複して付けない。
                     .select("*")
                     .eq(
                         "id",
@@ -3562,11 +3564,6 @@
                             currentAnimeId
                         )
                     )
-                    .eq("anime_verification_status", "verified")
-                    .eq("is_adult", false)
-                    .eq("is_kids", false)
-                    .eq("is_sensitive_visual", false)
-
                     .maybeSingle();
 
 
