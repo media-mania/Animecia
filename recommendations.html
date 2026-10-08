@@ -147,7 +147,7 @@ let rows=[],genres=[],selected=new Set(),userSignals=new Map();
 async function fetchCatalogRows(){
   const all=[];
   for(let offset=0;;offset+=1000){
-    const {data,error}=await s.rpc("search_anime_catalog",{
+    const {data,error}=await s.rpc("search_anime_catalog_v2",{
       p_query:null,p_genre_id:null,p_studio_id:null,p_year:null,p_season:null,
       p_status:null,p_format:null,p_sort:"title",p_limit:1000,p_offset:offset
     });
