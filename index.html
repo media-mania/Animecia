@@ -540,23 +540,20 @@ function card(a){
  return '<div class="card"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy" decoding="async">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div></a></div>';
 }
 function compareJapaneseTitle(a,b){
- const order="ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶへべほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをん";
- const key=x=>String(x?.title_kana||x?.title_romaji||x?.title_japanese||x?.title_native||x?.title||"").normalize("NFKC").replace(/[\s\u3000]/g,"").replace(/^[^\p{Letter}\p{Number}\u3040-\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)).toLowerCase();
- const ak=key(a),bk=key(b);
- const max=Math.max(ak.length,bk.length);
- for(let i=0;i<max;i++){
-  const ac=ak[i]||"",bc=bk[i]||"";
-  if(ac===bc) continue;
-  const ai=ac?order.indexOf(ac):-1,bi=bc?order.indexOf(bc):-1;
-  if(ai!==bi){
-   if(ai<0&&bi>=0)return 1;
-   if(ai>=0&&bi<0)return -1;
-   if(ai!==bi)return ai-bi;
-  }
-  const z=String(ac).localeCompare(String(bc),"ja-JP");
-  if(z)return z;
- }
- return Number(a?.id||0)-Number(b?.id||0);
+  const order=["a","i","u","e","o","ka","ki","ku","ke","ko","ga","gi","gu","ge","go","sa","shi","su","se","so","za","ji","zu","ze","zo","ta","chi","tsu","te","to","da","di","du","de","do","na","ni","nu","ne","no","ha","hi","fu","he","ho","ba","bi","bu","be","bo","pa","pi","pu","pe","po","ma","mi","mu","me","mo","ya","yu","yo","ra","ri","ru","re","ro","wa","wo","n"];
+  const key=x=>{
+    let s=String(x?.title_kana||x?.title_romaji||x?.title_japanese||x?.title_native||x?.title||"").normalize("NFKC").replace(/[\\s\\u3000]/g,"").replace(/^[^\\p{Letter}\\p{Number}\\u3040-\\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)).toLowerCase();
+    const m=s.match(/^(\\d+)(.*)$/);
+    if(m){
+      const nums=["zero","ichi","ni","san","yon","go","roku","nana","hachi","kyuu"], n=Number(m[1]);
+      if(n<1000){let r="",h=Math.floor(n/100),t=Math.floor(n%100/10),o=n%10;if(h)r+=(h===3?"sanbyaku":h===6?"roppyaku":h===8?"happyaku":nums[h]+"hyaku");if(t)r+=(t===1?"juu":nums[t]+"juu");if(o)r+=nums[o];s=r+m[2].replace(/^[.．\\-–—ー]+/,"");}
+    }
+    return s;
+  };
+  const token=s=>{for(const x of order)if(s.startsWith(x))return x;return s.slice(0,1)};
+  let x=key(a),y=key(b);
+  while(x&&y){const ax=token(x),by=token(y),ai=order.indexOf(ax),bi=order.indexOf(by);if(ai!==bi)return(ai<0?999:ai)-(bi<0?999:bi);if(ax!==by)return ax.localeCompare(by,"en");x=x.slice(ax.length);y=y.slice(by.length);}
+  return x?1:y?-1:Number(a?.id||0)-Number(b?.id||0);
 }
 function scoreOf(a,e){return e?.average_rating!=null?Number(e.average_rating):a.average_score!=null?Number(a.average_score)/10:null;}
 function renderFailure(id,msg){const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">'+esc(msg)+'</div>';}
