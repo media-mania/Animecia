@@ -2612,7 +2612,7 @@ function compareAnimeTitles(a,b){ return AnimeciaData.compare(a,b); }
              * 初回表示時に大量のリクエストが発生して失敗しやすかった。
              */
             const { data, error } =
-                await supabaseClient.rpc("search_anime_catalog", {
+                await supabaseClient.rpc("search_anime_catalog_v2", {
                     p_query:
                         searchInput.value.trim() || null,
 
