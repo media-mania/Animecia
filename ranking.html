@@ -210,8 +210,7 @@ async function load(){
      .eq("anime_verification_status","verified")
      .eq("is_japanese",true)
      .eq("is_adult",false)
-     .eq("is_kids",false)
-     .eq("is_sensitive_visual",false)
+     
      .in("id",ids);
    if(a.error) throw a.error;
    rows=a.data||[];
