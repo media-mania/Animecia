@@ -32,6 +32,8 @@
     links.forEach(function(item){
       item.textContent=loggedIn?"ログアウト":"ログイン";
       item.href=loggedIn?"#":"login.html";
+      item.classList.toggle("primary",!loggedIn);
+      item.classList.toggle("logout",loggedIn);
       item.setAttribute("aria-label",loggedIn?"ログアウト":"ログイン");
       item.onclick=loggedIn?async function(e){
         e.preventDefault();
