@@ -146,12 +146,18 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const title=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.title||"タイトル未設定";
 let rows=[],genres=[],selected=new Set(),userSignals=new Map();
 async function fetchCatalogRows(){
-  const {data,error}=await s.rpc("search_anime_catalog",{
-    p_query:null,p_genre_id:null,p_studio_id:null,p_year:null,p_season:null,
-    p_status:null,p_format:null,p_sort:"title",p_limit:1000,p_offset:0
-  });
-  if(error) throw error;
-  return data||[];
+  const all=[];
+  for(let offset=0;;offset+=1000){
+    const {data,error}=await s.rpc("search_anime_catalog",{
+      p_query:null,p_genre_id:null,p_studio_id:null,p_year:null,p_season:null,
+      p_status:null,p_format:null,p_sort:"title",p_limit:1000,p_offset:offset
+    });
+    if(error) throw error;
+    const batch=data||[];
+    all.push(...batch);
+    if(batch.length<1000) break;
+  }
+  return all;
 }
 async function init(){
  const [ar,gr,auth]=await Promise.all([
