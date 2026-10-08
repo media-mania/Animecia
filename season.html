@@ -7,7 +7,7 @@
 <meta name="description" content="Animeciaの今期アニメ一覧。放送中のアニメを検索・絞り込みできます。">
 <link rel="canonical" href="https://media-mania.github.io/Animecia/season.html">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="auth-init.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-init.js"></script><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 .hero{margin-bottom:22px}.hero h1{margin:0 0 7px;font-size:32px}.hero p{margin:0;color:#737373}
@@ -76,7 +76,7 @@ main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 .season-v7 .season-button{min-width:74px}.season-v7 .season-summary{grid-template-columns:repeat(4,1fr)}.season-v7 .summary-card:last-child{background:#fff8ee;border-color:#f2d5ae}
 @media(max-width:800px){.season-v7-feature{grid-template-columns:1fr}.season-v7 .season-summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.season-v7-head{display:block}.season-v7 .season-summary{grid-template-columns:1fr}}
 </style>
-<link rel="stylesheet" href="site-theme.css?v=20261001-v8">
+<link rel="stylesheet" href="site-theme.css?v=20261008-v1">
 <style id="animecia-global-header-fix">
 /* 全ページ共通ヘッダー：トップページと同じレイアウト */
 .site-header{
@@ -414,3 +414,4 @@ document.getElementById("search").oninput=e=>{search=e.target.value;syncUI();ren
 </nav></div><p class="copyright">© 2026 Animecia</p></footer>
 <script src="auth-nav.js"></script>\n</body>
 </html>
+<style id="animecia-ui-polish">html{overflow-x:hidden}body{overflow-x:hidden}:focus-visible{outline:3px solid #2563eb;outline-offset:3px}button,a,input,select,textarea{touch-action:manipulation}@media(max-width:900px){.layout{grid-template-columns:1fr!important}.grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important}}@media(max-width:640px){input,select,textarea{font-size:16px!important}.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.wrap.head,.header-inner,.container.nav{padding:0 14px!important}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style>
