@@ -90,7 +90,7 @@ jobs:
               }).get("data") or {}).get("Page") or {}).get("media") or []
 
           rows=sb("/rest/v1/anime",params={
-              "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese",
+              "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese,start_date",
               "order":"id.asc",
               "limit":"10000"
           })
@@ -189,7 +189,7 @@ jobs:
                   })
                   duplicate_count+=1
 
-          # 3) Reversible catalog policy. No rows are physically deleted.
+          # 3) Reversible catalog policy. No rows are physically deleted.\n          #    Future works are kept only when AniList provides a complete start date;\n          #    this is the available machine-readable signal for a confirmed first release date.\n          cutoff = __import__("datetime").date(1963, 1, 1)\n          today = __import__("datetime").date.today()
           excluded=0
           included=0
           for r,sid in source_rows:
@@ -197,18 +197,18 @@ jobs:
               if rid in duplicate_ids:
                   continue
               c=classified.get(sid) if sid is not None and str(r.get("source_provider") or "").casefold()=="anilist" else None
-              if c and c["is_adult"]:
+              if r.get("start_date") and str(r["start_date"])[:10] < "1963-01-01":\n                  patch(rid,{\n                      "catalog_policy_decision":"exclude",\n                      "catalog_policy_reasons":["before_1963-01-01"],\n                      "catalog_policy_version":"anilist-authoritative-v4"\n                  })\n                  excluded+=1\n              elif r.get("start_date") and str(r["start_date"])[:10] > today.isoformat():\n                  # A full DATE in the database is treated as a confirmed first-release date.\n                  patch(rid,{\n                      "catalog_policy_decision":"include",\n                      "catalog_policy_reasons":[],\n                      "catalog_policy_version":"anilist-authoritative-v4"\n                  })\n                  included+=1\n              elif c and c["is_adult"]:
                   patch(rid,{
                       "catalog_policy_decision":"exclude",
                       "catalog_policy_reasons":["adult_anilist_isAdult"],
-                      "catalog_policy_version":"anilist-authoritative-v3"
+                      "catalog_policy_version":"anilist-authoritative-v4"
                   })
                   excluded+=1
               elif c and c["is_preschool"]:
                   patch(rid,{
                       "catalog_policy_decision":"exclude",
                       "catalog_policy_reasons":["preschool_anilist_tag"],
-                      "catalog_policy_version":"anilist-authoritative-v2"
+                      "catalog_policy_version":"anilist-authoritative-v4"
                   })
                   excluded+=1
               elif c and c["original_country_code"] and c["original_country_code"] != "JP":
@@ -230,7 +230,7 @@ jobs:
               "total_rows":len(rows),
               "anilist_classified":classified_count,
               "exact_duplicates_excluded":duplicate_count,
-              "adult_or_preschool_excluded":excluded,
+              "adult_or_preschool_excluded":excluded,\n              "policy_version":"anilist-authoritative-v4",
               "included":included,
               "physical_deletes":0,
               "non_japanese_originals_excluded":sum(1 for r,sid in source_rows if (classified.get(sid) or {}).get("original_country_code") not in (None,"JP"))
