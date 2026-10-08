@@ -2491,3 +2491,38 @@ footer {
     }
 
 }
+
+
+/* Animecia 2026-10-08 UI/UX polish */
+:root{color-scheme:light}
+html{overflow-x:hidden}
+body{overflow-x:hidden}
+:focus-visible{outline:3px solid #2563eb;outline-offset:3px;border-radius:4px}
+button,a,input,select,textarea{touch-action:manipulation}
+button,input,select,textarea{max-width:100%}
+img{height:auto}
+@media (max-width:900px){
+  .container{width:min(100% - 28px,1180px)}
+  main{max-width:100%!important}
+  .layout{grid-template-columns:1fr!important}
+  .filters{grid-template-columns:1fr 1fr!important}
+  .ranking-hero,.hero,.memo-hero{padding:24px!important;border-radius:16px!important}
+  .panel{padding:16px!important;border-radius:14px!important}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important}
+}
+@media (max-width:640px){
+  .wrap.head,.header-inner,.container.nav{padding:0 14px!important;gap:10px!important}
+  header,.site-header{height:62px!important}
+  .wrap.head,.header-inner,.container.nav{min-height:62px!important}
+  .logo{font-size:20px!important}.brand{font-size:21px!important}
+  .logo:after{font-size:6px!important}
+  .main-nav a,.site-nav a,header nav a,.nav-links a{white-space:nowrap!important}
+  input,select,textarea{font-size:16px!important}
+  .filters{grid-template-columns:1fr!important}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .panel-head,.memo-head{align-items:flex-start!important;flex-direction:column!important}
+  .ranking-tabs{overflow-x:auto!important;white-space:nowrap!important}
+}
+@media (max-width:420px){.grid{grid-template-columns:1fr 1fr!important;gap:10px!important}.container{width:calc(100% - 20px)}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
