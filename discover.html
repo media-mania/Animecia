@@ -200,7 +200,8 @@ async function fetchCatalogRows(){
  return all;
 }
 async function load(){
- const [ar,gr]=await Promise.all([fetchCatalogRows(),s.rpc("get_catalog_genres")]);
+ const [catalogRows,gr]=await Promise.all([fetchCatalogRows(),s.rpc("get_catalog_genres")]);
+ const ar=await AnimeciaData.withEngagement(s,catalogRows);
  if(gr.error) throw gr.error;
  (gr.data||[]).forEach(g=>genreMap.set(Number(g.id),g.name));
  const normGenre=v=>String(v??"").normalize("NFKC").trim().toLowerCase();
@@ -208,9 +209,9 @@ async function load(){
    const names=String(a.genre||"").split(",").map(normGenre).filter(Boolean);
    const g=[...genreMap.entries()].filter(([,name])=>names.includes(normGenre(name))).map(([id])=>id);
    return {...a,e:{
-     average_rating:a.average_score,
-     favorite_count:a.favourites_count,
-     review_count:0
+     average_rating:a._animecia_rating,
+     favorite_count:a._animecia_engagement?.favorite_count||0,
+     review_count:a._animecia_engagement?.review_count||0
    },g};
  });
  const years=[...new Set(rows.map(a=>Number(a.season_year)).filter(y=>Number.isInteger(y)&&y>=1900&&y<=new Date().getFullYear()+1))].sort((a,b)=>b-a);
