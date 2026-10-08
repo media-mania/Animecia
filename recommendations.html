@@ -2,8 +2,8 @@
 <html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>自分に合ったアニメを探す | Animecia</title>
 <meta name="description" content="好みのジャンル、形式、話数、評価などからAnimeciaがあなたに合うアニメを探します。ログイン後は評価や視聴履歴も反映します。">
-<link rel="stylesheet" href="site-theme.css?v=20261001-v8"><link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="site-theme.css?v=20261008-v1"><link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 main{max-width:1240px;margin:auto;padding:34px 20px 80px}.hero{padding:40px;border-radius:22px;background:linear-gradient(135deg,#111216,#292b31);color:#fff;margin-bottom:16px}.kicker{font-size:11px;color:#fb7185;font-weight:900;letter-spacing:.17em}.hero h1{font-size:clamp(34px,5vw,54px);margin:12px 0 10px;letter-spacing:-.055em}.hero p{margin:0;color:#d1d5db;line-height:1.8;max-width:780px}.layout{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}.panel{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:21px;box-shadow:0 8px 28px rgba(17,18,20,.045)}.panel h2{font-size:18px;margin:0 0 5px}.hint{font-size:12px;color:#777;margin:0 0 16px;line-height:1.6}.question{padding:15px 0;border-top:1px solid #eceef1}.question:first-of-type{border-top:0}.question label{display:block;font-size:12px;font-weight:900;margin-bottom:9px}.chips{display:flex;flex-wrap:wrap;gap:7px}.chip{border:1px solid #dfe2e7;background:#fff;border-radius:999px;padding:8px 10px;font-size:11px;font-weight:800;cursor:pointer}.chip{display:inline-flex;align-items:center;gap:5px}.chip-check{display:inline-grid;place-items:center;width:15px;height:15px;border:1px solid #cfd3da;border-radius:50%;font-size:10px;font-weight:900;color:transparent;background:#fff}.chip.active{background:#111216;color:#fff;border-color:#111216;box-shadow:0 0 0 2px #111216;transform:translateY(-1px)}.chip.active .chip-check{color:#111216;border-color:#fff;background:#fff}.chip:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}.select{width:100%;height:42px;border:1px solid #d9dce2;border-radius:9px;padding:0 10px}.actions{display:flex;gap:8px;margin-top:16px}.primary,.secondary{flex:1;border:0;border-radius:10px;padding:11px;font-weight:900;cursor:pointer}.primary{background:#111216;color:#fff}.secondary{background:#f0f1f3;color:#222}.result-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}.result-head h2{margin:0}.score-note{font-size:11px;color:#777}.list{display:grid;gap:10px}.item{display:flex;gap:13px;align-items:center;padding:12px;border:1px solid #e5e7eb;border-radius:14px;text-decoration:none;color:inherit;transition:.18s}.item:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(17,18,20,.08)}.rank{width:32px;text-align:center;font-weight:900;font-size:20px}.thumb{width:68px;height:88px;object-fit:cover;border-radius:8px;background:#eceef1;flex:none}.grow{min-width:0;flex:1}.title{font-weight:900;line-height:1.45}.reason{font-size:11px;color:#737780;margin-top:4px}.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.pill{background:#f2f3f5;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:800}.match{font-size:11px;font-weight:900;color:#e11d48;white-space:nowrap}.empty,.loading{text-align:center;padding:40px;color:#777}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero{padding:30px 23px}}
@@ -215,3 +215,37 @@ document.getElementById("clear").onclick=()=>{selected.clear();updateGenreSelect
 init().catch(err=>{console.error(err);document.getElementById("result-sub").textContent="作品データを取得できませんでした。";document.getElementById("results").innerHTML="<div class=\"empty\">作品データの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>";});
 </script>
 </body></html>
+
+/* Animecia 2026-10-08 UI/UX polish */
+:root{color-scheme:light}
+html{overflow-x:hidden}
+body{overflow-x:hidden}
+:focus-visible{outline:3px solid #2563eb;outline-offset:3px;border-radius:4px}
+button,a,input,select,textarea{touch-action:manipulation}
+button,input,select,textarea{max-width:100%}
+img{height:auto}
+@media (max-width:900px){
+  .container{width:min(100% - 28px,1180px)}
+  main{max-width:100%!important}
+  .layout{grid-template-columns:1fr!important}
+  .filters{grid-template-columns:1fr 1fr!important}
+  .ranking-hero,.hero,.memo-hero{padding:24px!important;border-radius:16px!important}
+  .panel{padding:16px!important;border-radius:14px!important}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important}
+}
+@media (max-width:640px){
+  .wrap.head,.header-inner,.container.nav{padding:0 14px!important;gap:10px!important}
+  header,.site-header{height:62px!important}
+  .wrap.head,.header-inner,.container.nav{min-height:62px!important}
+  .logo{font-size:20px!important}.brand{font-size:21px!important}
+  .logo:after{font-size:6px!important}
+  .main-nav a,.site-nav a,header nav a,.nav-links a{white-space:nowrap!important}
+  input,select,textarea{font-size:16px!important}
+  .filters{grid-template-columns:1fr!important}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .panel-head,.memo-head{align-items:flex-start!important;flex-direction:column!important}
+  .ranking-tabs{overflow-x:auto!important;white-space:nowrap!important}
+}
+@media (max-width:420px){.grid{grid-template-columns:1fr 1fr!important;gap:10px!important}.container{width:calc(100% - 20px)}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
