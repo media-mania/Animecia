@@ -197,7 +197,14 @@ jobs:
               if rid in duplicate_ids:
                   continue
               c=classified.get(sid) if sid is not None and str(r.get("source_provider") or "").casefold()=="anilist" else None
-              if r.get("start_date") and str(r["start_date"])[:10] < "1963-01-01":\n                  patch(rid,{\n                      "catalog_policy_decision":"exclude",\n                      "catalog_policy_reasons":["before_1963-01-01"],\n                      "catalog_policy_version":"anilist-authoritative-v4"\n                  })\n                  excluded+=1\n              elif r.get("start_date") and str(r["start_date"])[:10] > today.isoformat():\n                  # A full DATE in the database is treated as a confirmed first-release date.\n                  patch(rid,{\n                      "catalog_policy_decision":"include",\n                      "catalog_policy_reasons":[],\n                      "catalog_policy_version":"anilist-authoritative-v4"\n                  })\n                  included+=1\n              elif c and c["is_adult"]:
+              if r.get("start_date") and str(r["start_date"])[:10] < "1963-01-01":
+                  patch(rid,{
+                      "catalog_policy_decision":"exclude",
+                      "catalog_policy_reasons":["before_1963-01-01"],
+                      "catalog_policy_version":"anilist-authoritative-v4"
+                  })
+                  excluded+=1
+              elif c and c["is_adult"]:
                   patch(rid,{
                       "catalog_policy_decision":"exclude",
                       "catalog_policy_reasons":["adult_anilist_isAdult"],
@@ -215,9 +222,16 @@ jobs:
                   patch(rid,{
                       "catalog_policy_decision":"exclude",
                       "catalog_policy_reasons":["non_japanese_original_anilist_country"],
-                      "catalog_policy_version":"anilist-authoritative-v3"
+                      "catalog_policy_version":"anilist-authoritative-v4"
                   })
                   excluded+=1
+              elif r.get("start_date") and str(r["start_date"])[:10] > today.isoformat():
+                  patch(rid,{
+                      "catalog_policy_decision":"include",
+                      "catalog_policy_reasons":["future_start_date_confirmed"],
+                      "catalog_policy_version":"anilist-authoritative-v4"
+                  })
+                  included+=1
               else:
                   patch(rid,{
                       "catalog_policy_decision":"include",
