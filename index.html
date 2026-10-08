@@ -566,8 +566,8 @@ async function load(){
  const safe=promise=>Promise.resolve(promise).catch(error=>({data:[],count:0,error}));
  const [countRes,seasonRes,seasonCountRes,genreRes,engRes,reviewRes]=await Promise.all([
    sb.from("animecia_public_anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified"),
-   sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season).order("id",{ascending:false}).limit(12),
-   safe(sb.from("animecia_public_anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).eq("season_year",year).eq("season",season)),
+   sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("season_year",year).eq("season",season).order("id",{ascending:false}).limit(12),
+   safe(sb.from("animecia_public_anime").select("id",{count:"exact",head:true}).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("season_year",year).eq("season",season)),
    safe(sb.rpc("get_catalog_genres")),
    safe(sb.from("anime_engagement_summary").select("anime_id,average_rating,rating_count,favorite_count,review_count").order("average_rating",{ascending:false,nullsFirst:false}).limit(100)),
    safe(sb.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at").order("created_at",{ascending:false}).limit(6))
@@ -613,7 +613,7 @@ async function load(){
  const rankedIds=engData.filter(x=>x.average_rating!=null).sort((a,b)=>Number(b.average_rating)-Number(a.average_rating)).slice(0,10).map(x=>x.anime_id);
  let rankedRows=[];
  if(rankedIds.length){
-   const rk=await safe(sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).in("id",rankedIds));
+   const rk=await safe(sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).in("id",rankedIds));
    const by=new Map((rk.data||[]).map(a=>[String(a.id),a]));
    rankedRows=rankedIds.map(id=>by.get(String(id))).filter(a=>a&&valid(a));
  }
