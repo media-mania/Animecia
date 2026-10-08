@@ -2,6 +2,9 @@
 (function(){
   "use strict";
   function ready(){
+    /* ログイン／ログアウト導線はトップページだけに表示する */
+    var page=(location.pathname.split("/").pop()||"index.html").toLowerCase();
+    if(page!=="index.html" && page!=="") return;
     if(!window.AnimeciaAuth)return setTimeout(ready,50);
     AnimeciaAuth.init().then(render).catch(function(){render(null);});
     window.addEventListener("animecia-auth",function(e){render(e.detail&&e.detail.user);});
