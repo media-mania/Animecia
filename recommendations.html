@@ -214,4 +214,4 @@ document.getElementById("find").onclick=()=>{if(!recommendationsReady){document.
 document.getElementById("clear").onclick=()=>{selected.clear();updateGenreSelected();document.querySelectorAll(".chip.active").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-pressed","false")});["format","length","rating","status"].forEach(id=>document.getElementById(id).value=id==="rating"?"0":"");document.getElementById("results").innerHTML='<div class="empty">あなたの好みから作品を探します。</div>';document.getElementById("result-sub").textContent="条件を設定して「この条件で探す」を押してください。"};
 init().catch(err=>{console.error(err);document.getElementById("result-sub").textContent="作品データを取得できませんでした。";document.getElementById("results").innerHTML="<div class=\"empty\">作品データの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>";});
 </script>
-</body></html>
+<script src="auth-nav.js"></script>\n</body></html>
