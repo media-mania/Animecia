@@ -126,7 +126,7 @@ async function init(){
       msg("認証機能の読み込みに失敗しました。ページを再読み込みしてください。",true);
       return;
     }
-    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.sessionStorage,storageKey:"animecia-auth-session"}});
     const {data,error}=await sb.auth.getSession();
     if(error){console.error("session check error",error);return;}
     if(data?.session?.user?.email_confirmed_at){
