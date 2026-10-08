@@ -70,7 +70,7 @@
     >
 
     <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 
     <style>
@@ -1038,7 +1038,7 @@
 .page-intro h1{margin:5px 0 7px!important;color:#fff!important;font-size:clamp(28px,4vw,42px)!important;letter-spacing:-.045em}.page-intro p{margin:0;color:#cbd5e1;line-height:1.8;max-width:760px}.page-kicker{display:block;color:#f59e0b;font-size:10px;font-weight:900;letter-spacing:.16em}.page-kicker.dark{color:#e87900}.page-intro-actions{display:flex;gap:8px;flex-wrap:wrap}.page-intro-actions a{padding:9px 12px;border:1px solid rgba(255,255,255,.17);border-radius:999px;background:rgba(255,255,255,.07);color:#fff;text-decoration:none;font-size:12px;font-weight:800}.page-intro-actions a:hover{background:rgba(255,255,255,.14)}.section-card{background:#fff;border:1px solid #e2e5e9;border-radius:16px;box-shadow:0 8px 28px rgba(16,20,26,.055)}
 @media(max-width:760px){.page-intro{display:block;padding:21px}.page-intro-actions{margin-top:16px}}
 </style>
-<link rel="stylesheet" href="site-theme.css?v=20261001-v8">
+<link rel="stylesheet" href="site-theme.css?v=20261008-v1">
 <style id="animecia-global-header-fix">
 /* 全ページ共通ヘッダー：トップページと同じレイアウト */
 .site-header{
@@ -4253,3 +4253,38 @@ function compareAnimeTitles(a,b){const order="ぁあぃいぅうぇえぉおか�
 </body>
 
 </html>
+
+
+/* Animecia 2026-10-08 UI/UX polish */
+:root{color-scheme:light}
+html{overflow-x:hidden}
+body{overflow-x:hidden}
+:focus-visible{outline:3px solid #2563eb;outline-offset:3px;border-radius:4px}
+button,a,input,select,textarea{touch-action:manipulation}
+button,input,select,textarea{max-width:100%}
+img{height:auto}
+@media (max-width:900px){
+  .container{width:min(100% - 28px,1180px)}
+  main{max-width:100%!important}
+  .layout{grid-template-columns:1fr!important}
+  .filters{grid-template-columns:1fr 1fr!important}
+  .ranking-hero,.hero,.memo-hero{padding:24px!important;border-radius:16px!important}
+  .panel{padding:16px!important;border-radius:14px!important}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important}
+}
+@media (max-width:640px){
+  .wrap.head,.header-inner,.container.nav{padding:0 14px!important;gap:10px!important}
+  header,.site-header{height:62px!important}
+  .wrap.head,.header-inner,.container.nav{min-height:62px!important}
+  .logo{font-size:20px!important}.brand{font-size:21px!important}
+  .logo:after{font-size:6px!important}
+  .main-nav a,.site-nav a,header nav a,.nav-links a{white-space:nowrap!important}
+  input,select,textarea{font-size:16px!important}
+  .filters{grid-template-columns:1fr!important}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .panel-head,.memo-head{align-items:flex-start!important;flex-direction:column!important}
+  .ranking-tabs{overflow-x:auto!important;white-space:nowrap!important}
+}
+@media (max-width:420px){.grid{grid-template-columns:1fr 1fr!important;gap:10px!important}.container{width:calc(100% - 20px)}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
