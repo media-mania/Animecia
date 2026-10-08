@@ -71,7 +71,17 @@ jobs:
                   media(id_in:$ids,type:ANIME) {
                     id
                     isAdult
+                    countryOfOrigin
                     tags { name }
+                    relations {
+                      edges {
+                        relationType
+                        node {
+                          type
+                          countryOfOrigin
+                        }
+                      }
+                    }
                   }
                 }
               }"""
@@ -104,11 +114,24 @@ jobs:
               for m in media:
                   aid=int(m["id"])
                   tags={str(t.get("name") or "").strip().casefold() for t in (m.get("tags") or [])}
+                  country=str(m.get("countryOfOrigin") or "").strip().upper() or None
+                  source_countries=[]
+                  for edge in (m.get("relations") or {}).get("edges") or []:
+                      node=edge.get("node") or {}
+                      if node.get("type") in ("MANGA","NOVEL","ONE_SHOT"):
+                          ctry=str(node.get("countryOfOrigin") or "").strip().upper()
+                          if ctry: source_countries.append(ctry)
+                  # For adaptations, prefer the country of the linked source work.
+                  # For original anime (or when no source relation is available), use
+                  # AniList's countryOfOrigin for the anime itself.
+                  original_country=(source_countries[0] if source_countries else country)
                   classified[aid]={
                       "is_adult": bool(m.get("isAdult") is True),
                       "is_preschool": bool(tags & PRESCHOOL),
                       "is_kids": bool(tags & KIDS),
-                      "is_sensitive_visual": bool(tags & SENSITIVE)
+                      "is_sensitive_visual": bool(tags & SENSITIVE),
+                      "original_country_code": original_country,
+                      "original_country_status": "known" if original_country else "unknown"
                   }
               time.sleep(.15)
 
@@ -118,6 +141,12 @@ jobs:
               if not c: continue
               for r in group:
                   patch(r["id"],c)
+                  patch(r["id"],{
+                      "original_country_code":c["original_country_code"],
+                      "original_country_status":c["original_country_status"],
+                      "original_country_confidence":1.0 if c["original_country_code"] else 0.0,
+                      "original_country_review_reason":"AniList countryOfOrigin; source-material relation country used when available."
+                  })
                   classified_count+=1
 
           # 2) Exact identity duplicates only: same provider + same source ID,
@@ -172,7 +201,7 @@ jobs:
                   patch(rid,{
                       "catalog_policy_decision":"exclude",
                       "catalog_policy_reasons":["adult_anilist_isAdult"],
-                      "catalog_policy_version":"anilist-authoritative-v2"
+                      "catalog_policy_version":"anilist-authoritative-v3"
                   })
                   excluded+=1
               elif c and c["is_preschool"]:
@@ -180,6 +209,13 @@ jobs:
                       "catalog_policy_decision":"exclude",
                       "catalog_policy_reasons":["preschool_anilist_tag"],
                       "catalog_policy_version":"anilist-authoritative-v2"
+                  })
+                  excluded+=1
+              elif c and c["original_country_code"] and c["original_country_code"] != "JP":
+                  patch(rid,{
+                      "catalog_policy_decision":"exclude",
+                      "catalog_policy_reasons":["non_japanese_original_anilist_country"],
+                      "catalog_policy_version":"anilist-authoritative-v3"
                   })
                   excluded+=1
               else:
@@ -196,6 +232,7 @@ jobs:
               "exact_duplicates_excluded":duplicate_count,
               "adult_or_preschool_excluded":excluded,
               "included":included,
-              "physical_deletes":0
+              "physical_deletes":0,
+              "non_japanese_originals_excluded":sum(1 for r,sid in source_rows if (classified.get(sid) or {}).get("original_country_code") not in (None,"JP"))
           },ensure_ascii=False))
           PY
