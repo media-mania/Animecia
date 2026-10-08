@@ -1,0 +1,52 @@
+/* Animecia shared authentication core. Browser-only, publishable key only. */
+(function(w){
+  "use strict";
+  var URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
+  var KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
+  var state={client:null,user:null,ready:false,promise:null};
+  function waitForSDK(){
+    if(w.supabase&&typeof w.supabase.createClient==="function") return Promise.resolve();
+    return new Promise(function(resolve,reject){
+      var start=Date.now();
+      (function poll(){
+        if(w.supabase&&typeof w.supabase.createClient==="function") return resolve();
+        if(Date.now()-start>10000) return reject(new Error("Supabase SDK timeout"));
+        setTimeout(poll,50);
+      })();
+    });
+  }
+  function client(){
+    if(!state.client) state.client=w.__animeciaAuthClient||(w.__animeciaAuthClient=w.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));
+    return state.client;
+  }
+  function isVerified(user){return !!(user&&!user.is_anonymous&&user.email_confirmed_at);}
+  function init(){
+    if(state.promise)return state.promise;
+    state.promise=waitForSDK().then(async function(){
+      var c=client();
+      var r=await c.auth.getUser();
+      state.user=isVerified(r.data&&r.data.user)?r.data.user:null;
+      state.ready=true;
+      c.auth.onAuthStateChange(function(_event,session){
+        state.user=isVerified(session&&session.user)?session.user:null;
+        w.dispatchEvent(new CustomEvent("animecia-auth",{detail:{user:state.user}}));
+      });
+      return state.user;
+    }).catch(function(e){state.ready=true;state.user=null;throw e;});
+    return state.promise;
+  }
+  function redirectToLogin(){
+    var target=location.pathname.split("/").pop()||"index.html";
+    var q=location.search||"";
+    var h=location.hash||"";
+    location.href="login.html?redirect="+encodeURIComponent(target+q+h);
+  }
+  w.AnimeciaAuth={
+    URL:URL,KEY:KEY,state:state,client:client,init:init,
+    getUser:function(){return init();},
+    isLoggedIn:function(){return isVerified(state.user);},
+    requireLogin:function(){return init().then(function(u){if(!u){redirectToLogin();return null;}return u;});},
+    redirectToLogin:redirectToLogin,
+    signOut:function(){return client().auth.signOut({scope:"local"});}
+  };
+})(window);
