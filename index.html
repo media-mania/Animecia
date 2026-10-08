@@ -536,7 +536,7 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const valid=a=>a&&a.anime_verification_status==="verified"&&a.is_japanese===true&&a.is_adult!==true&&a.is_kids!==true&&a.is_sensitive_visual!==true&&(a.start_date==null||a.start_date>="1963-01-01")&&/[ぁ-んァ-ヶ一-龯々ー]/.test(a.title_japanese||a.title_native||a.title_user_preferred||a.title||"");
 const img=(a,cls="")=>a?.cover_image?'<img class="'+cls+'" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'" decoding="async" fetchpriority="high">':'<div class="row-thumb">画像なし</div>';
 function card(a){
- const title=AnimeciaData.title(a),score=AnimeciaData.score(a);
+ const title=AnimeciaData.title(a),score=a._animecia_rating!=null?Number(a._animecia_rating):null;
  return '<div class="card"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy" decoding="async">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div></a></div>';
 }
 function compareJapaneseTitle(a,b){
