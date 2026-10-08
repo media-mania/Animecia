@@ -204,10 +204,15 @@ async function load(){
  const [ar,gr]=await Promise.all([fetchCatalogRows(),s.rpc("get_catalog_genres")]);
  if(gr.error) throw gr.error;
  (gr.data||[]).forEach(g=>genreMap.set(Number(g.id),g.name));
+ const normGenre=v=>String(v??"").normalize("NFKC").trim().toLowerCase();
  rows=(ar||[]).filter(a=>String(a.format||"").toUpperCase()!=="SPECIAL").map(a=>{
-   const names=String(a.genre||"").split(",").map(x=>x.trim()).filter(Boolean);
-   const g=[...genreMap.entries()].filter(([,name])=>names.includes(name)).map(([id])=>id);
-   return {...a,e:{},g};
+   const names=String(a.genre||"").split(",").map(normGenre).filter(Boolean);
+   const g=[...genreMap.entries()].filter(([,name])=>names.includes(normGenre(name))).map(([id])=>id);
+   return {...a,e:{
+     average_rating:a.average_score,
+     favorite_count:a.favourites_count,
+     review_count:0
+   },g};
  });
  const years=[...new Set(rows.map(a=>Number(a.season_year)).filter(y=>Number.isInteger(y)&&y>=1900&&y<=new Date().getFullYear()+1))].sort((a,b)=>b-a);
  document.getElementById("year").innerHTML='<option value="">すべて</option>'+years.map(y=>'<option>'+y+'</option>').join("");
@@ -225,7 +230,7 @@ function render(){
  r.sort((a,b)=>sort==="title"?title(a).localeCompare(title(b),"ja"):sort==="new"?String(b.start_date||"").localeCompare(String(a.start_date||"")):sort==="popular"?Number(b.e.favorite_count||0)-Number(a.e.favorite_count||0):Number(b.e.average_rating||0)-Number(a.e.average_rating||0));
  document.getElementById("count").innerHTML='<b>'+r.length+'</b> 作品';document.getElementById("result-count-v6").innerHTML='<b>'+r.length+'</b> 作品';
  const summary=[];if(q)summary.push("キーワード");if(selectedGenres.size)summary.push(selectedGenres.size+"ジャンル");if(f)summary.push(f);if(y)summary.push(y+"年");if(st)summary.push("放送状況");if(min)summary.push("評価"+min+"以上");document.getElementById("active-summary").textContent=summary.length?summary.join(" / "):"条件なし";
- document.getElementById("grid").innerHTML=r.slice(0,300).map(a=>'<a class="card" href="anime-detail.html?id='+a.id+'">'+(a.cover_image?'<img class="cover" src="'+esc(a.cover_image)+'" alt="'+esc(title(a))+'" loading="lazy" decoding="async" fetchpriority="high">':'<div class="cover" style="display:grid;place-items:center">画像なし</div>')+'<div class="pad"><div class="title">'+esc(title(a))+'</div><div class="sub">'+esc(a.status||"")+(a.episodes!=null?" · "+a.episodes+"話":"")+'</div><div class="meta"><span class="pill">★ '+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(1):"—")+'</span><span>♥ '+(a.e.favorite_count||0)+'</span><span>レビュー '+(a.e.review_count||0)+'</span></div></div></a>').join("")||'<div class="empty">条件に一致する作品がありません。</div>';
+ document.getElementById("grid").innerHTML=r.slice(0,300).map(a=>'<a class="card" href="anime-detail.html?id='+a.id+'">'+(a.cover_image?'<img class="cover" src="'+esc(a.cover_image)+'" alt="'+esc(title(a))+'" loading="lazy" decoding="async" fetchpriority="high">':'<div class="cover" style="display:grid;place-items:center">画像なし</div>')+'<div class="pad"><div class="title">'+esc(title(a))+'</div><div class="sub">'+esc(a.status||"")+(a.episodes!=null?" · "+a.episodes+"話":"")+'</div><div class="meta"><span class="pill">★ '+(a.e.average_rating!=null?Number(a.e.average_rating).toFixed(1):"—")+'</span><span>♥ '+Number(a.e.favorite_count||0)+'</span></div></div></a>').join("")||'<div class="empty">条件に一致する作品がありません。</div>';
 }
 ["q","format","year","status","rating","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));
 document.getElementById("reset").onclick=()=>{document.getElementById("q").value="";["format","year","status","rating","sort"].forEach((id,i)=>document.getElementById(id).value=i===4?"rating":"");selectedGenres.clear();document.querySelectorAll(".chip.active").forEach(x=>x.classList.remove("active"));render()};
