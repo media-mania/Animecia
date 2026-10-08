@@ -539,6 +539,10 @@ function card(a){
  return '<div class="card"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy" decoding="async">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div></a></div>';
 }
 function renderFailure(id,msg){const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">'+esc(msg)+'</div>';}
+async function safe(promise){
+  try{return await promise;}
+  catch(error){console.warn("Animecia homepage optional data unavailable:",error);return {data:[],error};}
+}
 async function catalogRPC(params){
   let result=await sb.rpc("search_anime_catalog_v2",params);
   if(result.error){
@@ -562,7 +566,7 @@ async function load(){
   const [catalogRes,seasonRes,genreRes,rankingRes,reviewRes]=await Promise.all([
     catalogRPC({...emptyParams,p_sort:"title"}),
     catalogRPC({...emptyParams,p_year:year,p_season:season,p_sort:"score",p_limit:12}),
-    sb.rpc("get_catalog_genres"),
+    safe(sb.rpc("get_catalog_genres")),
     catalogRPC({...emptyParams,p_sort:"score",p_limit:10}),
     safe(sb.from("reviews")
       .select("id,anime_id,title,content,rating,spoiler,likes_count,created_at")
@@ -588,7 +592,7 @@ async function load(){
   }
 
   const seasonRows=(seasonRes||[]).filter(a=>
-    AnimeciaData.isPublic(a) &&
+    a &&
     a.start_date &&
     a.start_date>="1963-01-01"
   );
@@ -612,12 +616,12 @@ async function load(){
   const titleRows=await catalogRPC({...emptyParams,p_sort:"title",p_limit:24});
   const titleBox=document.getElementById("home-title-index");
   if(titleBox){
-    const rows=titleRows.filter(a=>AnimeciaData.isPublic(a)&&a.start_date&&a.start_date>="1963-01-01");
+    const rows=titleRows.filter(a=>a&&a.start_date&&a.start_date>="1963-01-01");
     titleBox.innerHTML=rows.map(card).join("")||'<div class="empty">作品データがまだありません。</div>';
   }
 
   const rankingRows=(rankingRes||[]).filter(a=>
-    AnimeciaData.isPublic(a) &&
+    a &&
     a.start_date &&
     a.start_date>="1963-01-01" &&
     a.average_score!=null
@@ -631,7 +635,7 @@ async function load(){
     const rr=await safe(sb.from("animecia_public_anime")
       .select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,season_year,anime_verification_status,is_japanese,is_adult,is_kids,is_sensitive_visual")
       .in("id",reviewIds));
-    reviewAnime=(rr.data||[]).filter(AnimeciaData.isPublic);
+    reviewAnime=(rr.data||[]).filter(a=>a && a.anime_verification_status==="verified" && a.is_japanese===true && a.is_adult!==true && a.is_kids!==true && a.is_sensitive_visual!==true);
   }
   renderReviews(reviewRows,new Map(reviewAnime.map(a=>[String(a.id),a])));
 }
