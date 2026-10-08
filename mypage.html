@@ -218,9 +218,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <form class="header-search" action="anime.html" method="get" role="search">
 <input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
 </form>
-<div class="nav-actions">
-<a class="nav-btn primary" href="login.html" id="auth-link">ログイン</a>
-</div>
+
 </div>
 </header>
 <div class="home-function-scroll mypage-function-scroll" aria-label="Animeciaの機能"><div class="home-function-scroll-inner"><a href="index.html"><b>ホーム</b><span>トップ</span></a><a href="anime.html"><b>アニメを探す</b><span>作品検索</span></a><a href="season.html"><b>今期アニメ</b><span>放送作品</span></a><a href="ranking.html"><b>ランキング</b><span>評価・人気</span></a><a href="discover.html"><b>ジャンル</b><span>作品を発見</span></a><a href="recommendations.html"><b>おすすめ</b><span>次に観る作品</span></a><a href="memo.html"><b>メモ</b><span>作品をメモ</span></a><a href="community.html"><b>コミュニティ</b><span>みんなの投稿</span></a></div></div>
@@ -937,5 +935,5 @@ document.getElementById("save-visibility")?.addEventListener("click",saveVisibil
  const initialTab=decodeURIComponent(location.hash.replace(/^#/,""));if(initialTab&&document.querySelector(".tab[data-tab=\""+initialTab+"\"]")){currentTab=initialTab;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===currentTab));}start();
 });
 </script>
-<script src="auth-nav.js"></script>\n</body></html>
+\n</body></html>
 <style id="animecia-ui-polish">html{overflow-x:hidden}body{overflow-x:hidden}:focus-visible{outline:3px solid #2563eb;outline-offset:3px}button,a,input,select,textarea{touch-action:manipulation}@media(max-width:900px){.layout{grid-template-columns:1fr!important}.grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important}}@media(max-width:640px){input,select,textarea{font-size:16px!important}.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.wrap.head,.header-inner,.container.nav{padding:0 14px!important}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style>
