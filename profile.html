@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>プロフィール | Animecia</title>
 <meta id="meta-description" name="description" content="Animeciaユーザーのプロフィール。">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="anime-data.js"></script>
 <style>
 main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 .profile-card,.panel{background:#fff;border:1px solid #e3e6ea;border-radius:16px;box-shadow:0 8px 26px rgba(17,24,39,.05)}
@@ -34,9 +34,9 @@ const supabaseClient=AnimeciaAuth.client();
 const profileId=new URLSearchParams(location.search).get("id");
 const mediaUrl=(url,stamp)=>{if(!url)return "";try{const u=new URL(url,location.href);if(stamp)u.searchParams.set("v",String(new Date(stamp).getTime()));return u.href}catch(_){return url}};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
+const titleOf=a=>AnimeciaData.title(a);
 const imageMarkup=(url,alt)=>url?'<img class="thumb" src="'+esc(url)+'" alt="'+esc(alt)+'" loading="lazy" decoding="async" fetchpriority="high">':'<div class="thumb" style="display:grid;place-items:center;color:#888">画像なし</div>';
-const getAnime=async ids=>{const u=[...new Set((ids||[]).map(Number).filter(Number.isInteger))],m=new Map();for(let i=0;i<u.length;i+=500){const {data}=await supabaseClient.from("anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image").in("id",u.slice(i,i+500));(data||[]).forEach(a=>m.set(Number(a.id),a));}return m;};
+const getAnime=async ids=>{const u=[...new Set((ids||[]).map(Number).filter(Number.isInteger))],m=new Map();for(let i=0;i<u.length;i+=500){const {data}=await supabaseClient.from("animecia_public_anime").select("id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,english_title,cover_image,format,season,season_year,status").in("id",u.slice(i,i+500));(data||[]).forEach(a=>m.set(Number(a.id),a));}return m;};
 let profile=null,visibility={},currentUser=null,tabs=[];
 function renderHeader(followStats,reviewCount,isSelf){
  const name=profile.display_name||profile.username||"Animeciaユーザー";
