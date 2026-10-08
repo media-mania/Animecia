@@ -73,7 +73,7 @@
     >
 
     <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="anime-data.js"></script>
 
 
     <style>
@@ -2874,33 +2874,7 @@
     }
 
 
-    function getMainTitle(anime) {
-
-        return (
-            anime?.title_japanese ||
-            anime?.title_native ||
-
-            (
-                Array.isArray(anime?._japanese_aliases)
-                    ? anime._japanese_aliases[0]
-                    : ""
-            ) ||
-
-            (
-                /[ぁ-んァ-ン一-龯]/.test(String(anime?.title || ""))
-                    ? anime.title
-                    : ""
-            ) ||
-
-            anime?.title_user_preferred ||
-            anime?.title_romaji ||
-            anime?.title_english ||
-            anime?.english_title ||
-            anime?.title ||
-            "タイトル未設定"
-        );
-    }
-
+    function getMainTitle(anime){ return AnimeciaData.title(anime); }
 
     function getSubTitle(anime) {
 
