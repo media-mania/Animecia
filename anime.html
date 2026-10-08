@@ -2634,8 +2634,37 @@
         });
     }
 
-    function normalizeTitleReading(anime){return String(anime?.title_kana||anime?.title_romaji||anime?.title_japanese||anime?.title_native||anime?.title||"").normalize("NFKC").replace(/[\s\u3000]/g,"").replace(/^[^\p{Letter}\p{Number}\u3040-\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60)).toLowerCase();}
-function compareAnimeTitles(a,b){const order="ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅよょらりるれろゎわゐゑをん";const ar=normalizeTitleReading(a),br=normalizeTitleReading(b);for(let i=0;i<Math.max(ar.length,br.length);i++){const ac=ar[i]??"",bc=br[i]??"",ai=order.indexOf(ac),bi=order.indexOf(bc);if(ai!==bi){if(ai<0&&bi>=0)return 1;if(ai>=0&&bi<0)return -1;return ai-bi;}if(ac!==bc){const z=String(ac).localeCompare(String(bc),"ja-JP");if(z)return z;}}return Number(a?.id||0)-Number(b?.id||0);}
+    function normalizeTitleReading(anime){
+  const raw=String(anime?.title_kana||anime?.title_romaji||anime?.title_japanese||anime?.title_native||anime?.title||"").normalize("NFKC");
+  const strip=raw.replace(/\s|\u3000/g,"").replace(/^[^\p{Letter}\p{Number}\u3040-\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60)).toLowerCase();
+  const m=strip.match(/^(\d+)(.*)$/);
+  if(!m)return strip;
+  const n=Number(m[1]), rest=m[2];
+  const nums=["zero","ichi","ni","san","yon","go","roku","nana","hachi","kyuu"];
+  const small=x=>{
+    if(x===0)return"zero";
+    let s="";
+    const h=Math.floor(x/100), t=Math.floor((x%100)/10), o=x%10;
+    if(h)s+=(h===3?"sanbyaku":h===6?"roppyaku":h===8?"happyaku":nums[h]+"hyaku");
+    if(t)s+=(t===1?"juu":nums[t]+"juu");
+    if(o)s+=nums[o];
+    return s;
+  };
+  return small(n)+rest.replace(/^[.．\-–—ー]+/,"");
+}
+function compareAnimeTitles(a,b){
+  const order=["a","i","u","e","o","ka","ki","ku","ke","ko","ga","gi","gu","ge","go","sa","shi","su","se","so","za","ji","zu","ze","zo","ta","chi","tsu","te","to","da","di","du","de","do","na","ni","nu","ne","no","ha","hi","fu","he","ho","ba","bi","bu","be","bo","pa","pi","pu","pe","po","ma","mi","mu","me","mo","ya","yu","yo","ra","ri","ru","re","ro","wa","wo","n"];
+  const token=s=>{for(const x of order)if(s.startsWith(x))return x;return s.slice(0,1)};
+  const ar=normalizeTitleReading(a),br=normalizeTitleReading(b);
+  let x=ar,y=br;
+  while(x&&y){
+    const ax=token(x),by=token(y),ai=order.indexOf(ax),bi=order.indexOf(by);
+    if(ai!==bi)return (ai<0?999:ai)-(bi<0?999:bi);
+    if(ax!==by)return ax.localeCompare(by,"en");
+    x=x.slice(ax.length);y=y.slice(by.length);
+  }
+  return x?1:y?-1:Number(a?.id||0)-Number(b?.id||0);
+}
 
     /* =========================================
        Load anime
