@@ -8,7 +8,7 @@
   }
   function render(user){
     var loggedIn=!!(user&&!user.is_anonymous&&user.email_confirmed_at);
-    var link=document.getElementById("auth-link");
+    var links=Array.from(document.querySelectorAll("#auth-link,#footer-login-link"));\n    var link=links[0]||null;
     if(!link){
       var host=document.querySelector(".site-header .nav-actions")||document.querySelector("header .nav-actions");
       if(!host){
