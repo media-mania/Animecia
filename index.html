@@ -14,7 +14,7 @@
 <meta property="og:locale" content="ja_JP">
 <meta name="theme-color" content="#101114">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="anime-data.js"></script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"Animecia","url":"https://media-mania.github.io/Animecia/","potentialAction":{"@type":"SearchAction","target":"https://media-mania.github.io/Animecia/anime.html?search={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
@@ -531,12 +531,12 @@ const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
 let sb=null;
 function initSupabase(){if(!sb&&window.supabase?.createClient)sb=AnimeciaAuth.client();return sb;}
 function waitForSupabase(){return new Promise((resolve,reject)=>{const start=Date.now();(function check(){const client=initSupabase();if(client)return resolve(client);if(Date.now()-start>10000)return reject(new Error("Supabase SDK timeout"));setTimeout(check,50)})();});}
-const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
+const titleOf=a=>AnimeciaData.title(a);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const valid=a=>a&&a.anime_verification_status==="verified"&&a.is_japanese===true&&a.is_adult!==true&&a.is_kids!==true&&a.is_sensitive_visual!==true&&(a.start_date==null||a.start_date>="1963-01-01")&&/[ぁ-んァ-ヶ一-龯々ー]/.test(a.title_japanese||a.title_native||a.title_user_preferred||a.title||"");
 const img=(a,cls="")=>a?.cover_image?'<img class="'+cls+'" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'" decoding="async" fetchpriority="high">':'<div class="row-thumb">画像なし</div>';
 function card(a){
- const title=titleOf(a),score=a.average_score!=null?Number(a.average_score)/10:null;
+ const title=AnimeciaData.title(a),score=AnimeciaData.score(a);
  return '<div class="card"><a href="anime-detail.html?id='+encodeURIComponent(a.id)+'"><div class="poster '+(a.cover_image?"":"noimg")+'">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="'+esc(title)+'" loading="lazy" decoding="async">':"画像なし")+(score!=null?'<span class="score">★ '+score.toFixed(1)+'</span>':"")+'</div><div class="card-body"><div class="card-title">'+esc(title)+'</div><div class="meta">'+esc(a.season_year||"")+' '+esc(a.format||"")+'</div></div></a></div>';
 }
 function compareJapaneseTitle(a,b){
