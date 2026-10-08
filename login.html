@@ -83,9 +83,7 @@
 <form class="header-search" action="anime.html" method="get" role="search">
 <input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
 </form>
-<div class="nav-actions">
-<a class="nav-btn primary" href="login.html" id="auth-link">ログイン</a>
-</div>
+
 </div>
 </header><main><section class="panel"><h1>ログイン</h1><p>Animeciaのアカウントにログインします。</p><form id="form"><div class="field"><label for="email">メールアドレス</label><input id="email" type="email" autocomplete="email" required></div><div class="field"><label for="password">パスワード</label><input id="password" type="password" autocomplete="current-password" required></div><div class="actions"><button class="btn" id="submit">ログイン</button><button class="btn secondary" type="button" id="resend">確認メールを再送信</button></div><p id="message" class="message" aria-live="polite"></p></form><div class="links"><a href="signup.html">新規登録</a><a href="reset-password.html">パスワードを忘れた場合</a><a href="index.html">ホームへ戻る</a></div></section></main><script>
 const params=new URLSearchParams(location.search);
@@ -200,6 +198,5 @@ $("resend").addEventListener("click",async()=>{
 });
 
 init();
-</script><script src="auth-nav.js"></script>
-</body></html>
+</script></body></html>
 <style id="animecia-ui-polish">html{overflow-x:hidden}body{overflow-x:hidden}:focus-visible{outline:3px solid #2563eb;outline-offset:3px}button,a,input,select,textarea{touch-action:manipulation}@media(max-width:900px){.layout{grid-template-columns:1fr!important}.grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important}}@media(max-width:640px){input,select,textarea{font-size:16px!important}.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.wrap.head,.header-inner,.container.nav{padding:0 14px!important}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style>
