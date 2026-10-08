@@ -27,7 +27,7 @@
     var s=window.supabase.createClient(URL,KEY);
     s.auth.getUser().then(function(r){
       var user=r.data&&r.data.user;
-      if(user&&user.email_confirmed_at)return;
+      if(user&&user.email_confirmed_at){window.__animeciaLoggedIn=true;return;}\n      window.__animeciaLoggedIn=false;
       (selectors[key]||[]).forEach(function(sel){document.querySelectorAll(sel).forEach(disable);});
       if(key==="community"){
         addNotice(document.querySelector(".composer"),"投稿・返信・いいね・リポスト・保存などの操作にはログインが必要です。");
@@ -41,5 +41,10 @@
       }
     }).catch(function(){});
   }
+  document.addEventListener("click",function(e){
+    if(window.__animeciaLoggedIn!==false)return;
+    var t=e.target.closest && e.target.closest('[data-act="like"],[data-act="repost"],[data-act="bookmark"],[data-act="reply"],[data-act="send-reply"],[data-act="delete"],[data-add],[data-remove]');
+    if(t){e.preventDefault();e.stopImmediatePropagation();location.href="login.html?redirect="+encodeURIComponent(location.href);}
+  },true);
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",apply,{once:true});else apply();
 })();
