@@ -145,7 +145,22 @@
 <script>
 const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let sb=null;
+function waitForSupabase(){
+  return new Promise((resolve,reject)=>{
+    const start=Date.now();
+    (function check(){
+      if(window.supabase&&typeof window.supabase.createClient==="function"){
+        if(!sb)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+          auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.sessionStorage,storageKey:"animecia-auth-session"}
+        });
+        return resolve(sb);
+      }
+      if(Date.now()-start>10000)return reject(new Error("Supabase SDK timeout"));
+      setTimeout(check,50);
+    })();
+  });
+}
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
 const base="id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,season,season_year,average_score,anime_verification_status,created_at";
@@ -179,7 +194,8 @@ function render(rows){
  }).join("");
 }
 async function load(){
- // 0件の作品に埋もれないよう、実際に評価・お気に入り・レビューがある作品だけを取得
+ await waitForSupabase();
+ // 実際に評価・お気に入り・レビューがある作品だけを取得し、作品情報と結合する。
  const e=await sb.from("anime_engagement_summary")
    .select("anime_id,average_rating,rating_count,favorite_count,review_count,engagement_count")
    .gt("engagement_count",0)
@@ -192,6 +208,10 @@ async function load(){
  if(ids.length){
    const a=await sb.from("animecia_public_anime").select(base)
      .eq("anime_verification_status","verified")
+     .eq("is_japanese",true)
+     .eq("is_adult",false)
+     .eq("is_kids",false)
+     .eq("is_sensitive_visual",false)
      .in("id",ids);
    if(a.error) throw a.error;
    rows=a.data||[];
@@ -209,7 +229,7 @@ function sortAndRender(){
  render(rows);
 }
 document.querySelectorAll(".ranking-tab").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".ranking-tab").forEach(x=>x.classList.remove("active"));btn.classList.add("active");mode=btn.dataset.mode;sortAndRender();}));
-load().catch(err=>{console.error(err);document.getElementById("ranking-list").innerHTML='<div class="state">ランキングの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>';});
+waitForSupabase().then(load).catch(err=>{console.error(err);document.getElementById("ranking-list").innerHTML='<div class="state">ランキングの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>';});
 </script>
 \n</body>
 </html>
