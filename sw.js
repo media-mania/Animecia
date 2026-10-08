@@ -1,9 +1,7 @@
-const CACHE="animecia-static-v7";
+const CACHE="animecia-static-v8";
 const STATIC=/\.(?:css|js|woff2?|png|jpe?g|webp|gif|svg)(?:\?.*)?$/i;
-const STATIC_HTML=/^\/Animecia\/(?:anime\/[^/]+\/|genre\/[^/]+\/)/i;
 
 self.addEventListener("install",e=>e.waitUntil(self.skipWaiting()));
-
 self.addEventListener("activate",e=>e.waitUntil(
   caches.keys()
     .then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
@@ -20,31 +18,27 @@ self.addEventListener("fetch",e=>{
   if(STATIC.test(u.pathname)){
     e.respondWith(caches.open(CACHE).then(async c=>{
       const hit=await c.match(r);
-      try{
-        const net=await fetch(r,{cache:"no-cache"});
-        if(net.ok) c.put(r,net.clone());
+      const update=fetch(r,{cache:"no-cache"}).then(net=>{
+        if(net.ok)c.put(r,net.clone());
         return net;
-      }catch(err){
-        return hit;
-      }
+      }).catch(()=>null);
+      return hit || await update || Response.error();
     }));
     return;
   }
 
-  if(r.mode==="navigate"&&STATIC_HTML.test(u.pathname)){
+  if(r.mode==="navigate"){
     e.respondWith(caches.open(CACHE).then(async c=>{
       const hit=await c.match(r);
-      const net=(async()=>{
-        const preloaded=await e.preloadResponse;
-        if(preloaded){
-          if(preloaded.ok)c.put(r,preloaded.clone());
-          return preloaded;
-        }
-        const res=await fetch(r,{cache:"no-cache"});
-        if(res.ok)c.put(r,res.clone());
-        return res;
-      })().catch(()=>hit);
-      return hit||net;
+      const update=(async()=>{
+        try{
+          const pre=await e.preloadResponse;
+          const net=pre || await fetch(r,{cache:"no-cache"});
+          if(net.ok)c.put(r,net.clone());
+          return net;
+        }catch(_){return null}
+      })();
+      return hit || await update || Response.error();
     }));
   }
 });
