@@ -30,57 +30,18 @@
     const n=Number(v);
     return Number.isFinite(n)?(a?.average_rating!=null||a?._animecia_rating!=null?n:n/10):null;
   }
-  // 五十音順の共通キー。
-  // 1) title_kana があればその読みを優先
-  // 2) なければ AniList 等の title_romaji を使用
-  // 3) 数字・記号・英字も正規化して同じ比較方式にする
+  // 「ローマ字化 → 五十音順」を全ページ共通で使用する。
+  // title_romaji がある場合は必ずそれを基準にし、ローマ字そのものを
+  // ヘボン式の音節として解析して五十音の行・段へ変換して比較する。
   function reading(a){
-    const source=String(a?.title_kana||a?.title_romaji||a?.title_english||a?.english_title||a?.title_native||a?.title||"").normalize("NFKC");
-    const kanaToRoma={
-      "きゃ":"kya","きゅ":"kyu","きょ":"kyo","ぎゃ":"gya","ぎゅ":"gyu","ぎょ":"gyo",
-      "しゃ":"sha","しゅ":"shu","しょ":"sho","じゃ":"ja","じゅ":"ju","じょ":"jo",
-      "ちゃ":"cha","ちゅ":"chu","ちょ":"cho","ぢゃ":"ja","ぢゅ":"ju","ぢょ":"jo",
-      "にゃ":"nya","にゅ":"nyu","にょ":"nyo","ひゃ":"hya","ひゅ":"hyu","ひょ":"hyo",
-      "びゃ":"bya","びゅ":"byu","びょ":"byo","ぴゃ":"pya","ぴゅ":"pyu","ぴょ":"pyo",
-      "みゃ":"mya","みゅ":"myu","みょ":"myo","りゃ":"rya","りゅ":"ryu","りょ":"ryo",
-      "ふぁ":"fa","ふぃ":"fi","ふぇ":"fe","ふぉ":"fo","うぃ":"wi","うぇ":"we","うぉ":"wo",
-      "しぇ":"she","じぇ":"je","ちぇ":"che","つぁ":"tsa","つぃ":"tsi","つぇ":"tse","つぉ":"tso",
-      "てぃ":"ti","でぃ":"di","でゅ":"dyu","とぅ":"tu","どぅ":"du",
-      "あ":"a","い":"i","う":"u","え":"e","お":"o","か":"ka","き":"ki","く":"ku","け":"ke","こ":"ko",
-      "が":"ga","ぎ":"gi","ぐ":"gu","げ":"ge","ご":"go","さ":"sa","し":"shi","す":"su","せ":"se","そ":"so",
-      "ざ":"za","じ":"ji","ず":"zu","ぜ":"ze","ぞ":"zo","た":"ta","ち":"chi","つ":"tsu","て":"te","と":"to",
-      "だ":"da","ぢ":"ji","づ":"zu","で":"de","ど":"do","な":"na","に":"ni","ぬ":"nu","ね":"ne","の":"no",
-      "は":"ha","ひ":"hi","ふ":"fu","へ":"he","ほ":"ho","ば":"ba","び":"bi","ぶ":"bu","べ":"be","ぼ":"bo",
-      "ぱ":"pa","ぴ":"pi","ぷ":"pu","ぺ":"pe","ぽ":"po","ま":"ma","み":"mi","む":"mu","め":"me","も":"mo",
-      "や":"ya","ゆ":"yu","よ":"yo","ら":"ra","り":"ri","る":"ru","れ":"re","ろ":"ro","わ":"wa","を":"wo","ん":"n"
-    };
-    let s=source.toLowerCase().replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60));
-    let out="";
-    for(let i=0;i<s.length;i++){
-      const ch=s[i];
-      if(ch==="っ"){
-        const next=s.slice(i+1).match(/^(きゃ|きゅ|きょ|ぎゃ|ぎゅ|ぎょ|しゃ|しゅ|しょ|じゃ|じゅ|じょ|ちゃ|ちゅ|ちょ|にゃ|にゅ|にょ|ひゃ|ひゅ|ひょ|びゃ|びゅ|びょ|ぴゃ|ぴゅ|ぴょ|みゃ|みゅ|みょ|りゃ|りゅ|りょ|ふぁ|ふぃ|ふぇ|ふぉ|うぃ|うぇ|うぉ|しぇ|じぇ|ちぇ|つぁ|つぃ|つぇ|つぉ|てぃ|でぃ|でゅ|とぅ|どぅ|[あ-ん])/);
-        if(next){ const r=kanaToRoma[next[0]]||""; if(r) out+=r[0]; }
-        continue;
-      }
-      const pair=s.slice(i,i+2);
-      if(kanaToRoma[pair]){out+=kanaToRoma[pair];i++;continue;}
-      if(kanaToRoma[ch]){out+=kanaToRoma[ch];continue;}
-      if(/\\d/.test(ch)){
-        let j=i;while(j<s.length&&/\\d/.test(s[j]))j++;
-        const n=Number(s.slice(i,j));
-        out+=numberToRomaji(n);i=j-1;continue;
-      }
-      if(/[a-z]/.test(ch)){out+=ch;continue;}
-      // 記号・空白・長音などは読みキーから除外
-    }
-    return out;
+    const source=String(a?.title_romaji||a?.title_english||a?.english_title||a?.title_native||a?.title||"").normalize("NFKC");
+    return source.toLowerCase().replace(/[ー\s\-‐‑‒–—―・.,!?()[\]{}'"\\/:;_+&]/g,"").replace(/[^a-z0-9]/g,"");
   }
   function numberToRomaji(n){
     if(!Number.isFinite(n))return "";
     if(n===0)return "zero";
     const ones=["","ichi","ni","san","yon","go","roku","nana","hachi","kyuu"];
-    const under10000=(v)=>{
+    const under10000=v=>{
       let r="",th=Math.floor(v/1000),h=Math.floor(v%1000/100),t=Math.floor(v%100/10),o=v%10;
       if(th)r+=(th===3?"sanzen":th===8?"hassen":ones[th]+"sen");
       if(h)r+=(h===3?"sanbyaku":h===6?"roppyaku":h===8?"happyaku":ones[h]+"hyaku");
@@ -93,16 +54,62 @@
     return String(n);
   }
   function compare(a,b){
-    const order=["a","i","u","e","o","ka","ki","ku","ke","ko","ga","gi","gu","ge","go","sa","shi","su","se","so","za","ji","zu","ze","zo","ta","chi","tsu","te","to","da","di","du","de","do","na","ni","nu","ne","no","ha","hi","fu","he","ho","ba","bi","bu","be","bo","pa","pi","pu","pe","po","ma","mi","mu","me","mo","ya","yu","yo","ra","ri","ru","re","ro","wa","wo","n"];
-    const token=s=>order.find(x=>s.startsWith(x))||s.slice(0,1);
-    let x=reading(a),y=reading(b);
-    while(x&&y){
-      const ax=token(x),by=token(y),ai=order.indexOf(ax),bi=order.indexOf(by);
-      if(ai!==bi)return(ai<0?999:ai)-(bi<0?999:bi);
-      if(ax!==by)return ax.localeCompare(by,"en");
-      x=x.slice(ax.length);y=y.slice(by.length);
+    // 各ローマ字音節を五十音の位置へ変換。
+    // 例: kya→きゃ→「き」行、sha→しゃ→「し」行、chi→ち、tsu→つ。
+    const syllables=[
+      ["kya","ki"],["kyu","ki"],["kyo","ki"],["gya","ki"],["gyu","ki"],["gyo","ki"],
+      ["sha","shi"],["shu","shi"],["sho","shi"],["ja","shi"],["ju","shi"],["jo","shi"],["jya","shi"],["jyu","shi"],["jyo","shi"],
+      ["cha","chi"],["chu","chi"],["cho","chi"],["tya","chi"],["tyu","chi"],["tyo","chi"],
+      ["nya","ni"],["nyu","ni"],["nyo","ni"],["hya","hi"],["hyu","hi"],["hyo","hi"],
+      ["bya","hi"],["byu","hi"],["byo","hi"],["pya","hi"],["pyu","hi"],["pyo","hi"],
+      ["mya","mi"],["myu","mi"],["myo","mi"],["rya","ri"],["ryu","ri"],["ryo","ri"],
+      ["fa","fu"],["fi","fu"],["fe","fu"],["fo","fu"],["fya","fu"],["fyu","fu"],["fyo","fu"],
+      ["wi","i"],["we","e"],["wo","wo"],["she","shi"],["je","shi"],["che","chi"],
+      ["tsa","tsu"],["tsi","tsu"],["tse","tsu"],["tso","tsu"],["ti","chi"],["di","chi"],["du","tsu"],
+      ["a","a"],["i","i"],["u","u"],["e","e"],["o","o"],
+      ["ka","ka"],["ki","ki"],["ku","ku"],["ke","ke"],["ko","ko"],
+      ["ga","ka"],["gi","ki"],["gu","ku"],["ge","ke"],["go","ko"],
+      ["sa","sa"],["shi","shi"],["su","su"],["se","se"],["so","so"],
+      ["za","sa"],["ji","shi"],["zu","su"],["ze","se"],["zo","so"],
+      ["ta","ta"],["chi","chi"],["tsu","tsu"],["te","te"],["to","to"],
+      ["da","ta"],["de","te"],["do","to"],
+      ["na","na"],["ni","ni"],["nu","nu"],["ne","ne"],["no","no"],
+      ["ha","ha"],["hi","hi"],["fu","fu"],["he","he"],["ho","ho"],
+      ["ba","ha"],["bi","hi"],["bu","fu"],["be","he"],["bo","ho"],
+      ["pa","ha"],["pi","hi"],["pu","fu"],["pe","he"],["po","ho"],
+      ["ma","ma"],["mi","mi"],["mu","mu"],["me","me"],["mo","mo"],
+      ["ya","ya"],["yu","yu"],["yo","yo"],
+      ["ra","ra"],["ri","ri"],["ru","ru"],["re","re"],["ro","ro"],
+      ["wa","wa"],["wo","wo"],["n","n"]
+    ];
+    const baseOrder=["a","i","u","e","o","ka","ki","ku","ke","ko","sa","shi","su","se","so","ta","chi","tsu","te","to","na","ni","nu","ne","no","ha","hi","fu","he","ho","ma","mi","mu","me","mo","ya","yu","yo","ra","ri","ru","re","ro","wa","wo","n"];
+    const map=new Map(syllables);
+    const rank=new Map(baseOrder.map((x,i)=>[x,i]));
+    const key=s=>{
+      s=reading(s);
+      const result=[];
+      let i=0;
+      while(i<s.length){
+        if(/[0-9]/.test(s[i])){
+          let j=i;while(j<s.length&&/[0-9]/.test(s[j]))j++;
+          const n=Number(s.slice(i,j));
+          s=numberToRomaji(n)+s.slice(j);continue;
+        }
+        let hit=null;
+        for(const [romaji,base] of syllables){if(s.startsWith(romaji,i)&&(hit===null||romaji.length>hit[0].length))hit=[romaji,base];}
+        if(hit){result.push(rank.get(hit[1]));i+=hit[0].length;}
+        else {result.push(999);i++;}
+      }
+      return result;
+    };
+    const x=key(a),y=key(b);
+    const len=Math.max(x.length,y.length);
+    for(let i=0;i<len;i++){
+      if(x[i]===undefined)return -1;
+      if(y[i]===undefined)return 1;
+      if(x[i]!==y[i])return x[i]-y[i];
     }
-    return x?1:y?-1:Number(a?.id||0)-Number(b?.id||0);
+    return reading(a).localeCompare(reading(b),"en");
   }
   function genres(a){
     const out=[];
