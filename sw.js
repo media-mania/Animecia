@@ -1,8 +1,8 @@
-const CACHE="animecia-static-v5";
+const CACHE="animecia-static-v6";
 const STATIC=/\.(?:css|js|woff2?|png|jpe?g|webp|gif|svg)(?:\?.*)?$/i;
 const STATIC_HTML=/^\/Animecia\/(?:anime\/[^/]+\/|genre\/[^/]+\/)/i;
 self.addEventListener("install",e=>e.waitUntil(self.skipWaiting()));
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.registration.navigationPreload?.enable()).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{
   const r=e.request;
   if(r.method!=="GET") return;
@@ -25,7 +25,7 @@ self.addEventListener("fetch",e=>{
   if(r.mode==="navigate"&&STATIC_HTML.test(u.pathname)){
     e.respondWith(caches.open(CACHE).then(async c=>{
       const hit=await c.match(r);
-      const net=fetch(r).then(res=>{if(res.ok)c.put(r,res.clone());return res}).catch(()=>hit);
+      const net=(async()=>{const preloaded=await e.preloadResponse;if(preloaded){if(preloaded.ok)c.put(r,preloaded.clone());return preloaded;}const res=await fetch(r);if(res.ok)c.put(r,res.clone());return res;})().catch(()=>hit);
       return hit||net;
     }));
   }
