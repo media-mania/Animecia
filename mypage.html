@@ -392,7 +392,7 @@ async function getUser(){
  const {data,error}=await supabaseClient.auth.getUser();
  if(error){console.error(error);return null;}
  const u=data?.user||null;
- return u&&u.email_confirmed_at?u:null;
+ return u&&(u.email_confirmed_at||u.confirmed_at)&&!u.is_anonymous?u:null;
 }
 async function getAnime(ids){
  const unique=[...new Set((ids||[]).map(Number).filter(Number.isInteger))],map=new Map();
