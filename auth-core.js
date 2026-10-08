@@ -16,7 +16,7 @@
     });
   }
   function client(){
-    if(!state.client) state.client=w.__animeciaAuthClient||(w.__animeciaAuthClient=w.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));
+    if(!state.client) state.client=w.__animeciaAuthClient||(w.__animeciaAuthClient=w.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.sessionStorage,storageKey:"animecia-auth-session"}}));
     return state.client;
   }
   function isVerified(user){return !!(user&&!user.is_anonymous&&user.email_confirmed_at);}
