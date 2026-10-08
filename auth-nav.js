@@ -1,26 +1,37 @@
-/* Animecia 共通認証ナビゲーション */
+/* Animecia: 全ページ共通の認証ナビゲーション */
 (function(){
-  var URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
-  var KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
-  function setup(){
-    var links=document.querySelectorAll("#auth-link, #footer-login-link");
-    if(!links.length || !window.supabase || !window.supabase.createClient) return;
-    var client=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient(URL,KEY));
-    function render(user){
-      var loggedIn=!!(user&&!user.is_anonymous);
-      links.forEach(function(link){
-        link.textContent=loggedIn?"ログアウト":"ログイン";
-        link.href=loggedIn?"#":"login.html";
-        link.onclick=loggedIn?function(e){
-          e.preventDefault();
-          client.auth.signOut({scope:"local"}).then(function(){location.reload();});
-        }:null;
-        link.style.display="";
-      });
-    }
-    client.auth.getUser().then(function(res){render(res.data&&res.data.user);}).catch(function(){render(null);});
-    client.auth.onAuthStateChange(function(_event,session){render(session&&session.user);});
+  "use strict";
+  function ready(){
+    if(!window.AnimeciaAuth)return setTimeout(ready,50);
+    AnimeciaAuth.init().then(render).catch(function(){render(null);});
+    window.addEventListener("animecia-auth",function(e){render(e.detail&&e.detail.user);});
   }
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",setup,{once:true});
-  else setup();
+  function render(user){
+    var loggedIn=!!(user&&!user.is_anonymous&&user.email_confirmed_at);
+    var link=document.getElementById("auth-link");
+    if(!link){
+      var host=document.querySelector(".site-header .nav-actions")||document.querySelector("header .nav-actions");
+      if(!host){
+        var nav=document.querySelector(".site-header .container.nav")||document.querySelector("header nav")||document.querySelector(".wrap.head");
+        if(nav){
+          host=document.createElement("div");host.className="nav-actions animecia-auth-actions";
+          nav.appendChild(host);
+        }
+      }
+      if(host){
+        link=document.createElement("a");link.id="auth-link";link.className="nav-btn primary animecia-auth-link";host.appendChild(link);
+      }
+    }
+    if(!link)return;
+    link.textContent=loggedIn?"ログアウト":"ログイン";
+    link.href=loggedIn?"#":"login.html";
+    link.setAttribute("aria-label",loggedIn?"ログアウト":"ログイン");
+    link.onclick=loggedIn?async function(e){
+      e.preventDefault();link.setAttribute("aria-busy","true");link.textContent="ログアウト中…";
+      try{await AnimeciaAuth.signOut();location.replace("index.html");}
+      catch(err){console.error(err);link.removeAttribute("aria-busy");render(AnimeciaAuth.state.user);}
+    }:null;
+    link.style.display="";
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ready,{once:true});else ready();
 })();
