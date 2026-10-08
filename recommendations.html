@@ -145,33 +145,39 @@ const U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const title=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.title||"タイトル未設定";
 let rows=[],genres=[],selected=new Set(),userSignals=new Map();
-async function fetchAllRows(table, columns, orderColumn, batchSize=1000){
- let all=[];
- for(let from=0;;from+=batchSize){
-  const {data,error}=await s.from(table).select(columns).order(orderColumn,{ascending:true}).range(from,from+batchSize-1);
+async function fetchCatalogRows(){
+  const {data,error}=await s.rpc("search_anime_catalog",{
+    p_query:null,p_genre_id:null,p_studio_id:null,p_year:null,p_season:null,
+    p_status:null,p_format:null,p_sort:"title",p_limit:1000,p_offset:0
+  });
   if(error) throw error;
-  if(!data||!data.length) break;
-  all.push(...data);
-  if(data.length<batchSize) break;
- }
- return all;
+  return data||[];
 }
 async function init(){
- const [ar,gr,ag,auth]=await Promise.all([
-  fetchAllRows("animecia_public_anime","id,title,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,season_year,format,status,episodes,anime_verification_status","id"),
+ const [ar,gr,auth]=await Promise.all([
+  fetchCatalogRows(),
   s.from("genres").select("id,name").order("name"),
-  fetchAllRows("anime_genres","anime_id,genre_id","anime_id"),
   s.auth.getUser()
  ]);
  if(gr.error) throw gr.error;
  genres=gr.data||[];
- const gm=new Map(genres.map(g=>[Number(g.id),g.name])), gids=new Map();
- (ag||[]).forEach(x=>{const id=Number(x.anime_id);if(!gids.has(id))gids.set(id,[]);gids.get(id).push(Number(x.genre_id))});
- const ids=(ar||[]).map(a=>a.id),em=new Map();
- for(let i=0;i<ids.length;i+=500){const {data:e}=await s.from("anime_engagement_summary").select("anime_id,average_rating,favorite_count,review_count,rating_count").in("anime_id",ids.slice(i,i+500));(e||[]).forEach(x=>em.set(Number(x.anime_id),x))}
- rows=(ar||[]).filter(a=>a.anime_verification_status==="verified" && a.start_date && a.start_date >= "1963-01-01" && /^https:\/\/s[^/]+\.anilist\.co\//.test(a.cover_image || "")).map(a=>({...a,g:gids.get(Number(a.id))||[],gn:(gids.get(Number(a.id))||[]).map(x=>gm.get(x)).filter(Boolean),e:em.get(Number(a.id))||{}}));
+ const gm=new Map(genres.map(g=>[Number(g.id),g.name]));
+ rows=(ar||[]).map(a=>({...a,g:[],gn:[],e:{}}));
  renderGenres();
- if(auth.data.user&&!auth.data.user.is_anonymous){const uid=auth.data.user.id;const [rt,st,fv]=await Promise.all([s.from("user_ratings").select("anime_id,rating").eq("user_id",uid),s.from("user_anime_status").select("anime_id,status").eq("user_id",uid),s.from("favorites").select("anime_id").eq("user_id",uid)]);(rt.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{rating:Number(x.rating)}));(st.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),status:x.status}));(fv.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),favorite:true}));}
+ if(auth.data.user&&!auth.data.user.is_anonymous){
+   const uid=auth.data.user.id;
+   const [rt,st,fv]=await Promise.all([
+     s.from("user_ratings").select("anime_id,rating").eq("user_id",uid),
+     s.from("user_anime_status").select("anime_id,status").eq("user_id",uid),
+     s.from("favorites").select("anime_id").eq("user_id",uid)
+   ]);
+   if(rt.error) throw rt.error;
+   if(st.error) throw st.error;
+   if(fv.error) throw fv.error;
+   (rt.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{rating:Number(x.rating)}));
+   (st.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),status:x.status}));
+   (fv.data||[]).forEach(x=>userSignals.set(Number(x.anime_id),{...(userSignals.get(Number(x.anime_id))||{}),favorite:true}));
+ }
  recommendationsReady=true;
  run();
 }
