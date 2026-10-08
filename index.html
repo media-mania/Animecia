@@ -577,28 +577,22 @@ async function load(){
  const catalog=Number(countRes.count||0);
  const databaseCount=document.getElementById("database-count");if(databaseCount)databaseCount.textContent=catalog.toLocaleString("ja-JP")+"作品";
  
- // タイトル五十音索引は、公開対象だけを直接取得してから既存の日本語ソートを適用する。
- let titleIndexRows=[];
- const titleBatch=1000;
- const titlePages=Math.ceil(catalog/titleBatch);
- const titleRequests=[];
- for(let i=0;i<titlePages;i++){
-   titleRequests.push(safe(sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).range(i*titleBatch,(i+1)*titleBatch-1)));
- }
- const titleResponses=await Promise.all(titleRequests);
- titleResponses.forEach(x=>{if(!x.error)titleIndexRows.push(...(x.data||[]));});
- const titleKanaIds=titleIndexRows.map(a=>a?.id).filter(Boolean);
- const titleKanaMap=new Map();
- const titleKanaRequests=[];
- for(let offset=0;offset<titleKanaIds.length;offset+=500){
-   titleKanaRequests.push(safe(sb.from("anime").select("id,title_kana").in("id",titleKanaIds.slice(offset,offset+500))));
- }
- const titleKanaResponses=await Promise.all(titleKanaRequests);
- titleKanaResponses.forEach(x=>{if(!x.error)(x.data||[]).forEach(row=>titleKanaMap.set(Number(row.id),row.title_kana||""));});
- titleIndexRows.forEach(a=>a.title_kana=titleKanaMap.get(Number(a.id))||"");
- const titleIndex=titleIndexRows.sort(compareJapaneseTitle).slice(0,24);
+ // タイトル五十音索引はDB側の公開カタログ検索を利用し、全作品の一括取得を避ける。
+ const titleIndexRes=await safe(sb.rpc("search_anime_catalog",{
+   p_query:null,
+   p_genre_id:null,
+   p_studio_id:null,
+   p_year:null,
+   p_season:null,
+   p_status:null,
+   p_format:null,
+   p_sort:"title",
+   p_limit:24,
+   p_offset:0
+ }));
+ const titleIndexRows=titleIndexRes.error?[]:(titleIndexRes.data||[]);
  const titleBox=document.getElementById("home-title-index");
- if(titleBox)titleBox.innerHTML=titleIndex.length?titleIndex.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
+ if(titleBox)titleBox.innerHTML=titleIndexRows.length?titleIndexRows.map(card).join(""):'<div class="empty">作品データがまだありません。</div>';
  
  const genres=(genreRes.data||[]).filter(g=>g&&g.id!=null&&g.name);
  const uniqueGenres=[...new Map(genres.map(g=>[String(g.id),g])).values()];
