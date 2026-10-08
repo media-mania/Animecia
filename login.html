@@ -1,212 +1,174 @@
-<!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ログイン | Animecia</title>
-<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="auth-init.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="auth-core.js" defer></script><script src="auth-nav.js" defer></script><style>main{max-width:520px;margin:60px auto;padding:20px}.panel{padding:30px}.field{margin-bottom:16px}.field label{display:block;font-weight:700;font-size:13px;margin-bottom:7px}.field input{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;font:inherit}.actions{display:grid;gap:10px}.message{min-height:24px;margin:14px 0;font-size:13px}.links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;font-size:13px}</style>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ログイン | Animecia</title>
 <link rel="stylesheet" href="site-theme.css?v=20261008-v1">
-<style id="animecia-global-header-fix">
-/* 全ページ共通ヘッダー：トップページと同じレイアウト */
-.site-header{
-  position:sticky!important;top:0!important;z-index:9999!important;
-  background:rgba(16,17,20,.94)!important;
-  backdrop-filter:blur(16px)!important;
-  border-bottom:1px solid rgba(255,255,255,.08)!important;
-  color:#fff!important;
-}
-.site-header .container.nav{
-  width:min(1240px,calc(100% - 32px))!important;
-  min-height:68px!important;margin:auto!important;
-  display:flex!important;align-items:center!important;gap:28px!important;
-}
-.site-header .brand{
-  font-size:22px!important;font-weight:900!important;letter-spacing:-.04em!important;
-  text-decoration:none!important;color:#fff!important;white-space:nowrap!important;
-}
-.site-header .nav-links{
-  display:flex!important;gap:20px!important;align-items:center!important;flex:1!important;
-}
-.site-header .nav-links a{
-  color:#bfc2c8!important;text-decoration:none!important;font-size:13px!important;font-weight:650!important;
-  white-space:nowrap!important;
-}
-.site-header .nav-links a:hover{color:#fff!important}
-.site-header .header-search{
-  display:flex!important;align-items:center!important;flex:0 1 250px!important;
-  min-width:140px!important;margin:0!important;
-}
-.site-header .header-search input{
-  width:100%!important;min-width:0!important;height:36px!important;
-  border:1px solid #3a3d44!important;border-radius:9px!important;
-  background:#191b20!important;color:#fff!important;padding:8px 11px!important;
-  outline:none!important;
-}
-.site-header .header-search input::placeholder{color:#8f939b!important}
-.site-header .nav-actions{
-  display:flex!important;gap:8px!important;align-items:center!important;flex-shrink:0!important;
-}
-.site-header .nav-btn{
-  border:1px solid #3a3d44!important;background:#191b20!important;color:#fff!important;
-  border-radius:9px!important;padding:8px 13px!important;text-decoration:none!important;
-  font-size:12px!important;font-weight:750!important;white-space:nowrap!important;
-}
-.site-header .nav-btn.primary{background:#fff!important;color:#111!important;border-color:#fff!important}
-@media(max-width:1100px){
-  .site-header .nav-links{gap:12px!important}
-  .site-header .nav-links a{font-size:12px!important}
-  .site-header .header-search{flex-basis:190px!important}
-}
-@media(max-width:700px){
-  .site-header .container.nav{
-    width:min(100% - 20px,1240px)!important;min-height:60px!important;gap:10px!important;
-  }
-  .site-header .nav-links{display:none!important}
-  .site-header .header-search{flex:1 1 auto!important;min-width:0!important}
-  .site-header .header-search input{height:36px!important;font-size:12px!important}
-  .site-header .brand{font-size:20px!important}
-  .site-header .nav-actions .nav-btn:not(.primary){display:none!important}
-}
-</style>
 <link rel="stylesheet" href="header.css">
-<link rel="preconnect" href="https://bhgdjuwlxvbaeraaivmh.supabase.co" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script src="performance.js" defer></script></head><body>
+<link rel="preconnect" href="https://bhgdjuwlxvbaeraaivmh.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<script src="auth-init.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-core.js"></script>
+<style>
+main{max-width:520px;margin:60px auto;padding:20px}
+.panel{padding:30px}
+.field{margin-bottom:16px}
+.field label{display:block;font-weight:700;font-size:13px;margin-bottom:7px}
+.field input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:9px;font:inherit;background:#fff;color:#111}
+.field input:focus{outline:3px solid rgba(37,99,235,.18);border-color:#2563eb}
+.actions{display:grid;gap:10px}
+.actions button{width:100%;min-height:44px}
+.message{min-height:24px;margin:14px 0;font-size:13px;line-height:1.6}
+.links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;font-size:13px}
+.error{color:#b42318!important}
+.status{color:#555}
+.site-header{position:sticky!important;top:0!important;z-index:9999!important;background:rgba(16,17,20,.94)!important;backdrop-filter:blur(16px)!important;border-bottom:1px solid rgba(255,255,255,.08)!important;color:#fff!important}
+.site-header .container.nav{width:min(1240px,calc(100% - 32px))!important;min-height:68px!important;margin:auto!important;display:flex!important;align-items:center!important}
+.site-header .brand{font-size:22px!important;font-weight:900!important;text-decoration:none!important;color:#fff!important}
+@media(max-width:640px){main{margin:30px auto;padding:14px}.panel{padding:22px 18px}.site-header .container.nav{width:calc(100% - 20px)!important;min-height:60px!important}}
+</style>
+</head>
+<body>
 <header class="site-header">
-<div class="container nav">
-<a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
-<nav class="nav-links animecia-main-nav" aria-label="メインメニュー">
-<a href="index.html">ホーム</a>
-<a href="anime.html">アニメを探す</a>
-<a href="season.html">今期アニメ</a>
-<a href="ranking.html">ランキング</a>
-<a href="discover.html">ジャンル</a>
-<a href="recommendations.html">おすすめ</a>
-<a href="memo.html">メモ</a>
-<a href="community.html">コミュニティ</a>
-<a href="mypage.html">マイページ</a>
-</nav>
-<form class="header-search" action="anime.html" method="get" role="search">
-<input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
-</form>
-
+  <div class="container nav">
+    <a class="brand" href="index.html" aria-label="Animecia ホーム">Animecia</a>
+  </div>
+</header>
+<main>
+<section class="panel">
+<h1>ログイン</h1>
+<p>Animeciaのアカウントにログインします。</p>
+<form id="form" novalidate>
+<div class="field">
+<label for="email">メールアドレス</label>
+<input id="email" type="email" autocomplete="username" inputmode="email" required>
 </div>
-</header><main><section class="panel"><h1>ログイン</h1><p>Animeciaのアカウントにログインします。</p><form id="form"><div class="field"><label for="email">メールアドレス</label><input id="email" type="email" autocomplete="email" required></div><div class="field"><label for="password">パスワード</label><input id="password" type="password" autocomplete="current-password" required></div><div class="actions"><button class="btn" id="submit">ログイン</button><button class="btn secondary" type="button" id="resend">確認メールを再送信</button></div><p id="message" class="message" aria-live="polite"></p></form><div class="links"><a href="signup.html">新規登録</a><a href="reset-password.html">パスワードを忘れた場合</a><a href="index.html">ホームへ戻る</a></div></section></main><script>
-const params=new URLSearchParams(location.search);
-const redirect=params.get("redirect");
-function getSafeRedirect(value){
-  if(!value)return "mypage.html";
-  try{
-    const u=new URL(value,location.href);
-    if(u.origin!==location.origin)return "mypage.html";
-    const base=new URL(".",location.href);
-    if(u.pathname.startsWith(base.pathname))return u.pathname.slice(base.pathname.length)+(u.search||"")+(u.hash||"");
-  }catch(_){}
-  return "mypage.html";
-}
-const safeRedirect=getSafeRedirect(redirect);
-const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
-const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
-const $=id=>document.getElementById(id);
-const msg=(t,e=false)=>{$("message").textContent=t;$("message").style.color=e?"#b42318":""};
-let sb=null;
+<div class="field">
+<label for="password">パスワード</label>
+<input id="password" type="password" autocomplete="current-password" required>
+</div>
+<div class="actions">
+<button class="btn" id="submit" type="submit">ログイン</button>
+<button class="btn secondary" type="button" id="resend">確認メールを再送信</button>
+</div>
+<p id="message" class="message status" aria-live="polite"></p>
+</form>
+<div class="links">
+<a href="signup.html">新規登録</a>
+<a href="reset-password.html">パスワードを忘れた場合</a>
+<a href="index.html">ホームへ戻る</a>
+</div>
+</section>
+</main>
+<script>
+(function(){
+  "use strict";
+  const params=new URLSearchParams(location.search);
+  const redirect=params.get("redirect");
 
-function authErrorMessage(error){
-  const code=error?.code||"";
-  const message=String(error?.message||"");
-  if(code==="email_not_confirmed"||/email not confirmed/i.test(message)){
-    return "メールアドレスの確認が完了していません。確認メールを確認してください。";
+  function getSafeRedirect(value){
+    if(!value)return "mypage.html";
+    try{
+      const u=new URL(value,location.href);
+      if(u.origin!==location.origin)return "mypage.html";
+      const base=new URL(".",location.href);
+      if(u.pathname.startsWith(base.pathname)){
+        return u.pathname.slice(base.pathname.length)+(u.search||"")+(u.hash||"");
+      }
+    }catch(_){}
+    return "mypage.html";
   }
-  if(code==="invalid_credentials"||/invalid login credentials/i.test(message)){
-    return "メールアドレスまたはパスワードが正しくありません。";
-  }
-  if(/failed to fetch|network|fetch/i.test(message)){
-    return "認証サーバーに接続できませんでした。通信状態を確認して、もう一度お試しください。";
-  }
-  return "ログインに失敗しました。しばらくしてからもう一度お試しください。";
-}
 
-async function init(){
-  try{
-    if(!window.supabase||typeof window.supabase.createClient!=="function"){
-      msg("認証機能の読み込みに失敗しました。ページを再読み込みしてください。",true);
+  const safeRedirect=getSafeRedirect(redirect);
+  const $=id=>document.getElementById(id);
+  const message=(text,error)=>{
+    $("message").textContent=text||"";
+    $("message").className="message "+(error?"error":"status");
+  };
+
+  function errorMessage(error){
+    const code=String(error?.code||"");
+    const raw=String(error?.message||"");
+    if(code==="email_not_confirmed"||/email not confirmed/i.test(raw)){
+      return "メールアドレスの確認が完了していません。確認メールを確認してください。";
+    }
+    if(code==="invalid_credentials"||/invalid login credentials/i.test(raw)){
+      return "メールアドレスまたはパスワードが正しくありません。";
+    }
+    if(/failed to fetch|network|fetch/i.test(raw)){
+      return "認証サーバーに接続できませんでした。通信状態を確認して、もう一度お試しください。";
+    }
+    return raw||"ログインに失敗しました。しばらくしてからもう一度お試しください。";
+  }
+
+  async function start(){
+    try{
+      const user=await AnimeciaAuth.init();
+      if(user) location.replace(safeRedirect);
+    }catch(error){
+      console.error("Animecia login init failed",error);
+      message("認証機能の初期化に失敗しました。ページを再読み込みしてください。",true);
+    }
+  }
+
+  $("form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const email=$("email").value.trim();
+    const password=$("password").value;
+    if(!email||!password){
+      message("メールアドレスとパスワードを入力してください。",true);
       return;
     }
-    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.sessionStorage,storageKey:"animecia-auth-session"}});
-    const {data,error}=await sb.auth.getSession();
-    if(error){console.error("session check error",error);return;}
-    if((data?.session?.user?.email_confirmed_at||data?.session?.user?.confirmed_at)){
+
+    $("submit").disabled=true;
+    message("ログインしています…");
+
+    try{
+      const result=await AnimeciaAuth.signIn(email,password);
+      const user=result&&result.data&&result.data.user;
+      if(!user){
+        message("ログイン情報を取得できませんでした。もう一度お試しください。",true);
+        return;
+      }
+      if(!(user.email_confirmed_at||user.confirmed_at)){
+        await AnimeciaAuth.signOut();
+        message("メールアドレスの確認が完了していません。確認メールを確認してください。",true);
+        return;
+      }
       location.replace(safeRedirect);
-    }
-  }catch(error){
-    console.error("login initialization error",error);
-    msg("ログイン機能の初期化に失敗しました。ページを再読み込みしてください。",true);
-  }
-}
-
-$("form").addEventListener("submit",async e=>{
-  e.preventDefault();
-  if(!sb){
-    msg("ログイン機能を初期化しています。少し待ってからもう一度お試しください。",true);
-    return;
-  }
-  const email=$("email").value.trim();
-  const password=$("password").value;
-  if(!email||!password){
-    msg("メールアドレスとパスワードを入力してください。",true);
-    return;
-  }
-  $("submit").disabled=true;
-  msg("ログインしています…");
-  try{
-    const {data,error}=await sb.auth.signInWithPassword({email,password});
-    if(error){
-      console.error("sign in error",error);
-      msg(authErrorMessage(error),true);
+    }catch(error){
+      console.error("Animecia sign in failed",error);
+      message(errorMessage(error),true);
+    }finally{
       $("submit").disabled=false;
-      return;
     }
-    if(!data?.user){
-      msg("ログイン情報を取得できませんでした。もう一度お試しください。",true);
-      $("submit").disabled=false;
-      return;
-    }
-    if(!data.user.email_confirmed_at){
-      await sb.auth.signOut();
-      msg("メールアドレスの確認が完了していません。確認メールを確認してください。",true);
-      $("submit").disabled=false;
-      return;
-    }
-    location.replace(safeRedirect);
-  }catch(error){
-    console.error("sign in exception",error);
-    msg(authErrorMessage(error),true);
-    $("submit").disabled=false;
-  }
-});
+  });
 
-$("resend").addEventListener("click",async()=>{
-  if(!sb){
-    msg("認証機能を初期化しています。少し待ってからお試しください。",true);
-    return;
-  }
-  const email=$("email").value.trim();
-  if(!email){
-    msg("メールアドレスを入力してください。",true);
-    return;
-  }
-  try{
-    const {error}=await sb.auth.resend({
-      type:"signup",
-      email,
-      options:{emailRedirectTo:location.origin+location.pathname.replace("login.html","auth-callback.html")}
-    });
-    if(error){
-      console.error("resend error",error);
-      msg("確認メールの再送信に失敗しました。しばらくしてからもう一度お試しください。",true);
+  $("resend").addEventListener("click",async()=>{
+    const email=$("email").value.trim();
+    if(!email){
+      message("メールアドレスを入力してください。",true);
       return;
     }
-    msg("確認メールを再送信しました。迷惑メールフォルダも確認してください。");
-  }catch(error){
-    console.error("resend exception",error);
-    msg("確認メールの再送信に失敗しました。",true);
-  }
-});
+    try{
+      const c=AnimeciaAuth.client();
+      const {error}=await c.auth.resend({
+        type:"signup",
+        email,
+        options:{emailRedirectTo:new URL("auth-callback.html",location.href).href}
+      });
+      if(error)throw error;
+      message("確認メールを再送信しました。迷惑メールフォルダも確認してください。");
+    }catch(error){
+      console.error("Animecia resend failed",error);
+      message(errorMessage(error),true);
+    }
+  });
 
-init();
-</script></body></html>
-<style id="animecia-ui-polish">html{overflow-x:hidden}body{overflow-x:hidden}:focus-visible{outline:3px solid #2563eb;outline-offset:3px}button,a,input,select,textarea{touch-action:manipulation}@media(max-width:900px){.layout{grid-template-columns:1fr!important}.grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important}}@media(max-width:640px){input,select,textarea{font-size:16px!important}.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.wrap.head,.header-inner,.container.nav{padding:0 14px!important}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style>
+  start();
+})();
+</script>
+</body>
+</html>
