@@ -5,7 +5,7 @@
 <title>作品を発見 | Animecia</title>
 <meta name="description" content="ジャンル、年代、形式、評価、放送状況などからAnimeciaのアニメを探せます。">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="auth-init.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-init.js"></script><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 main{max-width:1240px;margin:auto;padding:34px 20px 80px}
 .hero{padding:38px;border-radius:22px;background:linear-gradient(135deg,#111216,#292b31);color:#fff;margin-bottom:18px;box-shadow:0 18px 45px rgba(0,0,0,.14)}
@@ -69,7 +69,7 @@ main{max-width:1240px;margin:auto;padding:34px 20px 80px}
 .discover-v6 .pill{background:#fff3e4;color:#a84f00;border-radius:5px}
 @media(max-width:700px){.discover-v6 .hero{padding:22px!important}.discover-v6 .panel{padding:17px}.discover-v6 .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.discover-v6 .result-head-v6{display:block}.discover-v6 .result-count-v6{margin-top:7px}}
 </style>
-<link rel="stylesheet" href="site-theme.css?v=20261001-v8">
+<link rel="stylesheet" href="site-theme.css?v=20261008-v1">
 <style id="animecia-global-header-fix">
 /* 全ページ共通ヘッダー：トップページと同じレイアウト */
 .site-header{
@@ -238,3 +238,4 @@ load().catch(err=>{console.error(err);document.getElementById("count").textConte
 <a href="discover.html">ジャンル</a><a href="recommendations.html">おすすめ</a><a href="terms.html">利用規約</a><a href="privacy.html">プライバシー</a>
 </nav></div><p class="copyright">© 2026 Animecia</p></footer>
 <script src="auth-nav.js"></script>\n</body></html>
+<style id="animecia-ui-polish">html{overflow-x:hidden}body{overflow-x:hidden}:focus-visible{outline:3px solid #2563eb;outline-offset:3px}button,a,input,select,textarea{touch-action:manipulation}@media(max-width:900px){.layout{grid-template-columns:1fr!important}.grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important}}@media(max-width:640px){input,select,textarea{font-size:16px!important}.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.wrap.head,.header-inner,.container.nav{padding:0 14px!important}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style>
