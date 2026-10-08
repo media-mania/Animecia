@@ -903,7 +903,7 @@ async function start(){
    if(warning)warning.innerHTML='<div class="error">ログインが必要です。<a href="login.html?redirect=mypage.html">ログインページへ</a></div>';
    return;
   }
-  if(!user.email_confirmed_at){
+  if(!(user.email_confirmed_at||user.confirmed_at)){
    if(warning)warning.style.display="block";
    if(warning)warning.innerHTML='<div class="error">メールアドレスの確認が必要です。確認メールをご確認ください。</div>';
    return;
