@@ -8,7 +8,7 @@
 <link rel="canonical" href="https://media-mania.github.io/Animecia/ranking.html">
 <link rel="stylesheet" href="site-theme.css?v=20261008-v1">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="anime-data.js"></script>
 <style>
 .ranking-page{padding-top:28px;padding-bottom:70px}
 .ranking-hero{padding:26px 28px;border-radius:16px;background:linear-gradient(135deg,#101827,#18243a);color:#fff;margin-bottom:16px}
@@ -159,7 +159,7 @@ function waitForSupabase(){
   });
 }
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
+const titleOf=a=>AnimeciaData.title(a);
 const base="id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,cover_image,start_date,format,season,season_year,average_score,anime_verification_status,created_at";
 let engagement=new Map();
 let anime=new Map();
