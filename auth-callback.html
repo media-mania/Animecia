@@ -8,6 +8,6 @@ const sb=supabase.createClient("https://bhgdjuwlxvbaeraaivmh.supabase.co","sb_pu
 const title=document.getElementById("title"),message=document.getElementById("message"); let finished=false;
 function success(){if(finished)return;finished=true;title.textContent="メールアドレスを確認しました";message.textContent="Animeciaへ移動します…";setTimeout(()=>location.replace("mypage.html"),500)}
 function fail(){if(finished)return;finished=true;title.textContent="メール確認に失敗しました";message.className="error";message.textContent="リンクが期限切れか、無効になっています。ログインページから確認メールを再送信してください。"}
-sb.auth.onAuthStateChange((event,session)=>{if(session?.user?.email_confirmed_at)success();else if(event==="SIGNED_OUT")fail()});
-(async()=>{const {data,error}=await sb.auth.getUser();if(!error&&data?.user?.email_confirmed_at){success();return}setTimeout(async()=>{if(finished)return;const {data:d}=await sb.auth.getSession();if(d?.session?.user?.email_confirmed_at)success();else fail()},1500)})();
+sb.auth.onAuthStateChange((event,session)=>{if((session?.user?.email_confirmed_at||session?.user?.confirmed_at))success();else if(event==="SIGNED_OUT")fail()});
+(async()=>{const {data,error}=await sb.auth.getUser();if(!error&&(data?.user?.email_confirmed_at||data?.user?.confirmed_at)){success();return}setTimeout(async()=>{if(finished)return;const {data:d}=await sb.auth.getSession();if((d?.session?.user?.email_confirmed_at||d?.session?.user?.confirmed_at))success();else fail()},1500)})();
 </script></body></html>
