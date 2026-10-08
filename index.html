@@ -528,7 +528,9 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
 <script>
 const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
-let sb=null;\nfunction initSupabase(){if(!sb&&window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);return sb;}\nfunction waitForSupabase(){return new Promise((resolve,reject)=>{const start=Date.now();(function check(){const client=initSupabase();if(client)return resolve(client);if(Date.now()-start>10000)return reject(new Error("Supabase SDK timeout"));setTimeout(check,50)})();});}
+let sb=null;
+function initSupabase(){if(!sb&&window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);return sb;}
+function waitForSupabase(){return new Promise((resolve,reject)=>{const start=Date.now();(function check(){const client=initSupabase();if(client)return resolve(client);if(Date.now()-start>10000)return reject(new Error("Supabase SDK timeout"));setTimeout(check,50)})();});}
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const valid=a=>a&&a.anime_verification_status==="verified"&&a.is_japanese===true&&a.is_adult!==true&&a.is_kids!==true&&a.is_sensitive_visual!==true&&(a.start_date==null||a.start_date>="1963-01-01")&&/[ぁ-んァ-ヶ一-龯々ー]/.test(a.title_japanese||a.title_native||a.title_user_preferred||a.title||"");
@@ -659,6 +661,7 @@ function bindQuickAdds(){
 document.getElementById("search-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("search-input").value.trim();if(q)location.href="anime.html?search="+encodeURIComponent(q);});
 (async()=>{try{await waitForSupabase();await load()}catch(e){console.error(e);renderFailure("season-feature","作品データを取得できませんでした。時間をおいて再読み込みしてください。");renderFailure("season-ranking","作品データの読み込みに失敗しました。");renderFailure("rank-list","作品データの読み込みに失敗しました。");renderFailure("genre-grid","ジャンル情報を準備中です。");}})();
 </script>
-<script src="auth-nav.js"></script>\n</body>
+<script src="auth-nav.js"></script>
+</body>
 </html>
 <style id="animecia-ui-polish">html{overflow-x:hidden}body{overflow-x:hidden}:focus-visible{outline:3px solid #2563eb;outline-offset:3px}button,a,input,select,textarea{touch-action:manipulation}@media(max-width:900px){.layout{grid-template-columns:1fr!important}.grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important}}@media(max-width:640px){input,select,textarea{font-size:16px!important}.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.wrap.head,.header-inner,.container.nav{padding:0 14px!important}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style>
