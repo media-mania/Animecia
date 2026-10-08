@@ -122,5 +122,4 @@ document.getElementById("search-button").onclick=()=>searchWorks(document.getEle
 document.getElementById("memo-search").addEventListener("input",e=>{clearTimeout(window.memoTimer);window.memoTimer=setTimeout(()=>searchWorks(e.target.value),180)});
 ids=getIds();render();
 </script>
-<script id="animecia-auth-nav">(function(){function sync(){try{var links=document.querySelectorAll('.nav-actions a[href="login.html"]');if(!links.length)return;var c=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient("https://bhgdjuwlxvbaeraaivmh.supabase.co","sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c"));c.auth.getUser().then(function(r){var u=r.data&&r.data.user;links.forEach(function(x){x.style.display=u&&!u.is_anonymous?"none":"";});}).catch(function(){});}catch(e){}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync);else sync();})();</script>
-</body></html>
+<script src="auth-nav.js"></script>\n</body></html>
