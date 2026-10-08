@@ -3547,32 +3547,46 @@
             loadingElement.style.display = "none";
             detailElement.style.display = "block";
 
-            // 別名・データソースは専用ローダーで1回だけ取得する。\n            const genrePromise = loadGenres();
+            // 初期表示に必要な情報だけを先に取得する。
+            const genrePromise = loadGenres();
             const userStatePromise = (async () => {
                 await loadAuth();
                 await loadUserState();
             })();
 
             await Promise.allSettled([
-                enrichmentPromise,
                 genrePromise,
                 loadStudios(),
                 loadCharacters(),
                 loadStaff(),
-                loadVoiceActors(),
                 loadStreamingLinks(),
-                loadAffiliateLinks(),
-                loadExternalLinks(),
-                loadAliases(),
-                loadSources(),
                 loadEngagementSummary(),
-                loadEpisodes(),
-                loadTags(),
                 loadRelatedAnime(),
                 loadReviews(),
-                loadAdvertisement(),
                 userStatePromise
             ]);
+
+            // 初期表示をブロックしない補助情報はアイドル時に取得する。
+            const loadDeferredDetails = () => {
+                Promise.allSettled([
+                    loadVoiceActors(),
+                    loadAffiliateLinks(),
+                    loadExternalLinks(),
+                    loadAliases(),
+                    loadSources(),
+                    loadEpisodes(),
+                    loadTags(),
+                    loadAdvertisement()
+                ]).catch(error => {
+                    console.error("補助情報取得エラー:", error);
+                });
+            };
+
+            if ("requestIdleCallback" in window) {
+                window.requestIdleCallback(loadDeferredDetails, { timeout: 1200 });
+            } else {
+                window.setTimeout(loadDeferredDetails, 350);
+            }
 
 
         } catch (error) {
