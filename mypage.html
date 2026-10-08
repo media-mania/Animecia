@@ -114,7 +114,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 .user-search-panel{display:flex;gap:8px;margin-bottom:14px}.user-search-panel input{flex:1;min-width:0;padding:10px 12px;border:1px solid #dfe3e8;border-radius:9px;background:#fff}.user-search-panel button{padding:10px 14px;border:0;border-radius:9px;background:#101827;color:#fff;font-weight:800}.my-rank-item{display:grid;grid-template-columns:38px 58px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid #e7e9ec;border-radius:11px;background:#fff;text-decoration:none;color:inherit}.my-rank-no{font-weight:950;text-align:center;color:#747b86}.my-rank-score{font-weight:950;color:#e87900}.my-rank-score small{display:block;color:#8a919b;font-weight:500;font-size:9px;text-align:right}.my-rank-thumb{width:58px;height:78px;object-fit:cover;border-radius:7px;background:#e5e7eb}@media(max-width:560px){.my-rank-item{grid-template-columns:28px 46px minmax(0,1fr) auto;gap:8px}.my-rank-thumb{width:46px;height:62px}.user-search-panel{display:grid;grid-template-columns:1fr auto}}
 </style>
 <style id="animecia-mypage-ui-v11">
-.section-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:14px}.section-heading h2{margin:2px 0 0;font-size:19px;letter-spacing:-.025em}.eyebrow{font-size:10px;letter-spacing:.14em;font-weight:900;color:#d9002b}.section-note{font-size:11px;color:#8a919b}.activity-panel,.profile-editor-panel,.settings-panel{overflow:hidden}.activity-panel{padding-top:18px}.profile-editor-panel,.settings-panel{margin-top:16px}.profile-editor-panel .profile-editor{margin-top:18px}.profile-editor-panel .crop-editor{background:#f7f8fa}.profile-editor-panel input:not([type=file]):focus,.profile-editor-panel textarea:focus{border-color:#9da5af;box-shadow:0 0 0 3px rgba(16,24,39,.06);outline:none}.profile-editor-panel input,.profile-editor-panel textarea{transition:border-color .15s,box-shadow .15s}.settings-panel .visibility-grid{margin-top:8px}.settings-panel .visibility-grid label{transition:background .15s,border-color .15s}.settings-panel .visibility-grid label:has(input:checked){background:#fff5f6;border-color:#f0b5bf}.settings-panel .visibility-grid input{accent-color:#d9002b}.profile-card{box-shadow:0 10px 30px rgba(17,24,39,.07)}
+.section-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:14px}.section-heading h2{margin:2px 0 0;font-size:19px;letter-spacing:-.025em}.eyebrow{font-size:10px;letter-spacing:.14em;font-weight:900;color:#d9002b}.section-note{font-size:11px;color:#8a919b}.activity-panel,.profile-editor-panel,.settings-panel{overflow:hidden}.activity-panel{padding-top:18px}.profile-editor-panel,.settings-panel{margin-top:16px}.profile-editor-panel .profile-editor{margin-top:18px}.profile-editor-panel .crop-editor{background:#f7f8fa}.profile-editor-panel input:not([type=file]):focus,.profile-editor-panel textarea:focus{border-color:#9da5af;box-shadow:0 0 0 3px rgba(16,24,39,.06);outline:none}.profile-editor-panel input,.profile-editor-panel textarea{transition:border-color .15s,box-shadow .15s}.settings-panel .visibility-grid{margin-top:8px}.ranking-search-result{display:flex;align-items:center;gap:9px;padding:8px;border:1px solid #e7e9ec;border-radius:9px;margin:6px 0}.ranking-search-result img{width:40px;height:54px;object-fit:cover;border-radius:5px}.ranking-search-result .grow{flex:1;min-width:0}.ranking-actions{display:flex;gap:5px;flex-wrap:wrap}.ranking-actions button{border:1px solid #dfe3e8;background:#fff;border-radius:7px;padding:5px 8px;cursor:pointer;font-size:11px}.ranking-actions button:hover{background:#f5f6f8}.settings-panel .visibility-grid label{transition:background .15s,border-color .15s}.settings-panel .visibility-grid label:has(input:checked){background:#fff5f6;border-color:#f0b5bf}.settings-panel .visibility-grid input{accent-color:#d9002b}.profile-card{box-shadow:0 10px 30px rgba(17,24,39,.07)}
 @media(max-width:600px){.section-heading{align-items:flex-start}.section-note{display:none}.section-heading h2{font-size:17px}}
 </style><style id="animecia-mypage-records-v12">
 .anime-record-card{position:relative;gap:14px;padding:12px!important;border:1px solid #e4e7eb!important;border-radius:12px!important;transition:transform .15s,border-color .15s,box-shadow .15s;background:#fff!important}
@@ -316,6 +316,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <button class="tab" data-tab="dropped" type="button">視聴中止</button>
 <button class="tab" data-tab="ratings" type="button">評価</button>
 <button class="tab" data-tab="reviews" type="button">レビュー</button>
+<button class="tab" data-tab="my_ranking" type="button">個人ランキング</button>
 </div>
 <div class="tab-group account-tabs" aria-label="アカウント">
 <button class="tab" data-tab="user_search" type="button">ユーザー検索</button>
@@ -343,7 +344,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 </div>
 <button id="save-profile" class="btn" type="button">プロフィールを保存</button><span id="profile-msg" class="message"></span>
 </div>
-<section class="panel settings-panel">
+<section class="panel ranking-editor-panel" id="ranking-editor"><div class="section-heading"><div><span class="eyebrow">MY RANKING</span><h2>個人ランキングを設定</h2></div><span class="section-note">最大20作品</span></div><p class="sub">作品を追加し、順位を上下に並べ替えられます。公開範囲で「個人ランキング」をオンにするとプロフィールにも表示されます。</p><div class="picker-row" style="display:flex;gap:8px;margin:12px 0"><input id="ranking-search" type="search" placeholder="作品名を検索…" style="flex:1;padding:10px 12px;border:1px solid #dfe3e8;border-radius:9px"><button id="ranking-search-button" class="btn" type="button">検索</button></div><div id="ranking-search-results"></div><div id="ranking-list" class="list"><div class="empty">読み込み中…</div></div></section><section class="panel settings-panel">
 <div class="section-heading"><div><span class="eyebrow">PRIVACY</span><h2>公開範囲</h2></div><span class="section-note">プロフィールの表示項目</span></div>
 <p class="sub">ユーザーホームで他のユーザーに表示する項目を個別に設定できます。オフにした項目は自分以外のユーザーには表示されません。</p>
 <div class="visibility-grid">
@@ -353,7 +354,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
 <label><input type="checkbox" id="show-ratings"> 評価</label>
 <label><input type="checkbox" id="show-reviews"> レビュー</label>
 <label><input type="checkbox" id="show-user_follows"> フォロー・フォロワー</label>
-<label><input type="checkbox" id="show-ranking"> ランキング</label>
+<label><input type="checkbox" id="show-ranking"> 個人ランキング</label>
 <label><input type="checkbox" id="show-posts"> 投稿</label>
 </div>
 <button id="save-visibility" class="btn" type="button" style="margin-top:14px">公開範囲を保存</button>
@@ -841,6 +842,10 @@ async function loadUserSearch(){
  document.getElementById("user-search-input").addEventListener("keydown",e=>{if(e.key==="Enter")run();});
 }
 
+async function loadMyRanking(){const el=document.getElementById("ranking-list");if(!el)return;const {data,error}=await supabaseClient.from("user_anime_rankings").select("anime_id,rank,updated_at").eq("user_id",currentUser.id).order("rank",{ascending:true});if(error)throw error;const rows=data||[],map=await getAnime(rows.map(x=>x.anime_id));el.innerHTML=rows.length?rows.map((x,i)=>{const a=map.get(Number(x.anime_id));if(!a)return "";return '<div class="list-item anime-record-card" data-ranking-id="'+a.id+'"><div class="my-rank-no">'+(i+1)+'</div><div class="anime-record-cover">'+imageMarkup(a.cover_image,titleOf(a))+'</div><div class="grow anime-record-info"><div class="title anime-record-title">'+esc(titleOf(a))+'</div><div class="sub">順位 '+(i+1)+'</div></div><div class="ranking-actions"><button data-rank-action="up" data-id="'+a.id+'" type="button">↑</button><button data-rank-action="down" data-id="'+a.id+'" type="button">↓</button><button data-rank-action="remove" data-id="'+a.id+'" type="button">削除</button></div></div>';}).join(""):'<div class="empty">まだ個人ランキングに作品がありません。</div>';el.querySelectorAll("[data-rank-action]").forEach(b=>b.onclick=async()=>{b.disabled=true;try{await rankingAction(b.dataset.rankAction,Number(b.dataset.id))}catch(e){console.error(e);alert(e.message||"ランキングを更新できませんでした")}finally{b.disabled=false}});}
+async function rankingAction(action,id){const {data:current,error}=await supabaseClient.from("user_anime_rankings").select("anime_id,rank").eq("user_id",currentUser.id).order("rank",{ascending:true});if(error)throw error;let ids=(current||[]).map(x=>Number(x.anime_id));const idx=ids.indexOf(id);if(idx<0)return;if(action==="remove"){const {error:e}=await supabaseClient.from("user_anime_rankings").delete().eq("user_id",currentUser.id).eq("anime_id",id);if(e)throw e}else{const to=action==="up"?idx-1:idx+1;if(to<0||to>=ids.length)return;[ids[idx],ids[to]]=[ids[to],ids[idx]];const {error:e}=await supabaseClient.rpc("reorder_my_anime_ranking",{p_anime_ids:ids});if(e)throw e}await loadMyRanking();}
+async function addRankingAnime(id){const {error}=await supabaseClient.rpc("add_anime_to_my_ranking",{p_anime_id:Number(id)});if(error)throw error;await loadMyRanking();document.getElementById("ranking-search-results").innerHTML="";document.getElementById("ranking-search").value="";}
+async function searchRankingAnime(){const q=document.getElementById("ranking-search").value.trim(),el=document.getElementById("ranking-search-results");if(!q){el.innerHTML="";return}el.innerHTML='<div class="loading">検索中…</div>';const {data,error}=await supabaseClient.rpc("search_anime_catalog_v2",{p_query:q,p_year:null,p_season:null,p_status:null,p_format:null,p_genre_id:null,p_studio_id:null,p_sort:"title",p_limit:10,p_offset:0});if(error){console.error(error);el.innerHTML='<div class="error">作品検索に失敗しました。</div>';return}el.innerHTML=(data||[]).map(a=>'<div class="ranking-search-result">'+(a.cover_image?'<img src="'+esc(a.cover_image)+'" alt="">':'<div style="width:40px;height:54px;background:#eee"></div>')+'<div class="grow"><b>'+esc(titleOf(a))+'</b></div><button class="btn secondary" data-add-ranking="'+a.id+'" type="button">追加</button></div>').join("")||'<div class="empty">該当する作品がありません。</div>';el.querySelectorAll("[data-add-ranking]").forEach(b=>b.onclick=async()=>{b.disabled=true;try{await addRankingAnime(b.dataset.addRanking)}catch(e){console.error(e);alert(e.message||"追加できませんでした")}finally{b.disabled=false}});}
 async function loadTab(){
  const el=document.getElementById("list");
  el.innerHTML='<div class="loading">読み込み中…</div>';
@@ -867,6 +872,7 @@ async function loadTab(){
    if(error)throw error;
    renderAnimeList(data||[],await getAnime((data||[]).map(x=>x.anime_id)),x=>"★ "+x.rating+"/10");return;
   }
+  if(currentTab==="my_ranking"){await loadMyRanking();return;}
   if(currentTab==="reviews"){
    const {data,error}=await supabaseClient.from("reviews").select("id,anime_id,title,content,rating,spoiler,likes_count,created_at,updated_at").eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(100);
    if(error)throw error;
@@ -944,6 +950,8 @@ document.querySelectorAll("[data-quick-tab]").forEach(a=>a.addEventListener("cli
  document.getElementById("mypage-post-body")?.addEventListener("input",e=>{document.getElementById("post-length").textContent=e.target.value.length+" / 500";});
  document.getElementById("save-profile")?.addEventListener("click",saveProfile);
 document.getElementById("save-visibility")?.addEventListener("click",saveVisibility);
+ document.getElementById("ranking-search-button")?.addEventListener("click",searchRankingAnime);
+ document.getElementById("ranking-search")?.addEventListener("keydown",e=>{if(e.key==="Enter")searchRankingAnime();});
  document.getElementById("upload-avatar")?.addEventListener("click",uploadAvatar);
  document.getElementById("upload-background")?.addEventListener("click",uploadBackground);
  bindCropControls();
