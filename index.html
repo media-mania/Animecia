@@ -656,23 +656,15 @@ function bindQuickAdds(){
  document.querySelectorAll(".quick-add").forEach(btn=>btn.onclick=async e=>{e.preventDefault();e.stopPropagation();try{const {data:{user}}=await sb.auth.getUser();if(!user){location.href="login.html";return;}const r=await sb.from("favorites").upsert({user_id:user.id,anime_id:Number(btn.dataset.animeId)},{onConflict:"user_id,anime_id"});if(r.error)throw r.error;btn.textContent="✓";btn.classList.add("added");}catch(err){console.error(err);btn.textContent="!";}});
 }
 document.getElementById("search-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("search-input").value.trim();if(q)location.href="anime.html?search="+encodeURIComponent(q);});
-(async()=>{try{const {data:{user}}=await sb.auth.getUser();if(user&&user.email){document.getElementById("auth-link").textContent="ログアウト";document.getElementById("auth-link").href="#";document.getElementById("auth-link").onclick=async e=>{e.preventDefault();await sb.auth.signOut();location.reload();};}}catch(e){console.error(e)}try{await load()}catch(e){console.error(e);renderFailure("season-feature","作品データを取得できませんでした。時間をおいて再読み込みしてください。");renderFailure("season-ranking","作品データの読み込みに失敗しました。");renderFailure("rank-list","作品データの読み込みに失敗しました。");renderFailure("genre-grid","ジャンル情報を準備中です。");}})();
+(async()=>{try{await sb.auth.signOut({scope:"local"});}catch(e){console.error("ログイン状態の初期化に失敗しました",e)}try{await load()}catch(e){console.error(e);renderFailure("season-feature","作品データを取得できませんでした。時間をおいて再読み込みしてください。");renderFailure("season-ranking","作品データの読み込みに失敗しました。");renderFailure("rank-list","作品データの読み込みに失敗しました。");renderFailure("genre-grid","ジャンル情報を準備中です。");}})();
 </script>
 <script id="animecia-auth-nav">
 (function(){
-  function syncAuthNav(){
-    try{
-      if(!window.supabase || !window.supabase.createClient) return;
-      var links=document.querySelectorAll('.nav-actions #auth-link, .nav-actions a[href="login.html"]');
-      if(!links.length) return;
-      var U="https://bhgdjuwlxvbaeraaivmh.supabase.co",K="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c",client=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient(U,K));
-      client.auth.getUser().then(function(res){
-        var loggedIn=!!(res.data&&res.data.user&&!res.data.user.is_anonymous);
-        links.forEach(function(el){el.style.display=loggedIn?"none":"";});
-      }).catch(function(){});
-    }catch(e){}
-  }
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",syncAuthNav); else syncAuthNav();
+  // トップページ訪問時はログアウト状態を初期状態とする。
+  var link=document.getElementById("auth-link");
+  if(link){link.textContent="ログイン";link.href="login.html";link.onclick=null;link.style.display="";}
+  var footerLink=document.getElementById("footer-login-link");
+  if(footerLink){footerLink.textContent="ログイン";footerLink.href="login.html";footerLink.style.display="";}
 })();
 </script></body>
 </html>
