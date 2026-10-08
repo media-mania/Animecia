@@ -150,9 +150,7 @@ function waitForSupabase(){
     const start=Date.now();
     (function check(){
       if(window.supabase&&typeof window.supabase.createClient==="function"){
-        if(!sb)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
-          auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.sessionStorage,storageKey:"animecia-auth-session"}
-        });
+        if(!sb)sb=AnimeciaAuth.client();
         return resolve(sb);
       }
       if(Date.now()-start>10000)return reject(new Error("Supabase SDK timeout"));
