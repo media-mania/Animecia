@@ -70,7 +70,7 @@
     >
 
     <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="anime-data.js"></script>
 <style>
 
         .anime-page {
@@ -1828,50 +1828,7 @@
     }
 
 
-    function getMainTitle(
-        anime
-    ) {
-
-        return (
-
-            anime.title_japanese ||
-
-            anime.title_native ||
-
-            (
-                Array.isArray(
-                    anime._japanese_aliases
-                )
-                    ? anime._japanese_aliases[0]
-                    : ""
-            ) ||
-
-            (
-                /[\u3040-\u30ff\u3400-\u9fff]/.test(
-                    String(
-                        anime.title || ""
-                    )
-                )
-                    ? anime.title
-                    : ""
-            ) ||
-
-            anime.title_user_preferred ||
-
-            anime.title_romaji ||
-
-            anime.title_english ||
-
-            anime.english_title ||
-
-            anime.title ||
-
-            "タイトル未設定"
-
-        );
-
-    }
-
+    function getMainTitle(anime){ return AnimeciaData.title(anime); }
 
     function getSubTitle(
         anime
@@ -2630,37 +2587,8 @@
         });
     }
 
-    function normalizeTitleReading(anime){
-  const raw=String(anime?.title_kana||anime?.title_romaji||anime?.title_japanese||anime?.title_native||anime?.title||"").normalize("NFKC");
-  const strip=raw.replace(/\s|\u3000/g,"").replace(/^[^\p{Letter}\p{Number}\u3040-\u30ffー]+/u,"").replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60)).toLowerCase();
-  const m=strip.match(/^(\d+)(.*)$/);
-  if(!m)return strip;
-  const n=Number(m[1]), rest=m[2];
-  const nums=["zero","ichi","ni","san","yon","go","roku","nana","hachi","kyuu"];
-  const small=x=>{
-    if(x===0)return"zero";
-    let s="";
-    const h=Math.floor(x/100), t=Math.floor((x%100)/10), o=x%10;
-    if(h)s+=(h===3?"sanbyaku":h===6?"roppyaku":h===8?"happyaku":nums[h]+"hyaku");
-    if(t)s+=(t===1?"juu":nums[t]+"juu");
-    if(o)s+=nums[o];
-    return s;
-  };
-  return small(n)+rest.replace(/^[.．\-–—ー]+/,"");
-}
-function compareAnimeTitles(a,b){
-  const order=["a","i","u","e","o","ka","ki","ku","ke","ko","ga","gi","gu","ge","go","sa","shi","su","se","so","za","ji","zu","ze","zo","ta","chi","tsu","te","to","da","di","du","de","do","na","ni","nu","ne","no","ha","hi","fu","he","ho","ba","bi","bu","be","bo","pa","pi","pu","pe","po","ma","mi","mu","me","mo","ya","yu","yo","ra","ri","ru","re","ro","wa","wo","n"];
-  const token=s=>{for(const x of order)if(s.startsWith(x))return x;return s.slice(0,1)};
-  const ar=normalizeTitleReading(a),br=normalizeTitleReading(b);
-  let x=ar,y=br;
-  while(x&&y){
-    const ax=token(x),by=token(y),ai=order.indexOf(ax),bi=order.indexOf(by);
-    if(ai!==bi)return (ai<0?999:ai)-(bi<0?999:bi);
-    if(ax!==by)return ax.localeCompare(by,"en");
-    x=x.slice(ax.length);y=y.slice(by.length);
-  }
-  return x?1:y?-1:Number(a?.id||0)-Number(b?.id||0);
-}
+    function normalizeTitleReading(anime){ return AnimeciaData.reading(anime); }
+function compareAnimeTitles(a,b){ return AnimeciaData.compare(a,b); }
 
     /* =========================================
        Load anime
