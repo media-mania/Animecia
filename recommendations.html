@@ -167,7 +167,7 @@ async function init(){
  if(gr.error) throw gr.error;
  genres=gr.data||[];
  const gm=new Map(genres.map(g=>[Number(g.id),g.name]));
- rows=(ar||[]).map(a=>{const gn=String(a.genre||"").split(",").map(x=>x.trim()).filter(Boolean);const g=[...gm.entries()].filter(([,name])=>gn.includes(name)).map(([id])=>id);return {...a,g,gn,e:{}};});
+ rows=(ar||[]).map(a=>{const gn=String(a.genre||"").split(",").map(x=>x.trim()).filter(Boolean);const g=[...gm.entries()].filter(([,name])=>gn.includes(name)).map(([id])=>id);return {...a,g,gn,e:{average_rating:a._animecia_rating,favorite_count:a._animecia_engagement?.favorite_count||0,review_count:a._animecia_engagement?.review_count||0}};});
  renderGenres();
  if(auth.data.user&&!auth.data.user.is_anonymous){
    const uid=auth.data.user.id;
