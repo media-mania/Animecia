@@ -43,7 +43,7 @@ jobs:
           KEY=os.environ["SUPABASE_SECRET_KEY"]
           ANI=os.environ["ANILIST_URL"]
           UA="Animecia-AniList-Discovery/1.0 (+https://github.com/media-mania/Animecia)"
-          ALLOWED={"TV","MOVIE","OVA","OAV","ONA"}
+          ALLOWED={"TV","TV_SHORT","MOVIE","SPECIAL","OVA","OAV","ONA"}
 
           def http(url,method="GET",body=None,retries=5):
               data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
@@ -149,8 +149,6 @@ jobs:
               if m.get("isAdult") is True:
                   continue
               tag_names={str(t.get("name") or "").strip().lower() for t in (m.get("tags") or [])}
-              if tag_names.intersection({"kids","preschool","kindergarten","幼児向け","子供向け","こども向け"}):
-                  continue
               title=m.get("title") or {}
               jp=title.get("native") or title.get("userPreferred") or title.get("romaji") or "タイトル未設定"
               desc=re.sub(r"<[^>]+>"," ",m.get("description") or "")
@@ -208,7 +206,7 @@ jobs:
                 "genres":m.get("genres") or [],
                 "studios":[],
                 "is_adult":bool(m.get("isAdult") is True),
-                "is_kids":bool(tag_names.intersection({"kids","preschool","kindergarten","幼児向け","子供向け","こども向け"})),
+                "is_kids":bool(tag_names.intersection({"kids","children","児童","児童向け","子供向け","こども向け","子ども向け"})),
                 "is_sensitive_visual":bool(tag_names.intersection({"ecchi","hentai","nudity","sexual content","sexual themes","erotica","erotic","fanservice","性的","性的描写","性的な内容","裸","ヌード","エッチ","お色気","成人向け"})),
                 "source_provider":"anilist",
                 "source_id":str(m["id"]),
