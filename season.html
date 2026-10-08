@@ -7,7 +7,7 @@
 <meta name="description" content="Animeciaの今期アニメ一覧。放送中のアニメを検索・絞り込みできます。">
 <link rel="canonical" href="https://media-mania.github.io/Animecia/season.html">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="anime-data.js"></script><style>
 main{max-width:1180px;margin:0 auto;padding:36px 20px 70px}
 .hero{margin-bottom:22px}.hero h1{margin:0 0 7px;font-size:32px}.hero p{margin:0;color:#737373}
 .panel{padding:22px;border-radius:14px;margin-bottom:18px}
@@ -199,7 +199,7 @@ const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
 const supabaseClient=AnimeciaAuth.client();
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
+const titleOf=a=>AnimeciaData.title(a);
 const seasonName={WINTER:"冬",SPRING:"春",SUMMER:"夏",FALL:"秋"};
 const params=new URLSearchParams(location.search);
 const now=new Date();
