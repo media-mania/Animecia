@@ -64,9 +64,21 @@
     });
     return out;
   }
+  async function withEngagement(client,rows){
+    const ids=[...new Set((rows||[]).map(a=>Number(a?.id)).filter(Number.isInteger))];
+    const map=new Map();
+    for(let i=0;i<ids.length;i+=500){
+      const {data,error}=await client.from("anime_engagement_summary")
+        .select("anime_id,average_rating,rating_count,favorite_count,review_count")
+        .in("anime_id",ids.slice(i,i+500));
+      if(error) throw error;
+      (data||[]).forEach(x=>map.set(String(x.anime_id),x));
+    }
+    return (rows||[]).map(a=>({...a,_animecia_rating:map.get(String(a.id))?.average_rating??null,_animecia_engagement:map.get(String(a.id))||null}));
+  }
   function isPublic(a){
     return !!a && a.anime_verification_status==="verified" && a.is_japanese!==false &&
       a.is_adult!==true && a.is_kids!==true && a.is_sensitive_visual!==true;
   }
-  global.AnimeciaData={title,subtitle,year,season,seasonCode,format,status,image,score,reading,compare,genres,isPublic,seasonNames,formatNames,statusNames};
+  global.AnimeciaData={title,subtitle,year,season,seasonCode,format,status,image,score,reading,compare,genres,withEngagement,isPublic,seasonNames,formatNames,statusNames};
 })(window);
