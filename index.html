@@ -658,13 +658,5 @@ function bindQuickAdds(){
 document.getElementById("search-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("search-input").value.trim();if(q)location.href="anime.html?search="+encodeURIComponent(q);});
 (async()=>{try{await load()}catch(e){console.error(e);renderFailure("season-feature","作品データを取得できませんでした。時間をおいて再読み込みしてください。");renderFailure("season-ranking","作品データの読み込みに失敗しました。");renderFailure("rank-list","作品データの読み込みに失敗しました。");renderFailure("genre-grid","ジャンル情報を準備中です。");}})();
 </script>
-<script id="animecia-auth-nav">
-(function(){
-  // トップページ訪問時はログアウト状態を初期状態とする。
-  var link=document.getElementById("auth-link");
-  if(link){link.textContent="ログイン";link.href="login.html";link.onclick=null;link.style.display="";}
-  var footerLink=document.getElementById("footer-login-link");
-  if(footerLink){footerLink.textContent="ログイン";footerLink.href="login.html";footerLink.style.display="";}
-})();
-</script></body>
+<script src="auth-nav.js"></script>\n</body>
 </html>
