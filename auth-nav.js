@@ -10,7 +10,7 @@
     window.addEventListener("animecia-auth",function(e){render(e.detail&&e.detail.user);});
   }
   function render(user){
-    var loggedIn=!!(user&&!user.is_anonymous&&user.email_confirmed_at);
+    var loggedIn=!!(user&&!user.is_anonymous&&(user.email_confirmed_at||user.confirmed_at));
     var links=Array.from(document.querySelectorAll("#auth-link,#footer-login-link"));
     var link=links[0]||null;
     if(!link){
