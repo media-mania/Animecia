@@ -81,6 +81,7 @@ main{max-width:520px;margin:60px auto;padding:20px}
   }
 
   const safeRedirect=getSafeRedirect(redirect);
+  let loginInProgress=false;
   const $=id=>document.getElementById(id);
   const message=(text,error)=>{
     $("message").textContent=text||"";
@@ -105,7 +106,7 @@ main{max-width:520px;margin:60px auto;padding:20px}
   async function start(){
     try{
       const user=await AnimeciaAuth.init();
-      if(user) location.replace(safeRedirect);
+      if(user && !loginInProgress) location.replace(safeRedirect);
     }catch(error){
       console.error("Animecia login init failed",error);
       message("認証機能の初期化に失敗しました。ページを再読み込みしてください。",true);
@@ -142,6 +143,7 @@ main{max-width:520px;margin:60px auto;padding:20px}
       message(errorMessage(error),true);
     }finally{
       $("submit").disabled=false;
+      loginInProgress=false;
     }
   });
 
