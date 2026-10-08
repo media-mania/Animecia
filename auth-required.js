@@ -20,7 +20,7 @@
   }
   function apply(user){
     var path=location.pathname.split("/").pop()||"index.html";
-    var logged=!!(user&&user.email_confirmed_at&&!user.is_anonymous);
+    var logged=!!(user&&(user.email_confirmed_at||user.confirmed_at)&&!user.is_anonymous);
     if(["mypage.html","memo.html","messages.html"].indexOf(path)>=0&&!logged){
       document.body.style.visibility="hidden";
       login();
