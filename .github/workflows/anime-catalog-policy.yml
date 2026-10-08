@@ -1,0 +1,201 @@
+name: Animecia Catalog Policy Audit
+
+on:
+  schedule:
+    - cron: '45 5 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/anime-catalog-policy.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: animecia-catalog-policy
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      ANILIST_URL: https://graphql.anilist.co
+    steps:
+      - name: Reclassify and apply reversible catalog policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json, os, time, urllib.error, urllib.parse, urllib.request
+          from collections import defaultdict
+
+          BASE=os.environ["SUPABASE_URL"].rstrip("/")
+          KEY=os.environ["SUPABASE_SECRET_KEY"]
+          ANI=os.environ["ANILIST_URL"]
+          HEADERS={"apikey":KEY,"Authorization":"Bearer "+KEY,"Accept":"application/json","Content-Type":"application/json"}
+
+          PRESCHOOL={"preschool","kindergarten","幼児","幼児向け","未就学児","未就学児向け","就学前","就学前向け","幼稚園児向け"}
+          KIDS={"kids","children","児童","児童向け","子供向け","こども向け","子ども向け"}
+          SENSITIVE={"ecchi","hentai","nudity","sexual content","sexual themes","erotica","erotic","fanservice","性的","性的描写","性的な内容","裸","ヌード","エッチ","お色気","成人向け"}
+
+          def request(url,method="GET",body=None,retries=5):
+              data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
+              for n in range(retries):
+                  try:
+                      req=urllib.request.Request(url,data=data,method=method,headers=HEADERS)
+                      with urllib.request.urlopen(req,timeout=60) as r:
+                          raw=r.read()
+                          return json.loads(raw.decode()) if raw else []
+                  except urllib.error.HTTPError as e:
+                      if e.code in (408,425,429,500,502,503,504) and n<retries-1:
+                          time.sleep(min(20,2**n)); continue
+                      raise
+
+          def sb(path,method="GET",body=None,params=None):
+              url=BASE+path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params,doseq=True)
+              return request(url,method,body)
+
+          def patch(anime_id,body):
+              sb("/rest/v1/anime","PATCH",body,{"id":f"eq.{anime_id}"})
+
+          def anilist(ids):
+              if not ids: return []
+              query="""query($ids:[Int]) {
+                Page(perPage:50) {
+                  media(id_in:$ids,type:ANIME) {
+                    id
+                    isAdult
+                    tags { name }
+                  }
+                }
+              }"""
+              return ((request(ANI,"POST",{
+                  "query":query,"variables":{"ids":ids}
+              }).get("data") or {}).get("Page") or {}).get("media") or []
+
+          rows=sb("/rest/v1/anime",params={
+              "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese",
+              "order":"id.asc",
+              "limit":"10000"
+          })
+
+          # 1) AniList is authoritative for AniList-backed content classification.
+          by_source={}
+          source_rows=[]
+          for r in rows:
+              try:
+                  sid=int(r["source_id"]) if str(r.get("source_id") or "").strip() else None
+              except (TypeError,ValueError):
+                  sid=None
+              source_rows.append((r,sid))
+              if str(r.get("source_provider") or "").casefold()=="anilist" and sid is not None:
+                  by_source.setdefault(sid,[]).append(r)
+
+          source_ids=list(by_source)
+          classified={}
+          for start in range(0,len(source_ids),50):
+              media=anilist(source_ids[start:start+50])
+              for m in media:
+                  aid=int(m["id"])
+                  tags={str(t.get("name") or "").strip().casefold() for t in (m.get("tags") or [])}
+                  classified[aid]={
+                      "is_adult": bool(m.get("isAdult") is True),
+                      "is_preschool": bool(tags & PRESCHOOL),
+                      "is_kids": bool(tags & KIDS),
+                      "is_sensitive_visual": bool(tags & SENSITIVE)
+                  }
+              time.sleep(.15)
+
+          classified_count=0
+          for sid, group in by_source.items():
+              c=classified.get(sid)
+              if not c: continue
+              for r in group:
+                  patch(r["id"],c)
+                  classified_count+=1
+
+          # 2) Exact identity duplicates only: same provider + same source ID,
+          #    or same provider + same external ID. Never use title alone.
+          groups=defaultdict(list)
+          for r,sid in source_rows:
+              provider=str(r.get("source_provider") or "").strip().casefold()
+              if provider and sid is not None:
+                  groups[("source",provider,str(sid))].append(r)
+              ext=str(r.get("external_id") or "").strip()
+              if provider and ext:
+                  groups[("external",provider,ext)].append(r)
+
+          duplicate_ids={}
+          for key,group in groups.items():
+              if len(group)<2: continue
+              # Prefer verified Japanese records; otherwise the lowest ID is canonical.
+              ordered=sorted(group,key=lambda r:(
+                  0 if str(r.get("anime_verification_status") or "").casefold()=="verified" else 1,
+                  0 if r.get("is_japanese") is True else 1,
+                  int(r["id"])
+              ))
+              canonical=int(ordered[0]["id"])
+              for r in ordered[1:]:
+                  rid=int(r["id"])
+                  if rid!=canonical:
+                      duplicate_ids[rid]=canonical
+
+          duplicate_count=0
+          for r,sid in source_rows:
+              rid=int(r["id"])
+              if rid in duplicate_ids:
+                  cid=duplicate_ids[rid]
+                  patch(rid,{
+                      "duplicate_status":"confirmed_duplicate",
+                      "duplicate_of_id":cid,
+                      "duplicate_review_reason":"Exact provider/source identity match; canonical record selected automatically.",
+                      "catalog_policy_decision":"exclude",
+                      "catalog_policy_reasons":["exact_duplicate"]
+                  })
+                  duplicate_count+=1
+
+          # 3) Reversible catalog policy. No rows are physically deleted.
+          excluded=0
+          included=0
+          for r,sid in source_rows:
+              rid=int(r["id"])
+              if rid in duplicate_ids:
+                  continue
+              c=classified.get(sid) if sid is not None and str(r.get("source_provider") or "").casefold()=="anilist" else None
+              if c and c["is_adult"]:
+                  patch(rid,{
+                      "catalog_policy_decision":"exclude",
+                      "catalog_policy_reasons":["adult_anilist_isAdult"],
+                      "catalog_policy_version":"anilist-authoritative-v2"
+                  })
+                  excluded+=1
+              elif c and c["is_preschool"]:
+                  patch(rid,{
+                      "catalog_policy_decision":"exclude",
+                      "catalog_policy_reasons":["preschool_anilist_tag"],
+                      "catalog_policy_version":"anilist-authoritative-v2"
+                  })
+                  excluded+=1
+              else:
+                  patch(rid,{
+                      "catalog_policy_decision":"include",
+                      "catalog_policy_reasons":[],
+                      "catalog_policy_version":"anilist-authoritative-v2"
+                  })
+                  included+=1
+
+          print(json.dumps({
+              "total_rows":len(rows),
+              "anilist_classified":classified_count,
+              "exact_duplicates_excluded":duplicate_count,
+              "adult_or_preschool_excluded":excluded,
+              "included":included,
+              "physical_deletes":0
+          },ensure_ascii=False))
+          PY
