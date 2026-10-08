@@ -1542,39 +1542,7 @@
        トップページ以外は、ログイン中ならログインボタンを非表示
     ========================================= */
 
-    function syncAuthNavigation(user = null) {
-        const links = document.querySelectorAll(
-            '.nav-actions #auth-link, .nav-actions a[href="login.html"]'
-        );
-
-        const loggedIn = !!(
-            user &&
-            user.id &&
-            !user.is_anonymous
-        );
-
-        links.forEach(link => {
-            link.hidden = loggedIn;
-            link.setAttribute("aria-hidden", String(loggedIn));
-        });
-    }
-
-    async function initializeAuthNavigation() {
-        try {
-            const { data, error } = await supabaseClient.auth.getUser();
-            if (error) throw error;
-            syncAuthNavigation(data?.user || null);
-
-            supabaseClient.auth.onAuthStateChange((_event, session) => {
-                syncAuthNavigation(session?.user || null);
-            });
-        } catch (error) {
-            console.error("認証状態の取得に失敗しました:", error);
-            syncAuthNavigation(null);
-        }
-    }
-
-    initializeAuthNavigation();
+    /* 認証ナビゲーションは auth-nav.js に統一 */
 
 
     /* =========================================
