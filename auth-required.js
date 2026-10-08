@@ -7,7 +7,7 @@
     memo:["#clear","#memo-search","#search-button"],
     detail:["#favorite-button","#memo-button","#review-title","#review-rating","#review-content","#review-spoiler","#review-submit-button","#review-cancel-edit","#watch-status","#watch-progress","#status-save","#user-rating","#rating-save","#follow-button","#notify-episode"]
   };
-  function disable(el){
+  function addStyle(){if(document.getElementById("animecia-auth-required-style"))return;var st=document.createElement("style");st.id="animecia-auth-required-style";st.textContent=".auth-required-disabled{opacity:.5!important;cursor:not-allowed!important}.auth-required-notice{margin:0 0 12px;padding:12px 14px;border:1px solid #f0c36d;border-radius:10px;background:#fff8e6;color:#5f4700;font-size:13px;line-height:1.6}.auth-required-notice a{font-weight:800;color:#b45309}";document.head.appendChild(st)}\n  function disable(el){
     if(!el)return;
     if("disabled" in el)el.disabled=true;
     el.setAttribute("aria-disabled","true");
@@ -21,7 +21,7 @@
     parent.insertBefore(n,parent.firstChild);
   }
   function apply(){
-    var path=location.pathname.split("/").pop()||"index.html";
+    addStyle();\n    var path=location.pathname.split("/").pop()||"index.html";
     var key=path==="community.html"?"community":path==="memo.html"?"memo":path==="anime-detail.html"?"detail":null;
     if(!key)return;
     var s=window.supabase.createClient(URL,KEY);
