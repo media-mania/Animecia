@@ -19,9 +19,12 @@ async function fetchCatalogRows(){
 async function load(){
  await AnimeciaAuth.init();
  s=AnimeciaAuth.client();
- const [catalogRows,gr]=await Promise.all([fetchCatalogRows(),s.rpc("get_catalog_genres")]);
+ const [catalogResult,genreResult]=await Promise.allSettled([fetchCatalogRows(),s.rpc("get_catalog_genres")]);
+ if(catalogResult.status!=="fulfilled") throw catalogResult.reason;
+ const catalogRows=catalogResult.value||[];
+ const gr=genreResult.status==="fulfilled"?genreResult.value:{data:[],error:genreResult.reason};
  const ar=await AnimeciaData.withEngagement(s,catalogRows);
- if(gr.error) throw gr.error;
+ if(gr.error) console.warn("Genre metadata unavailable; catalog will still be displayed.",gr.error);
  (gr.data||[]).forEach(g=>genreMap.set(Number(g.id),g.name));
  const normGenre=v=>String(v??"").normalize("NFKC").trim().toLowerCase();
  rows=(ar||[]).filter(a=>String(a.format||"").toUpperCase()!=="SPECIAL").map(a=>{
