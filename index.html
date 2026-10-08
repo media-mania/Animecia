@@ -563,18 +563,18 @@ async function load(){
     p_season:null,p_status:null,p_format:null,p_limit:1,p_offset:0
   };
 
-  const [catalogRes,seasonRes,genreRes,rankingRes,reviewRes]=await Promise.all([
-    catalogRPC({...emptyParams,p_sort:"title"}),
+  const [seasonRes,genreRes,rankingRes,reviewRes,titleRows]=await Promise.all([
     catalogRPC({...emptyParams,p_year:year,p_season:season,p_sort:"score",p_limit:12}),
     safe(sb.rpc("get_catalog_genres")),
     catalogRPC({...emptyParams,p_sort:"score",p_limit:10}),
     safe(sb.from("reviews")
       .select("id,anime_id,title,content,rating,spoiler,likes_count,created_at")
       .order("created_at",{ascending:false})
-      .limit(6))
+      .limit(6)),
+    catalogRPC({...emptyParams,p_sort:"title",p_limit:24})
   ]);
 
-  const catalogCount=Number(catalogRes[0]?.total_count||0);
+  const catalogCount=Number(titleRows[0]?.total_count||0);
   const databaseCount=document.getElementById("database-count");
   if(databaseCount)databaseCount.textContent=catalogCount.toLocaleString("ja-JP")+"作品";
 
@@ -613,7 +613,6 @@ async function load(){
     }).join("")||'<div class="empty">今期作品がまだ登録されていません。</div>';
   }
 
-  const titleRows=await catalogRPC({...emptyParams,p_sort:"title",p_limit:24});
   const titleBox=document.getElementById("home-title-index");
   if(titleBox){
     const rows=titleRows.filter(a=>a&&a.start_date&&a.start_date>="1963-01-01");
