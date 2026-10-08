@@ -211,5 +211,5 @@ function sortAndRender(){
 document.querySelectorAll(".ranking-tab").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".ranking-tab").forEach(x=>x.classList.remove("active"));btn.classList.add("active");mode=btn.dataset.mode;sortAndRender();}));
 load().catch(err=>{console.error(err);document.getElementById("ranking-list").innerHTML='<div class="state">ランキングの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>';});
 </script>
-</body>
+<script src="auth-nav.js"></script>\n</body>
 </html>
