@@ -14,7 +14,7 @@
 <meta property="og:locale" content="ja_JP">
 <meta name="theme-color" content="#101114">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-init.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"Animecia","url":"https://media-mania.github.io/Animecia/","potentialAction":{"@type":"SearchAction","target":"https://media-mania.github.io/Animecia/anime.html?search={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
@@ -656,7 +656,7 @@ function bindQuickAdds(){
  document.querySelectorAll(".quick-add").forEach(btn=>btn.onclick=async e=>{e.preventDefault();e.stopPropagation();try{const {data:{user}}=await sb.auth.getUser();if(!user){location.href="login.html";return;}const r=await sb.from("favorites").upsert({user_id:user.id,anime_id:Number(btn.dataset.animeId)},{onConflict:"user_id,anime_id"});if(r.error)throw r.error;btn.textContent="✓";btn.classList.add("added");}catch(err){console.error(err);btn.textContent="!";}});
 }
 document.getElementById("search-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("search-input").value.trim();if(q)location.href="anime.html?search="+encodeURIComponent(q);});
-(async()=>{try{await sb.auth.signOut({scope:"local"});}catch(e){console.error("ログイン状態の初期化に失敗しました",e)}try{await load()}catch(e){console.error(e);renderFailure("season-feature","作品データを取得できませんでした。時間をおいて再読み込みしてください。");renderFailure("season-ranking","作品データの読み込みに失敗しました。");renderFailure("rank-list","作品データの読み込みに失敗しました。");renderFailure("genre-grid","ジャンル情報を準備中です。");}})();
+(async()=>{try{await load()}catch(e){console.error(e);renderFailure("season-feature","作品データを取得できませんでした。時間をおいて再読み込みしてください。");renderFailure("season-ranking","作品データの読み込みに失敗しました。");renderFailure("rank-list","作品データの読み込みに失敗しました。");renderFailure("genre-grid","ジャンル情報を準備中です。");}})();
 </script>
 <script id="animecia-auth-nav">
 (function(){
