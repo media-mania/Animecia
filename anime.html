@@ -2611,44 +2611,33 @@ function compareAnimeTitles(a,b){ return AnimeciaData.compare(a,b); }
              * 並べ替え、さらにtitle_kanaを追加取得していたため、
              * 初回表示時に大量のリクエストが発生して失敗しやすかった。
              */
-            const { data, error } =
-                await supabaseClient.rpc("search_anime_catalog_v2", {
-                    p_query:
-                        searchInput.value.trim() || null,
+            const rpcParams = {
+                p_query: searchInput.value.trim() || null,
+                p_genre_id: genreFilter.value ? Number(genreFilter.value) : null,
+                p_studio_id: studioFilter.value ? Number(studioFilter.value) : null,
+                p_year: yearFilter.value ? Number(yearFilter.value) : null,
+                p_season: seasonFilter.value || null,
+                p_status: statusFilter.value || null,
+                p_format: formatFilter.value || null,
+                p_sort: sortFilter.value || "title",
+                p_limit: PAGE_SIZE,
+                p_offset: (currentPage - 1) * PAGE_SIZE
+            };
 
-                    p_genre_id:
-                        genreFilter.value
-                            ? Number(genreFilter.value)
-                            : null,
+            /*
+             * 新しい共通RPCを優先し、公開環境でPostgRESTのスキーマ
+             * キャッシュが一時的に古い場合は既存RPCへ自動フォールバックする。
+             * これにより「アニメ情報を読み込めませんでした」で一覧全体が
+             * 消えることを防ぐ。
+             */
+            let result = await supabaseClient.rpc("search_anime_catalog_v2", rpcParams);
 
-                    p_studio_id:
-                        studioFilter.value
-                            ? Number(studioFilter.value)
-                            : null,
+            if (result.error) {
+                console.warn("search_anime_catalog_v2 failed; falling back:", result.error);
+                result = await supabaseClient.rpc("search_anime_catalog", rpcParams);
+            }
 
-                    p_year:
-                        yearFilter.value
-                            ? Number(yearFilter.value)
-                            : null,
-
-                    p_season:
-                        seasonFilter.value || null,
-
-                    p_status:
-                        statusFilter.value || null,
-
-                    p_format:
-                        formatFilter.value || null,
-
-                    p_sort:
-                        sortFilter.value || "title",
-
-                    p_limit:
-                        PAGE_SIZE,
-
-                    p_offset:
-                        (currentPage - 1) * PAGE_SIZE
-                });
+            const { data, error } = result;
 
             if (error) {
                 throw error;
