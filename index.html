@@ -529,7 +529,7 @@ footer{margin-top:55px;background:#111217;color:#b9bbc1}.footer-inner{padding:34
 const SUPABASE_URL="https://bhgdjuwlxvbaeraaivmh.supabase.co";
 const SUPABASE_KEY="sb_publishable_-rZ4HusVezs5IlZQnUQ-Kw_SLUd8R0c";
 let sb=null;
-function initSupabase(){if(!sb&&window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);return sb;}
+function initSupabase(){if(!sb&&window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.sessionStorage,storageKey:"animecia-auth-session"}});return sb;}
 function waitForSupabase(){return new Promise((resolve,reject)=>{const start=Date.now();(function check(){const client=initSupabase();if(client)return resolve(client);if(Date.now()-start>10000)return reject(new Error("Supabase SDK timeout"));setTimeout(check,50)})();});}
 const titleOf=a=>a?.title_japanese||a?.title_native||a?.title_user_preferred||a?.title_romaji||a?.title_english||a?.english_title||a?.title||"タイトル未設定";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -619,7 +619,7 @@ async function load(){
  const rankedIds=engData.filter(x=>x.average_rating!=null).sort((a,b)=>Number(b.average_rating)-Number(a.average_rating)).slice(0,10).map(x=>x.anime_id);
  let rankedRows=[];
  if(rankedIds.length){
-   const rk=await safe(sb.from("animecia_public_anime").select(base).in("id",rankedIds));
+   const rk=await safe(sb.from("animecia_public_anime").select(base).eq("anime_verification_status","verified").eq("is_japanese",true).eq("is_adult",false).eq("is_kids",false).eq("is_sensitive_visual",false).in("id",rankedIds));
    const by=new Map((rk.data||[]).map(a=>[String(a.id),a]));
    rankedRows=rankedIds.map(id=>by.get(String(id))).filter(a=>a&&valid(a));
  }
