@@ -8,30 +8,47 @@
   }
   function render(user){
     var loggedIn=!!(user&&!user.is_anonymous&&user.email_confirmed_at);
-    var links=Array.from(document.querySelectorAll("#auth-link,#footer-login-link"));\n    var link=links[0]||null;
+    var links=Array.from(document.querySelectorAll("#auth-link,#footer-login-link"));
+    var link=links[0]||null;
     if(!link){
       var host=document.querySelector(".site-header .nav-actions")||document.querySelector("header .nav-actions");
       if(!host){
         var nav=document.querySelector(".site-header .container.nav")||document.querySelector("header nav")||document.querySelector(".wrap.head");
         if(nav){
-          host=document.createElement("div");host.className="nav-actions animecia-auth-actions";
+          host=document.createElement("div");
+          host.className="nav-actions animecia-auth-actions";
           nav.appendChild(host);
         }
       }
       if(host){
-        link=document.createElement("a");link.id="auth-link";link.className="nav-btn primary animecia-auth-link";host.appendChild(link);
+        link=document.createElement("a");
+        link.id="auth-link";
+        link.className="nav-btn primary animecia-auth-link";
+        host.appendChild(link);
+        links=[link].concat(links);
       }
     }
-    if(!link)return;
-    link.textContent=loggedIn?"ログアウト":"ログイン";
-    link.href=loggedIn?"#":"login.html";
-    link.setAttribute("aria-label",loggedIn?"ログアウト":"ログイン");
-    link.onclick=loggedIn?async function(e){
-      e.preventDefault();link.setAttribute("aria-busy","true");link.textContent="ログアウト中…";
-      try{await AnimeciaAuth.signOut();location.replace("index.html");}
-      catch(err){console.error(err);link.removeAttribute("aria-busy");render(AnimeciaAuth.state.user);}
-    }:null;
-    link.style.display="";
+    if(!links.length)return;
+    links.forEach(function(item){
+      item.textContent=loggedIn?"ログアウト":"ログイン";
+      item.href=loggedIn?"#":"login.html";
+      item.setAttribute("aria-label",loggedIn?"ログアウト":"ログイン");
+      item.onclick=loggedIn?async function(e){
+        e.preventDefault();
+        item.setAttribute("aria-busy","true");
+        item.textContent="ログアウト中…";
+        try{
+          await AnimeciaAuth.signOut();
+          location.replace("index.html");
+        }catch(err){
+          console.error(err);
+          item.removeAttribute("aria-busy");
+          render(AnimeciaAuth.state.user);
+        }
+      }:null;
+      item.style.display="";
+    });
   }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ready,{once:true});else ready();
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ready,{once:true});
+  else ready();
 })();
