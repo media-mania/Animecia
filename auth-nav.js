@@ -6,8 +6,8 @@
     var links=document.querySelectorAll("#auth-link, #footer-login-link");
     if(!links.length || !window.supabase || !window.supabase.createClient) return;
     var client=window.__animeciaAuthClient||(window.__animeciaAuthClient=window.supabase.createClient(URL,KEY));
-    client.auth.getUser().then(function(res){
-      var loggedIn=!!(res.data&&res.data.user&&!res.data.user.is_anonymous);
+    function render(user){
+      var loggedIn=!!(user&&!user.is_anonymous);
       links.forEach(function(link){
         link.textContent=loggedIn?"ログアウト":"ログイン";
         link.href=loggedIn?"#":"login.html";
@@ -17,14 +17,9 @@
         }:null;
         link.style.display="";
       });
-    }).catch(function(){
-      links.forEach(function(link){
-        link.textContent="ログイン";
-        link.href="login.html";
-        link.onclick=null;
-        link.style.display="";
-      });
-    });
+    }
+    client.auth.getUser().then(function(res){render(res.data&&res.data.user);}).catch(function(){render(null);});
+    client.auth.onAuthStateChange(function(_event,session){render(session&&session.user);});
   }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",setup,{once:true});
   else setup();
