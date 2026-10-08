@@ -3515,7 +3515,7 @@
 
                     // animecia_public_anime は公開対象作品をDB側ですでに絞り込んでいる。
                     // 詳細ページではIDだけで取得し、同じ条件を重複して付けない。
-                    .select("*")
+                    .select("id,title,genre,description,review,official_url,english_title,title_romaji,title_english,title_native,title_japanese,cover_image,banner_image,start_date,end_date,episodes,duration,status,format,season,season_year,source,average_score,popularity,favourites_count,site_url,title_user_preferred,search_aliases,streaming_links,synopsis,synopsis_source,updated_at,created_at")
                     .eq(
                         "id",
                         Number(
@@ -3547,51 +3547,7 @@
             loadingElement.style.display = "none";
             detailElement.style.display = "block";
 
-            // 以下はすべて補助情報。基本情報の表示を待たせない。
-            const enrichmentPromise = (async () => {
-                try {
-                    const [aliasResult, sourceResult] = await Promise.all([
-                        supabaseClient
-                            .from("anime_aliases")
-                            .select("title,language")
-                            .eq("anime_id", Number(currentAnimeId)),
-                        !currentAnime.cover_image
-                            ? supabaseClient
-                                .from("anime_sources")
-                                .select("image_url,last_synced_at")
-                                .eq("anime_id", Number(currentAnimeId))
-                                .not("image_url", "is", null)
-                                .order("last_synced_at", { ascending: false, nullsFirst: false })
-                            : Promise.resolve({ data: [], error: null })
-                    ]);
-
-                    if (!aliasResult.error) {
-                        currentAnime._japanese_aliases = (aliasResult.data || [])
-                            .filter(row =>
-                                String(row.language || "").toLowerCase() === "japanese" ||
-                                /[ぁ-んァ-ン一-龯]/.test(String(row.title || ""))
-                            )
-                            .map(row => String(row.title || "").trim())
-                            .filter(Boolean);
-                    }
-
-                    if (!currentAnime.cover_image && !sourceResult.error) {
-                        const sourceImage = (sourceResult.data || []).find(row =>
-                            /^https?:\/\//i.test(String(row.image_url || ""))
-                        );
-                        if (sourceImage) currentAnime.cover_image = sourceImage.image_url;
-                    }
-
-                    if (currentAnime.cover_image || currentAnime._japanese_aliases.length) {
-                        renderAnime(currentAnime);
-                        updateSEO(currentAnime);
-                    }
-                } catch (error) {
-                    console.error("作品補助情報取得エラー:", error);
-                }
-            })();
-
-            const genrePromise = loadGenres();
+            // 別名・データソースは専用ローダーで1回だけ取得する。\n            const genrePromise = loadGenres();
             const userStatePromise = (async () => {
                 await loadAuth();
                 await loadUserState();
