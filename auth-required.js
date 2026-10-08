@@ -15,7 +15,7 @@
   function notice(parent,text){
     if(!parent||parent.querySelector(".auth-required-notice"))return;
     var n=document.createElement("div");n.className="auth-required-notice";
-    n.innerHTML="<strong>ログインが必要です</strong><br>"+text+" <a href="login.html?redirect="+encodeURIComponent(location.pathname.split("/").pop()+location.search)+"">ログインする</a>";
+    n.innerHTML="<strong>ログインが必要です</strong><br>"+text+" <a href=\"login.html?redirect="+encodeURIComponent(location.pathname.split("/").pop()+location.search)+"\">ログインする</a>";
     parent.insertBefore(n,parent.firstChild);
   }
   function apply(user){
