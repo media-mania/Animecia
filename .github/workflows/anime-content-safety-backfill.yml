@@ -77,7 +77,7 @@ jobs:
                       raise
 
           rows=sb("/rest/v1/anime",params={
-              "select":"id,source_id,source_provider,is_adult,is_kids,is_sensitive_visual",
+              "select":"id,source_id",
               "source_provider":"eq.anilist",
               "source_id":"not.is.null",
               "limit":"10000"
@@ -95,18 +95,29 @@ jobs:
               batch=ids[start:start+50]
               media=anilist([x[1] for x in batch])
               by_source={int(m["id"]):m for m in media if m.get("id") is not None}
-              for anime_id,source_id,current_adult,current_kids,current_sensitive in batch:
+              for anime_id,source_id in batch:
                   m=by_source.get(source_id)
                   if not m:
                       continue
                   tags={str(t.get("name") or "").strip().casefold() for t in (m.get("tags") or [])}
+                  preschool=bool(tags.intersection({
+                      "preschool","kindergarten","幼児","幼児向け","未就学児","未就学児向け",
+                      "就学前","就学前向け","幼稚園児向け"
+                  }))
                   kids=bool(tags.intersection({
-                      "kids","preschool","kindergarten","children","幼児","幼児向け",
-                      "児童","児童向け","子供向け","こども向け","子ども向け"
+                      "kids","children","児童","児童向け","子供向け","こども向け","子ども向け"
                   }))
                   adult=bool(m.get("isAdult") is True)
-                  sensitive=bool(tags.intersection({"ecchi","hentai","nudity","sexual content","sexual themes","erotica","erotic","fanservice","性的","性的描写","性的な内容","裸","ヌード","エッチ","お色気","成人向け"}))
-                  sb("/rest/v1/anime",method="PATCH",body={"is_adult":(current_adult or adult),"is_kids":(current_kids or kids),"is_sensitive_visual":(current_sensitive or sensitive)},params={"id":f"eq.{anime_id}"})
+                  sensitive=bool(tags.intersection({
+                      "ecchi","hentai","nudity","sexual content","sexual themes","erotica","erotic",
+                      "fanservice","性的","性的描写","性的な内容","裸","ヌード","エッチ","お色気","成人向け"
+                  }))
+                  sb("/rest/v1/anime",method="PATCH",body={
+                      "is_adult":adult,
+                      "is_kids":kids,
+                      "is_preschool":preschool,
+                      "is_sensitive_visual":sensitive
+                  },params={"id":f"eq.{anime_id}"})
                   updated += 1
               time.sleep(.15)
 
