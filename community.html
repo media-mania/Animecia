@@ -89,9 +89,7 @@ main{max-width:1080px;margin:auto;padding:24px 14px 70px}.layout{display:grid;gr
 <form class="header-search" action="anime.html" method="get" role="search">
 <input name="search" type="search" placeholder="アニメを検索…" aria-label="アニメを検索">
 </form>
-<div class="nav-actions">
-<a class="nav-btn primary" href="login.html" id="auth-link">ログイン</a>
-</div>
+
 </div>
 </header>
 <main><div class="layout"><section>
@@ -216,6 +214,6 @@ function removePostPhoto(index){const input=document.getElementById("post-image"
 function clearPostPhotos(){document.getElementById("post-image").value="";updatePhotoPreview()}
 async function init(){const {data,error}=await sb.auth.getSession();if(error)console.error(error);currentUser=data?.session?.user||null;document.getElementById("post-submit").onclick=createPost;document.getElementById("photo-button").onclick=()=>document.getElementById("post-image").click();document.getElementById("post-image").addEventListener("change",updatePhotoPreview);document.getElementById("post-body").addEventListener("input",e=>document.getElementById("post-count").textContent=e.target.value.length+" / 4000");document.getElementById("user-search-btn").onclick=searchUsers;document.getElementById("user-search").onkeydown=e=>{if(e.key==="Enter")searchUsers()};document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentMode=b.dataset.mode;loadFeed()});await loadFeed()}
 document.addEventListener("DOMContentLoaded",init);
-</script><script src="auth-nav.js"></script>\n<script src="auth-required.js"></script>
+</script>\n<script src="auth-required.js"></script>
 </body></html>
 <style id="animecia-ui-polish">html{overflow-x:hidden}body{overflow-x:hidden}:focus-visible{outline:3px solid #2563eb;outline-offset:3px}button,a,input,select,textarea{touch-action:manipulation}@media(max-width:900px){.layout{grid-template-columns:1fr!important}.grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.main-nav,.site-nav,header nav,.nav-links{overflow-x:auto!important;overscroll-behavior-x:contain!important}}@media(max-width:640px){input,select,textarea{font-size:16px!important}.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.wrap.head,.header-inner,.container.nav{padding:0 14px!important}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style>
