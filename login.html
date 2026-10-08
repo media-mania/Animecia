@@ -129,7 +129,7 @@ async function init(){
     sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.sessionStorage,storageKey:"animecia-auth-session"}});
     const {data,error}=await sb.auth.getSession();
     if(error){console.error("session check error",error);return;}
-    if(data?.session?.user?.email_confirmed_at){
+    if((data?.session?.user?.email_confirmed_at||data?.session?.user?.confirmed_at)){
       location.replace(safeRedirect);
     }
   }catch(error){
