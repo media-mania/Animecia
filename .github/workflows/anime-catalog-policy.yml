@@ -203,6 +203,22 @@ jobs:
                   "original_country_review_reason":"AniList origin could not be verified in this run; prior country classification cleared to prevent stale decisions."
               })
 
+          # Legacy is_japanese-derived labels are not independent origin evidence.
+          legacy_ids=[
+              int(r["id"]) for r in rows
+              if str(r.get("source_provider") or "").casefold()!="anilist"
+              and str(r.get("original_country_review_reason") or "").casefold().startswith(
+                  "derived from existing positive is_japanese classification"
+              )
+          ]
+          for start in range(0,len(legacy_ids),100):
+              patch_many(legacy_ids[start:start+100],{
+                  "original_country_code":None,
+                  "original_country_status":"unknown",
+                  "original_country_confidence":0.0,
+                  "original_country_review_reason":"Legacy is_japanese flag is not independent evidence of original country; manual verification required."
+              })
+
           # 2) Exact identity duplicates only: same provider + same source ID,
           #    or same provider + same external ID. Never use title alone.
           groups=defaultdict(list)
@@ -298,7 +314,7 @@ jobs:
               body={
                   "catalog_policy_decision":decision,
                   "catalog_policy_reasons":[reason] if reason else ([extra] if extra else []),
-                  "catalog_policy_version":"anilist-authoritative-v6"
+                  "catalog_policy_version":"anilist-authoritative-v7"
               }
               patch_many(ids,body)
 
