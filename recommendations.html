@@ -163,10 +163,10 @@ async function init(){
  s=AnimeciaAuth.client();
  const [catalogRows,gr,auth]=await Promise.all([
   fetchCatalogRows(),
-  s.from("genres").select("id,name").order("name"),
+  s.rpc("get_catalog_genres"),
   s.auth.getUser()
  ]);
- if(gr.error) console.warn("Animecia recommendations: genres table unavailable; deriving genres from catalog.",gr.error);
+ if(gr.error) console.warn("Animecia recommendations: genre RPC unavailable; deriving genres from catalog.",gr.error);
  genres=(gr.data||[]).map(g=>({id:Number(g.id),name:String(g.name||"").trim()})).filter(g=>g.name);
  const genreNames=new Map();
  (catalogRows||[]).forEach(a=>String(a.genre||"").split(/[,、/]/).map(x=>x.trim()).filter(Boolean).forEach(name=>genreNames.set(name,name)));
