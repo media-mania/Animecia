@@ -6,29 +6,69 @@ jobs:
   backfill:
     if: contains(github.event.head_commit.message, '[season-backfill]')
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: animecia-anilist-maintenance
+      cancel-in-progress: false
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SEASON_BACKFILL_TOKEN: ${{ secrets.ANIME_SEASON_BACKFILL_TOKEN }}
     steps:
-      - name: Backfill missing seasons
+      - name: Validate configuration
         shell: bash
         run: |
           set -euo pipefail
+          if [ -z "${SUPABASE_URL}" ]; then
+            echo "::error::Missing SUPABASE_URL repository secret."
+            exit 1
+          fi
           if [ -z "${SEASON_BACKFILL_TOKEN}" ]; then
             echo "::error::Missing ANIME_SEASON_BACKFILL_TOKEN repository secret."
             exit 1
           fi
-          URL="${SUPABASE_URL%/}/functions/v1/backfill-anime-seasons?token=${SEASON_BACKFILL_TOKEN}&limit=30"
-          for i in $(seq 1 20); do
+          if [[ ! "${SUPABASE_URL}" =~ ^https://[a-zA-Z0-9.-]+$ ]]; then
+            echo "::error::SUPABASE_URL must be the Supabase project URL."
+            exit 1
+          fi
+      - name: Backfill missing seasons
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="${SUPABASE_URL%/}/functions/v1/backfill-anime-seasons?token=${SEASON_BACKFILL_TOKEN}&limit=5"
+          PREVIOUS_REMAINING=-1
+          STALLED=0
+          COMPLETE=false
+          for i in $(seq 1 80); do
             echo "Batch $i"
-            BODY=$(curl --fail --silent --show-error --max-time 120 "$URL")
+            RESPONSE=$(curl --silent --show-error --max-time 120 --write-out $'\nHTTP_STATUS:%{http_code}' "$URL")
+            STATUS="${RESPONSE##*HTTP_STATUS:}"
+            BODY="${RESPONSE%$'\n'HTTP_STATUS:*}"
+            echo "HTTP status: ${STATUS}"
             echo "$BODY"
-            REMAINING=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("remaining",999999))' <<< "$BODY")
+            if [[ ! "${STATUS}" =~ ^2[0-9][0-9]$ ]]; then
+              echo "::error::Backfill endpoint returned HTTP ${STATUS}."
+              exit 1
+            fi
+            REMAINING=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("remaining", -1))' <<< "$BODY")
+            PROCESSED=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("processed", 0))' <<< "$BODY")
             if [ "$REMAINING" -eq 0 ]; then
               echo "All missing start dates resolved."
+              COMPLETE=true
               break
             fi
-            sleep 2
+            if [ "$PROCESSED" -eq 0 ] && [ "$REMAINING" -eq "$PREVIOUS_REMAINING" ]; then
+              STALLED=$((STALLED+1))
+            else
+              STALLED=0
+            fi
+            if [ "$STALLED" -ge 2 ]; then
+              echo "::error::Backfill made no progress in consecutive batches; remaining rows need manual/source review."
+              exit 1
+            fi
+            PREVIOUS_REMAINING="$REMAINING"
+            sleep 12
           done
-
-# Triggered to verify repository secret configuration and resume the season backfill.
+          if [ "$COMPLETE" != true ]; then
+            echo "::error::Backfill reached the batch limit; unresolved rows remain."
+            exit 1
+          fi
