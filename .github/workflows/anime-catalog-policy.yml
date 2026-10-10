@@ -277,11 +277,27 @@ jobs:
               c=classified.get(sid) if sid is not None and str(r.get("source_provider") or "").casefold()=="anilist" else None
               is_anilist=str(r.get("source_provider") or "").casefold()=="anilist"
               legacy_reason=str(r.get("original_country_review_reason") or "").casefold().startswith("derived from existing positive is_japanese classification")
-              if is_anilist:
-                  # AniList-linked rows must be classified from this run's API
-                  # evidence. A missing response is unknown, never a fallback to stale JP.
-                  origin_code=(c or {}).get("original_country_code")
-                  origin_status=(c or {}).get("original_country_status") or "unknown"
+              if is_anilist and c:
+                  # Native AniList IDs are classified from this run's API evidence.
+                  origin_code=c.get("original_country_code")
+                  origin_status=c.get("original_country_status") or "unknown"
+              elif is_anilist and sid is not None and sid >= 10000000:
+                  # Some legacy rows are incorrectly labeled AniList but store wrapped
+                  # external IDs (for example, MAL IDs prefixed with 1000000000).
+                  # They cannot be queried as AniList IDs. Preserve only an explicit,
+                  # previously verified origin; unknown/unverified values still fail closed.
+                  stored_code=str(r.get("original_country_code") or "").strip().upper() or None
+                  stored_status=str(r.get("original_country_status") or "unknown")
+                  if stored_code and stored_status in ("verified_jp","verified_non_jp"):
+                      origin_code=stored_code
+                      origin_status=stored_status
+                  else:
+                      origin_code=None
+                      origin_status="unknown"
+              elif is_anilist:
+                  # A native AniList lookup that failed must not reuse stale country flags.
+                  origin_code=None
+                  origin_status="unknown"
               elif legacy_reason:
                   # A legacy boolean is not evidence of original country.
                   origin_code=None
