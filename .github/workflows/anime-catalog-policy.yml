@@ -42,7 +42,7 @@ jobs:
           KIDS={"kids","children","児童","児童向け","子供向け","こども向け","子ども向け"}
           SENSITIVE={"ecchi","hentai","nudity","sexual content","sexual themes","erotica","erotic","fanservice","性的","性的描写","性的な内容","裸","ヌード","エッチ","お色気","成人向け"}
 
-          def request(url,method="GET",body=None,retries=5,headers=None):
+          def request(url,method="GET",body=None,retries=6,headers=None):
               data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
               request_headers={"User-Agent":"Animecia-CatalogPolicy/1.0","Accept":"application/json","Content-Type":"application/json"}
               if headers: request_headers.update(headers)
@@ -59,7 +59,14 @@ jobs:
                       detail=e.read().decode("utf-8","replace")[:1200]
                       print(f"HTTP {e.code} from {url}: {detail}",flush=True)
                       if e.code in (408,425,429,500,502,503,504) and n<retries-1:
-                          time.sleep(min(20,2**n)); continue
+                          retry_after=e.headers.get("Retry-After")
+                          try:
+                              wait=max(1,min(120,float(retry_after))) if retry_after else min(60,10*(2**n))
+                          except (TypeError,ValueError):
+                              wait=min(60,10*(2**n))
+                          print(f"Retrying HTTP {e.code} after {wait:.0f}s (attempt {n+2}/{retries})",flush=True)
+                          time.sleep(wait)
+                          continue
                       raise
 
           def sb(path,method="GET",body=None,params=None):
