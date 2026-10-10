@@ -19,7 +19,7 @@ concurrency:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
@@ -136,7 +136,7 @@ jobs:
               except (TypeError,ValueError):
                   sid=None
               source_rows.append((r,sid))
-              if str(r.get("source_provider") or "").casefold()=="anilist" and sid is not None:
+              if str(r.get("source_provider") or "").casefold()=="anilist" and sid is not None and 0 < sid < 10000000:
                   by_source.setdefault(sid,[]).append(r)
 
           source_ids=list(by_source)
