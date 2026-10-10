@@ -531,7 +531,7 @@ function initSupabase(){if(!sb&&window.supabase?.createClient)sb=AnimeciaAuth.cl
 function waitForSupabase(){return new Promise((resolve,reject)=>{const start=Date.now();(function check(){const client=initSupabase();if(client)return resolve(client);if(Date.now()-start>10000)return reject(new Error("Supabase SDK timeout"));setTimeout(check,50)})();});}
 const titleOf=a=>AnimeciaData.title(a);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const valid=a=>a&&a.anime_verification_status==="verified"&&a.is_japanese===true&&a.is_adult!==true&&a.is_kids!==true&&a.is_sensitive_visual!==true&&(a.start_date==null||a.start_date>="1963-01-01")&&/[ぁ-んァ-ヶ一-龯々ー]/.test(a.title_japanese||a.title_native||a.title_user_preferred||a.title||"");
+const valid=a=>AnimeciaData.isPublic(a)&&(a.start_date==null||a.start_date>="1963-01-01")&&/[ぁ-んァ-ヶ一-龯々ー]/.test(a.title_japanese||a.title_native||a.title_user_preferred||a.title||"");
 const img=(a,cls="")=>a?.cover_image?'<img class="'+cls+'" src="'+esc(a.cover_image)+'" alt="'+esc(titleOf(a))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'" decoding="async" fetchpriority="high">':'<div class="row-thumb">画像なし</div>';
 function card(a){
  const title=AnimeciaData.title(a),score=a._animecia_rating!=null?Number(a._animecia_rating):null;
