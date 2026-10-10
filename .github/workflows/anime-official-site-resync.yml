@@ -38,7 +38,7 @@ jobs:
 
           BASE=os.environ["SUPABASE_URL"].rstrip("/")
           KEY=os.environ["SUPABASE_SECRET_KEY"]
-          BATCH=max(50,min(500,int(os.environ.get("BATCH_SIZE","500"))))
+          BATCH=max(10,min(100,int(os.environ.get("BATCH_SIZE","100"))))
           HEAD={"apikey":KEY,"Authorization":"Bearer "+KEY,"Accept":"application/json","User-Agent":"Animecia-OfficialSiteResync/1.0"}
           ANILIST="https://graphql.anilist.co"
 
@@ -129,7 +129,7 @@ jobs:
               raw,_=req(ANILIST,"POST",body,{"Content-Type":"application/json","Accept":"application/json"})
               for m in (json.loads(raw.decode()).get("data",{}).get("Page",{}).get("media") or []):
                   medias[int(m["id"])]=m
-              time.sleep(.2)
+              time.sleep(2.0)
 
           changed=0
           for r in rows:
@@ -146,7 +146,7 @@ jobs:
                           vals=[v for v in (ts.get("native"),ts.get("userPreferred"),ts.get("romaji"),ts.get("english")) if v]
                           if any(nt==re.sub(r"\\s+","",v).lower() or nt in re.sub(r"\\s+","",v).lower() for v in vals):
                               media=x; break
-                      time.sleep(.35)
+                      time.sleep(2.0)
               if not media: continue
               url=choose(media)
               if url and japanese_page(url):
