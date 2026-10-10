@@ -132,13 +132,17 @@ jobs:
                   # For original anime (or when no source relation is available), use
                   # AniList's countryOfOrigin for the anime itself.
                   original_country=(source_countries[0] if source_countries else country)
+                  country_status=("verified_jp" if original_country=="JP" else
+                                  "verified_non_jp" if original_country else "unknown")
                   classified[aid]={
                       "is_adult": bool(m.get("isAdult") is True),
                       "is_preschool": bool(tags & PRESCHOOL),
                       "is_kids": bool(tags & KIDS),
                       "is_sensitive_visual": bool(tags & SENSITIVE),
                       "original_country_code": original_country,
-                      "original_country_status": "known" if original_country else "unknown"
+                      "original_country_status": country_status,
+                      "original_country_confidence": 1.0 if original_country else 0.0,
+                      "original_country_review_reason": "AniList countryOfOrigin; source-material relation country used when available."
                   }
               time.sleep(.15)
 
@@ -148,12 +152,6 @@ jobs:
               if not c: continue
               for r in group:
                   patch(r["id"],c)
-                  patch(r["id"],{
-                      "original_country_code":c["original_country_code"],
-                      "original_country_status":c["original_country_status"],
-                      "original_country_confidence":1.0 if c["original_country_code"] else 0.0,
-                      "original_country_review_reason":"AniList countryOfOrigin; source-material relation country used when available."
-                  })
                   classified_count+=1
 
           # 2) Exact identity duplicates only: same provider + same source ID,
