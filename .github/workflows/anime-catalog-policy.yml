@@ -116,7 +116,7 @@ jobs:
           page_size=1000
           while True:
               page=sb("/rest/v1/anime",params={
-                  "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese,original_country_code,original_country_status,start_date",
+                  "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese,original_country_code,original_country_status,original_country_review_reason,start_date",
                   "order":"id.asc",
                   "limit":str(page_size),
                   "offset":str(offset)
@@ -188,6 +188,20 @@ jobs:
           for serialized, ids in classification_groups.items():
               patch_many(ids,json.loads(serialized))
               classified_count+=len(ids)
+
+          # Clear stale country claims for AniList rows that could not be verified
+          # from this run. This includes API failures and source IDs no longer returned.
+          unclassified_ids=[]
+          for sid, group in by_source.items():
+              if sid not in classified:
+                  unclassified_ids.extend(int(r["id"]) for r in group)
+          for start in range(0,len(unclassified_ids),100):
+              patch_many(unclassified_ids[start:start+100],{
+                  "original_country_code":None,
+                  "original_country_status":"unknown",
+                  "original_country_confidence":0.0,
+                  "original_country_review_reason":"AniList origin could not be verified in this run; prior country classification cleared to prevent stale decisions."
+              })
 
           # 2) Exact identity duplicates only: same provider + same source ID,
           #    or same provider + same external ID. Never use title alone.
@@ -284,7 +298,7 @@ jobs:
               body={
                   "catalog_policy_decision":decision,
                   "catalog_policy_reasons":[reason] if reason else ([extra] if extra else []),
-                  "catalog_policy_version":"anilist-authoritative-v5"
+                  "catalog_policy_version":"anilist-authoritative-v6"
               }
               patch_many(ids,body)
 
