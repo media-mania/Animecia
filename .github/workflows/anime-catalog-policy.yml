@@ -237,7 +237,7 @@ jobs:
                       "catalog_policy_version":"anilist-authoritative-v4"
                   })
                   excluded+=1
-              elif r.get("start_date") and str(r["start_date"])[:10] > today.isoformat():
+              elif r.get("start_date") and str(r["start_date"])[:10] > date.today().isoformat():
                   patch(rid,{
                       "catalog_policy_decision":"include",
                       "catalog_policy_reasons":["future_start_date_confirmed"],
