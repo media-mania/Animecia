@@ -114,13 +114,21 @@ jobs:
               externalLinks{url site language type}
           }}}"""
 
-          rows=sb("/rest/v1/anime",{
+          # Rotate through the full AniList-linked catalogue. Without this cursor,
+          # the first low-ID rows with no usable official link are retried forever.
+          cursor=(int(time.time()//900)*BATCH)%26038
+          params={
               "select":"id,title_japanese,title_native,title_user_preferred,title_romaji,title_english,source_provider,source_id,official_url",
+              "source_provider":"eq.anilist",
+              "source_id":"not.is.null",
               "anime_verification_status":"eq.verified",
               "start_date":"gte.1963-01-01",
               "or":"(official_url.is.null,official_url.ilike.*anilist.co*,official_url.ilike.*animenewsnetwork.com*,official_url.ilike.*twitter.com*,official_url.ilike.*x.com*,official_url.ilike.*instagram.com*,official_url.ilike.*facebook.com*,official_url.ilike.*youtube.com*,official_url.ilike.*wikipedia.org*,official_url.ilike.*crunchyroll.com*)",
               "order":"id.asc","limit":str(BATCH)
-          })
+          }
+          rows=sb("/rest/v1/anime",{**params,"id":"gt."+str(cursor)})
+          if len(rows)<BATCH:
+              rows+=sb("/rest/v1/anime",{**params,"id":"lt."+str(cursor),"limit":str(BATCH-len(rows))})
 
           ids=[int(r["source_id"]) for r in rows if r.get("source_provider")=="anilist" and str(r.get("source_id") or "").isdigit()]
           medias={}
