@@ -97,7 +97,7 @@ jobs:
               }).get("data") or {}).get("Page") or {}).get("media") or []
 
           rows=sb("/rest/v1/anime",params={
-              "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese,start_date",
+              "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese,original_country_code,original_country_status,start_date",
               "order":"id.asc",
               "limit":"10000"
           })
@@ -125,7 +125,10 @@ jobs:
                   source_countries=[]
                   for edge in (m.get("relations") or {}).get("edges") or []:
                       node=edge.get("node") or {}
-                      if node.get("type") in ("MANGA","NOVEL","ONE_SHOT"):
+                      # Only use a source work explicitly linked as an adaptation.
+                      # Other relations (sequel, prequel, side story) are not proof
+                      # of the original work's country.
+                      if edge.get("relationType") == "ADAPTATION" and node.get("type") in ("MANGA","NOVEL","ONE_SHOT"):
                           ctry=str(node.get("countryOfOrigin") or "").strip().upper()
                           if ctry: source_countries.append(ctry)
                   # For adaptations, prefer the country of the linked source work.
@@ -194,59 +197,51 @@ jobs:
                   })
                   duplicate_count+=1
 
-          # 3) Reversible catalog policy. No rows are physically deleted.
-          #    Future works are kept only when AniList provides a complete start date;
-          #    this is the available machine-readable signal for a confirmed first release date.
+          # 3) Reversible catalog policy. Fail closed: only works with a
+          # positively verified Japanese origin are public. Unknown origin is
+          # excluded until it can be classified; no records are physically deleted.
           from datetime import date
           cutoff = date(1963, 1, 1)
           today = date.today()
           excluded=0
           included=0
+          non_japanese_excluded=0
+          unverified_origin_excluded=0
           for r,sid in source_rows:
               rid=int(r["id"])
               if rid in duplicate_ids:
                   continue
               c=classified.get(sid) if sid is not None and str(r.get("source_provider") or "").casefold()=="anilist" else None
+              origin_code=(c or {}).get("original_country_code") or str(r.get("original_country_code") or "").strip().upper() or None
+              origin_status=(c or {}).get("original_country_status") or r.get("original_country_status")
+              reason=None
               if r.get("start_date") and str(r["start_date"])[:10] < cutoff.isoformat():
-                  patch(rid,{
-                      "catalog_policy_decision":"exclude",
-                      "catalog_policy_reasons":["before_1963-01-01"],
-                      "catalog_policy_version":"anilist-authoritative-v4"
-                  })
-                  excluded+=1
+                  reason="before_1963-01-01"
               elif c and c["is_adult"]:
-                  patch(rid,{
-                      "catalog_policy_decision":"exclude",
-                      "catalog_policy_reasons":["adult_anilist_isAdult"],
-                      "catalog_policy_version":"anilist-authoritative-v4"
-                  })
-                  excluded+=1
+                  reason="adult_anilist_isAdult"
               elif c and c["is_preschool"]:
+                  reason="preschool_anilist_tag"
+              elif origin_code and origin_code != "JP":
+                  reason="non_japanese_original"
+                  non_japanese_excluded+=1
+              elif origin_code != "JP" or origin_status != "verified_jp":
+                  reason="japanese_origin_unverified"
+                  unverified_origin_excluded+=1
+              if reason:
                   patch(rid,{
                       "catalog_policy_decision":"exclude",
-                      "catalog_policy_reasons":["preschool_anilist_tag"],
-                      "catalog_policy_version":"anilist-authoritative-v4"
+                      "catalog_policy_reasons":[reason],
+                      "catalog_policy_version":"anilist-authoritative-v5"
                   })
                   excluded+=1
-              elif c and c["original_country_code"] and c["original_country_code"] != "JP":
-                  patch(rid,{
-                      "catalog_policy_decision":"exclude",
-                      "catalog_policy_reasons":["non_japanese_original_anilist_country"],
-                      "catalog_policy_version":"anilist-authoritative-v4"
-                  })
-                  excluded+=1
-              elif r.get("start_date") and str(r["start_date"])[:10] > date.today().isoformat():
-                  patch(rid,{
-                      "catalog_policy_decision":"include",
-                      "catalog_policy_reasons":["future_start_date_confirmed"],
-                      "catalog_policy_version":"anilist-authoritative-v4"
-                  })
-                  included+=1
               else:
+                  reasons=[]
+                  if r.get("start_date") and str(r["start_date"])[:10] > today.isoformat():
+                      reasons=["future_start_date_confirmed"]
                   patch(rid,{
                       "catalog_policy_decision":"include",
-                      "catalog_policy_reasons":[],
-                      "catalog_policy_version":"anilist-authoritative-v2"
+                      "catalog_policy_reasons":reasons,
+                      "catalog_policy_version":"anilist-authoritative-v5"
                   })
                   included+=1
 
@@ -255,9 +250,10 @@ jobs:
               "anilist_classified":classified_count,
               "exact_duplicates_excluded":duplicate_count,
               "adult_or_preschool_excluded":excluded,
-              "policy_version":"anilist-authoritative-v4",
+              "policy_version":"anilist-authoritative-v5",
               "included":included,
               "physical_deletes":0,
-              "non_japanese_originals_excluded":sum(1 for r,sid in source_rows if (classified.get(sid) or {}).get("original_country_code") not in (None,"JP"))
+              "non_japanese_originals_excluded":non_japanese_excluded,
+              "unverified_japanese_origin_excluded":unverified_origin_excluded
           },ensure_ascii=False))
           PY
