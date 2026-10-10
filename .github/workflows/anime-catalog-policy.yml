@@ -259,9 +259,9 @@ jobs:
               })
               duplicate_count+=len(ids)
 
-          # 3) Reversible catalog policy. Fail closed: only works with a
-          # positively verified Japanese origin are public. Unknown origin is
-          # excluded until it can be classified; no records are physically deleted.
+          # 3) Reversible catalog policy. Unknown origin is allowed pending
+          # manual review; only a known non-Japanese origin is excluded on origin
+          # grounds. Other publication exclusions remain unchanged. No rows are deleted.
           from datetime import date
           cutoff = date(1963, 1, 1)
           today = date.today()
@@ -315,9 +315,8 @@ jobs:
               elif origin_code and origin_code != "JP":
                   reason="non_japanese_original"
                   non_japanese_excluded+=1
-              elif origin_code != "JP" or origin_status != "verified_jp":
-                  reason="japanese_origin_unverified"
-                  unverified_origin_excluded+=1
+              # Unknown origin alone is not an exclusion. The public view still
+              # enforces verification, duplicate, date, format, title and safety rules.
               if reason:
                   policy_groups[("exclude",reason,"")].append(rid)
                   excluded+=1
