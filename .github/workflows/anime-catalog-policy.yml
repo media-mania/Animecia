@@ -142,7 +142,12 @@ jobs:
           source_ids=list(by_source)
           classified={}
           for start in range(0,len(source_ids),50):
-              media=anilist(source_ids[start:start+50])
+              try:
+                  media=anilist(source_ids[start:start+50])
+              except Exception as e:
+                  # Fail closed for this batch: do not reuse old origin flags.
+                  print(f"AniList batch failed at offset {start}: {e}",flush=True)
+                  media=[]
               for m in media:
                   aid=int(m["id"])
                   tags={str(t.get("name") or "").strip().casefold() for t in (m.get("tags") or [])}
@@ -172,7 +177,7 @@ jobs:
                       "original_country_confidence": 1.0 if original_country else 0.0,
                       "original_country_review_reason": "AniList countryOfOrigin; source-material relation country used when available."
                   }
-              time.sleep(1.5)
+              time.sleep(3.0)
 
           classified_count=0
           classification_groups=defaultdict(list)
@@ -240,8 +245,20 @@ jobs:
               if rid in duplicate_ids:
                   continue
               c=classified.get(sid) if sid is not None and str(r.get("source_provider") or "").casefold()=="anilist" else None
-              origin_code=(c or {}).get("original_country_code") or str(r.get("original_country_code") or "").strip().upper() or None
-              origin_status=(c or {}).get("original_country_status") or r.get("original_country_status")
+              is_anilist=str(r.get("source_provider") or "").casefold()=="anilist"
+              legacy_reason=str(r.get("original_country_review_reason") or "").casefold().startswith("derived from existing positive is_japanese classification")
+              if is_anilist:
+                  # AniList-linked rows must be classified from this run's API
+                  # evidence. A missing response is unknown, never a fallback to stale JP.
+                  origin_code=(c or {}).get("original_country_code")
+                  origin_status=(c or {}).get("original_country_status") or "unknown"
+              elif legacy_reason:
+                  # A legacy boolean is not evidence of original country.
+                  origin_code=None
+                  origin_status="unknown"
+              else:
+                  origin_code=str(r.get("original_country_code") or "").strip().upper() or None
+                  origin_status=r.get("original_country_status")
               reason=None
               if r.get("start_date") and str(r["start_date"])[:10] < cutoff.isoformat():
                   reason="before_1963-01-01"
