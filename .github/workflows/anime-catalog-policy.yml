@@ -299,9 +299,6 @@ jobs:
               elif origin_code and origin_code != "JP":
                   reason="non_japanese_original"
                   non_japanese_excluded+=1
-              elif origin_code != "JP" or origin_status != "verified_jp":
-                  reason="japanese_origin_unverified"
-                  unverified_origin_excluded+=1
               if reason:
                   policy_groups[("exclude",reason,"")].append(rid)
                   excluded+=1
