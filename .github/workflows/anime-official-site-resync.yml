@@ -52,6 +52,8 @@ jobs:
                       with urllib.request.urlopen(r,timeout=timeout) as x:
                           return x.read(),x.status
                   except urllib.error.HTTPError as e:
+                      detail=e.read().decode("utf-8","replace")[:1200]
+                      print(f"HTTP {e.code} from {url}: {detail}",flush=True)
                       if e.code in (429,500,502,503,504):
                           time.sleep(min(20,2**n)); continue
                       raise
