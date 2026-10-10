@@ -251,7 +251,8 @@ jobs:
               "total_rows":len(rows),
               "anilist_classified":classified_count,
               "exact_duplicates_excluded":duplicate_count,
-              "adult_or_preschool_excluded":excluded,\n              "policy_version":"anilist-authoritative-v4",
+              "adult_or_preschool_excluded":excluded,
+              "policy_version":"anilist-authoritative-v4",
               "included":included,
               "physical_deletes":0,
               "non_japanese_originals_excluded":sum(1 for r,sid in source_rows if (classified.get(sid) or {}).get("original_country_code") not in (None,"JP"))
