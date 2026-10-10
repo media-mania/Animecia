@@ -71,6 +71,14 @@ jobs:
           def patch(anime_id,body):
               sb("/rest/v1/anime","PATCH",body,{"id":f"eq.{anime_id}"})
 
+          def patch_many(anime_ids,body):
+              # PostgREST accepts an IN filter; keep batches small to avoid URL limits.
+              ids=list(anime_ids)
+              for start in range(0,len(ids),100):
+                  chunk=ids[start:start+100]
+                  if chunk:
+                      sb("/rest/v1/anime","PATCH",body,{"id":"in.("+",".join(str(x) for x in chunk)+")"})
+
           def anilist(ids):
               if not ids: return []
               query="""query($ids:[Int]) {
@@ -96,11 +104,21 @@ jobs:
                   "query":query,"variables":{"ids":ids}
               }).get("data") or {}).get("Page") or {}).get("media") or []
 
-          rows=sb("/rest/v1/anime",params={
-              "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese,original_country_code,original_country_status,start_date",
-              "order":"id.asc",
-              "limit":"10000"
-          })
+          rows=[]
+          offset=0
+          page_size=1000
+          while True:
+              page=sb("/rest/v1/anime",params={
+                  "select":"id,source_provider,source_id,external_id,anime_verification_status,is_japanese,original_country_code,original_country_status,start_date",
+                  "order":"id.asc",
+                  "limit":str(page_size),
+                  "offset":str(offset)
+              })
+              rows.extend(page)
+              if len(page)<page_size:
+                  break
+              offset+=len(page)
+              time.sleep(.1)
 
           # 1) AniList is authoritative for AniList-backed content classification.
           by_source={}
@@ -150,12 +168,14 @@ jobs:
               time.sleep(.15)
 
           classified_count=0
+          classification_groups=defaultdict(list)
           for sid, group in by_source.items():
               c=classified.get(sid)
               if not c: continue
-              for r in group:
-                  patch(r["id"],c)
-                  classified_count+=1
+              classification_groups[json.dumps(c,sort_keys=True)].extend(int(r["id"]) for r in group)
+          for serialized, ids in classification_groups.items():
+              patch_many(ids,json.loads(serialized))
+              classified_count+=len(ids)
 
           # 2) Exact identity duplicates only: same provider + same source ID,
           #    or same provider + same external ID. Never use title alone.
@@ -184,18 +204,18 @@ jobs:
                       duplicate_ids[rid]=canonical
 
           duplicate_count=0
-          for r,sid in source_rows:
-              rid=int(r["id"])
-              if rid in duplicate_ids:
-                  cid=duplicate_ids[rid]
-                  patch(rid,{
-                      "duplicate_status":"confirmed_duplicate",
-                      "duplicate_of_id":cid,
-                      "duplicate_review_reason":"Exact provider/source identity match; canonical record selected automatically.",
-                      "catalog_policy_decision":"exclude",
-                      "catalog_policy_reasons":["exact_duplicate"]
-                  })
-                  duplicate_count+=1
+          duplicate_groups=defaultdict(list)
+          for rid,cid in duplicate_ids.items():
+              duplicate_groups[cid].append(rid)
+          for cid, ids in duplicate_groups.items():
+              patch_many(ids,{
+                  "duplicate_status":"confirmed_duplicate",
+                  "duplicate_of_id":cid,
+                  "duplicate_review_reason":"Exact provider/source identity match; canonical record selected automatically.",
+                  "catalog_policy_decision":"exclude",
+                  "catalog_policy_reasons":["exact_duplicate"]
+              })
+              duplicate_count+=len(ids)
 
           # 3) Reversible catalog policy. Fail closed: only works with a
           # positively verified Japanese origin are public. Unknown origin is
@@ -207,6 +227,7 @@ jobs:
           included=0
           non_japanese_excluded=0
           unverified_origin_excluded=0
+          policy_groups=defaultdict(list)
           for r,sid in source_rows:
               rid=int(r["id"])
               if rid in duplicate_ids:
@@ -228,28 +249,26 @@ jobs:
                   reason="japanese_origin_unverified"
                   unverified_origin_excluded+=1
               if reason:
-                  patch(rid,{
-                      "catalog_policy_decision":"exclude",
-                      "catalog_policy_reasons":[reason],
-                      "catalog_policy_version":"anilist-authoritative-v5"
-                  })
+                  policy_groups[("exclude",reason,"")].append(rid)
                   excluded+=1
               else:
-                  reasons=[]
-                  if r.get("start_date") and str(r["start_date"])[:10] > today.isoformat():
-                      reasons=["future_start_date_confirmed"]
-                  patch(rid,{
-                      "catalog_policy_decision":"include",
-                      "catalog_policy_reasons":reasons,
-                      "catalog_policy_version":"anilist-authoritative-v5"
-                  })
+                  future=bool(r.get("start_date") and str(r["start_date"])[:10] > today.isoformat())
+                  policy_groups[("include","","future_start_date_confirmed" if future else "")].append(rid)
                   included+=1
+
+          for (decision,reason,extra), ids in policy_groups.items():
+              body={
+                  "catalog_policy_decision":decision,
+                  "catalog_policy_reasons":[reason] if reason else ([extra] if extra else []),
+                  "catalog_policy_version":"anilist-authoritative-v5"
+              }
+              patch_many(ids,body)
 
           print(json.dumps({
               "total_rows":len(rows),
               "anilist_classified":classified_count,
               "exact_duplicates_excluded":duplicate_count,
-              "adult_or_preschool_excluded":excluded,
+              "excluded_total":excluded,
               "policy_version":"anilist-authoritative-v5",
               "included":included,
               "physical_deletes":0,
