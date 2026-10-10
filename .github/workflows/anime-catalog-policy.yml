@@ -299,6 +299,9 @@ jobs:
               elif origin_code and origin_code != "JP":
                   reason="non_japanese_original"
                   non_japanese_excluded+=1
+              elif origin_code != "JP" or origin_status != "verified_jp":
+                  reason="japanese_origin_unverified"
+                  unverified_origin_excluded+=1
               if reason:
                   policy_groups[("exclude",reason,"")].append(rid)
                   excluded+=1
@@ -311,7 +314,7 @@ jobs:
               body={
                   "catalog_policy_decision":decision,
                   "catalog_policy_reasons":[reason] if reason else ([extra] if extra else []),
-                  "catalog_policy_version":"anilist-authoritative-v8"
+                  "catalog_policy_version":"anilist-authoritative-v7"
               }
               patch_many(ids,body)
 
@@ -320,7 +323,7 @@ jobs:
               "anilist_classified":classified_count,
               "exact_duplicates_excluded":duplicate_count,
               "excluded_total":excluded,
-              "policy_version":"anilist-authoritative-v8",
+              "policy_version":"anilist-authoritative-v7",
               "included":included,
               "physical_deletes":0,
               "non_japanese_originals_excluded":non_japanese_excluded,
