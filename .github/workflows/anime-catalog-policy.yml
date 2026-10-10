@@ -42,15 +42,22 @@ jobs:
           KIDS={"kids","children","児童","児童向け","子供向け","こども向け","子ども向け"}
           SENSITIVE={"ecchi","hentai","nudity","sexual content","sexual themes","erotica","erotic","fanservice","性的","性的描写","性的な内容","裸","ヌード","エッチ","お色気","成人向け"}
 
-          def request(url,method="GET",body=None,retries=5):
+          def request(url,method="GET",body=None,retries=5,headers=None):
               data=None if body is None else json.dumps(body,ensure_ascii=False).encode()
+              request_headers={"User-Agent":"Animecia-CatalogPolicy/1.0","Accept":"application/json","Content-Type":"application/json"}
+              if headers: request_headers.update(headers)
               for n in range(retries):
                   try:
-                      req=urllib.request.Request(url,data=data,method=method,headers=HEADERS)
+                      req=urllib.request.Request(url,data=data,method=method,headers=request_headers)
                       with urllib.request.urlopen(req,timeout=60) as r:
                           raw=r.read()
-                          return json.loads(raw.decode()) if raw else []
+                          payload=json.loads(raw.decode()) if raw else []
+                          if isinstance(payload,dict) and payload.get("errors"):
+                              raise RuntimeError("AniList GraphQL error: "+json.dumps(payload["errors"],ensure_ascii=False)[:1200])
+                          return payload
                   except urllib.error.HTTPError as e:
+                      detail=e.read().decode("utf-8","replace")[:1200]
+                      print(f"HTTP {e.code} from {url}: {detail}",flush=True)
                       if e.code in (408,425,429,500,502,503,504) and n<retries-1:
                           time.sleep(min(20,2**n)); continue
                       raise
@@ -59,7 +66,7 @@ jobs:
               url=BASE+path
               if params:
                   url += "?" + urllib.parse.urlencode(params,doseq=True)
-              return request(url,method,body)
+              return request(url,method,body,headers=HEADERS)
 
           def patch(anime_id,body):
               sb("/rest/v1/anime","PATCH",body,{"id":f"eq.{anime_id}"})
